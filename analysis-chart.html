@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧工厂实时监控</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: #1a1a1a;
+            overflow: hidden;
+            color: #e0e0e0;
+        }
+        .header {
+            height: 60px;
+            background-color: blue;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            color: #f0f0f0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+        }
+        h2 {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            color: #ffa500;
+            text-transform: uppercase;
+        }
+        p {
+            margin: 8px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .canvas-container {
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1></h1>
+        <div>当前时间：<span id="time"></span></div>
+    </div>
+    <div class="canvas-container">
+        <canvas id="factoryCanvas"></canvas>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script>
+        // 初始化Three.js场景
+        const canvas = document.getElementById("factoryCanvas");
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x1a1a1a); // 更加工业化风格的背景色
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 90, 100);
+        camera.lookAt(0, 0, 0);
+
+        // 添加光源
+        const ambientLight = new THREE.AmbientLight(0x666666, 1.2); // 柔和的环境光
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(20, 50, 30);
+        directionalLight.castShadow = true;
+        scene.add(directionalLight);
+
+        // 工厂基础
+        const factoryBaseGeometry = new THREE.PlaneGeometry(200, 200);
+        const factoryBaseMaterial = new THREE.MeshStandardMaterial({ color: 0x2e2e38, metalness: 0.3, roughness: 0.8 });
+        const factoryBase = new THREE.Mesh(factoryBaseGeometry, factoryBaseMaterial);
+        factoryBase.rotation.x = -Math.PI / 2;
+        scene.add(factoryBase);
+
+        // 创建传送带路径
+        // position 位置（x,y,z）
+        // length 长度
+        // width 宽度
+        // height 高度
+        // rotation = [0, 0, 0] 旋转
+        // beltSegments 滚轮数
+        function createConveyorBelt(position, length, width, height, rotation = [0, 0, 0], beltSegments) {
+            const conveyorBeltGroup = new THREE.Group();
+
+            const beltGeometry = new THREE.BoxGeometry(length, height / 2, width);
+            const beltMaterial = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.7, roughness: 0.4 });
+            const conveyorBelt = new THREE.Mesh(beltGeometry, beltMaterial);
+            conveyorBelt.position.set(0, height / 4, 0);
+            conveyorBeltGroup.add(conveyorBelt);
+
+            const segmentLength = length / beltSegments;
+            const chainMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.5, roughness: 0.4 });
+            for (let i = 0; i < beltSegments; i++) {
+                const segmentGeometry = new THREE.BoxGeometry(segmentLength - 0.2, height / 10, width + 0.5);
+                const segment = new THREE.Mesh(segmentGeometry, chainMaterial);
+                const offset = -length / 2 + segmentLength * i + segmentLength / 2;
+                segment.position.set(offset, height / 2 + 0.5, 0);
+                conveyorBeltGroup.add(segment);
+            }
+
+            conveyorBeltGroup.position.set(...position);
+            conveyorBeltGroup.rotation.x = rotation[0] * Math.PI / 180;
+            conveyorBeltGroup.rotation.y = rotation[1] * Math.PI / 180;
+            conveyorBeltGroup.rotation.z = rotation[2] * Math.PI / 180;
+
+            scene.add(conveyorBeltGroup);
+        }
+
+        // 添加传送带-最下方
+        createConveyorBelt([0, 5, 60], 100, 6, 3, [0, 0, 0], 30);
+        // 中间
+        createConveyorBelt([-1, 5, 10], 100, 8, 3, [0, 0, 0], 30);
+        // 最上方
+        createConveyorBelt([-2, 5, -60], 102.2, 11, 3, [0, 0, 0], 30);
+        // 右侧竖着的
+        createConveyorBelt([54, 5, 43], 40, 7, 3, [90, -90, 90], 18);
+        // 右侧上货区
+        createConveyorBelt([64.5, 5, 27], 13, 7, 3, [0, 0, 0], 4);
+        // 下货区竖着的
+        createConveyorBelt([54, 5, -51], 30, 9, 3, [90, -90, 90], 10);
+
+        // 创建功能区块（预热区和消毒区）
+        function createFunctionalBlock(position, length, width, height, color) {
+            const blockGeometry = new THREE.BoxGeometry(length, height, width);
+            const blockMaterial = new THREE.MeshStandardMaterial({ color: color, metalness: 0.5, roughness: 0.6 });
+            const functionalBlock = new THREE.Mesh(blockGeometry, blockMaterial);
+            functionalBlock.position.set(...position);
+            scene.add(functionalBlock);
+        }
+
+        // 添加预热区（蓝色-下区域块）
+        const preheatBlocksCount = 7;
+        const preheatBlockWidth = 20;
+        const preheatBlockHeight = 1.7;
+        const preheatBlockLength = 12;
+        for (let i = 0; i < preheatBlocksCount; i++) {
+            const xOffset = -46 + i * (preheatBlockLength + 3); // 调整偏移量使其更加整齐
+            createFunctionalBlock([xOffset, preheatBlockHeight / 2 + 1.5, 44], preheatBlockLength, preheatBlockWidth, preheatBlockHeight, 0x0000ff);
+        }
+
+        // 添加预热区（蓝色-上区域块）
+        const preheatBlocksCount2 = 7;
+        const preheatBlockWidth2 = 20;
+        const preheatBlockHeight2 = 1.7;
+        const preheatBlockLength2 = 12;
+        for (let i = 0; i < preheatBlocksCount2; i++) {
+            const xOffset = -46 + i * (preheatBlockLength2 + 3); // 调整偏移量使其更加整齐
+            createFunctionalBlock([xOffset, preheatBlockHeight2 / 2 + 1.5, 23], preheatBlockLength2, preheatBlockWidth2, preheatBlockHeight2, 0x0000ff);
+        }
+
+        // 添加消毒区（黄色区域-下块）
+        const disinfectionBlocksCount = 7;
+        const disinfectionBlockWidth = 28;
+        const disinfectionBlockHeight = 1;
+        const disinfectionBlockLength = 12;
+        for (let i = 0; i < disinfectionBlocksCount; i++) {
+            const xOffset = -47 + i * (disinfectionBlockLength + 3); // 调整偏移量使其更加整齐
+            createFunctionalBlock([xOffset, disinfectionBlockHeight / 2 + 1.5, -45], disinfectionBlockLength, disinfectionBlockWidth, disinfectionBlockHeight, 0xffff00);
+        }
+
+        // 添加消毒区（黄色区域-上块）
+        const disinfectionBlocksCount2 = 7;
+        const disinfectionBlockWidth2 = 28;
+        const disinfectionBlockHeight2 = 1;
+        const disinfectionBlockLength2 = 12;
+        for (let i = 0; i < disinfectionBlocksCount2; i++) {
+            const xOffset = -47 + i * (disinfectionBlockLength2 + 3); // 调整偏移量使其更加整齐
+            createFunctionalBlock([xOffset, disinfectionBlockHeight2 / 2 + 1.5, -15], disinfectionBlockLength2, disinfectionBlockWidth2, disinfectionBlockHeight2, 0xffff00);
+        }
+
+        // 动画渲染
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // 实时时间更新
+        const timeEl = document.getElementById("time");
+        setInterval(() => {
+            const now = new Date();
+            timeEl.textContent = now.toLocaleTimeString();
+        }, 1000);
+    </script>
+</body>
+</html>

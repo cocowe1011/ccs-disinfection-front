@@ -1,15 +1,11 @@
 <template>
   <div style="width: 100%;height: 100%;">
-    <div class="orderlist">
-      <div>
-        <div class="header">
-          <h1>智慧工厂实时监控</h1>
-          <div>当前时间：<span>{{ currentTime }}</span></div>
-        </div>
-        <div class="canvas-container">
-          <canvas ref="factoryCanvas"></canvas>
-        </div>
-      </div>
+    <div class="header">
+      <h1>智慧工厂实时监控</h1>
+      <div>当前时间：<span>{{ currentTime }}</span></div>
+    </div>
+    <div class="canvas-container">
+      <canvas ref="factoryCanvas"></canvas>
     </div>
   </div>
 </template>
@@ -42,31 +38,30 @@ export default {
       // 初始化Three.js场景
       // 获取 canvas 元素
       const canvas = this.$refs.factoryCanvas;
-
+      const canvasContainer = this.$el.querySelector('.canvas-container');
       // 创建 WebGLRenderer 渲染器
       this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
       this.renderer.setClearColor(0x1a1a1a); // 更加工业化风格的背景色
-
+      this.renderer.setPixelRatio(window.devicePixelRatio);
       // 创建场景和相机
       this.scene = new THREE.Scene();
-      this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+      this.camera = new THREE.PerspectiveCamera(55, canvasContainer.clientWidth / canvasContainer.clientHeight, 0.1, 1000);
       this.camera.position.set(0, 90, 100); // 相机初始位置
       this.camera.lookAt(0, 0, 0); // 相机看向原点
 
       // 添加光源
-      // 柔和的环境光
-      const ambientLight = new THREE.AmbientLight(0x666666, 1.2); // 柔和的环境光
+      const ambientLight = new THREE.AmbientLight(0x666666, 2.5); // 非常强的环境光
       this.scene.add(ambientLight);
 
       // 定向光（用于模拟太阳光）
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 2.8);
       directionalLight.position.set(20, 50, 30); // 光源位置
       directionalLight.castShadow = true; // 开启阴影
       this.scene.add(directionalLight);
 
       // 工厂基础
-      const factoryBaseGeometry = new THREE.PlaneGeometry(200, 200);
+      const factoryBaseGeometry = new THREE.PlaneGeometry(190, 190);
       const factoryBaseMaterial = new THREE.MeshStandardMaterial({ color: 0x2e2e38, metalness: 0.3, roughness: 0.8 });
       const factoryBase = new THREE.Mesh(factoryBaseGeometry, factoryBaseMaterial);
       factoryBase.rotation.x = -Math.PI / 2;
@@ -160,10 +155,11 @@ export default {
       }, 1000);
     },
     onWindowResize() {
+      const canvasContainer = this.$el.querySelector('.canvas-container');
       // 处理窗口大小调整
       if (this.renderer && this.camera) {
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.camera.aspect = window.innerWidth / window.innerHeight;
+        this.renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+        this.camera.aspect = canvasContainer.clientWidth / canvasContainer.clientHeight;
         this.camera.updateProjectionMatrix();
       }
     },
@@ -188,7 +184,7 @@ body {
 }
 .header {
   height: 60px;
-  background-color: #333;
+  background-color: blue;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -199,19 +195,5 @@ body {
 .canvas-container {
   height: calc(100% - 60px);
   width: 100%;
-}
-.orderlist {
-  width: 100%;
-  height: 100%;
-  padding: 20px;
-  box-sizing: border-box;
-  > div {
-    width: 100%;
-    height: 100%;
-    opacity: 1;
-    border-radius: 20px;
-    background: rgb(255, 255, 255);
-    box-shadow: 0px 60px 90px 0px rgba(0, 0, 0, 0.2);
-  }
 }
 </style>
