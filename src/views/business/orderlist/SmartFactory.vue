@@ -105,12 +105,53 @@ export default {
         this.scene.add(conveyorBeltGroup);
     },
     // 创建功能区块（预热区和消毒区）
-    createFunctionalBlock(position, length, width, height, color) {
+    createFunctionalBlock(position, length, width, height, color, label) {
+      // 创建功能性方块
       const blockGeometry = new THREE.BoxGeometry(length, height, width);
-      const blockMaterial = new THREE.MeshStandardMaterial({ color: color, metalness: 0.5, roughness: 0.6 });
-      const functionalBlock = new THREE.Mesh(blockGeometry, blockMaterial);
-      functionalBlock.position.set(...position);
-      this.scene.add(functionalBlock);
+        const blockMaterial = new THREE.MeshStandardMaterial({ color: color, metalness: 0.5, roughness: 0.6 });
+        const functionalBlock = new THREE.Mesh(blockGeometry, blockMaterial);
+        functionalBlock.position.set(...position);
+        this.scene.add(functionalBlock);
+
+        // 创建标签 (使用动态大小的平面)
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+
+        // 设置画布大小，根据传入的长和宽调整
+        canvas.width = length * 20;  // 使用适当的比例来转换长和宽，这里用 20 作为比例因子，您可以根据需要进行调整
+        canvas.height = width * 10;  // 使用适当的比例来转换长和宽
+
+        // 设置背景颜色
+        // context.fillStyle = 'rgba(0, 0, 0, 0.5)'; // 设置背景颜色为半透明的黑色 (您可以更改颜色和透明度)
+        // context.fillRect(0, 0, canvas.width, canvas.height); // 绘制矩形，覆盖整个画布
+
+        // 设置文本样式
+        context.font = 'Bold 150px Arial';
+        context.fillStyle = 'white';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillText(label, canvas.width / 2, canvas.height / 2);
+
+        // 创建纹理并用于材质
+        const texture = new THREE.CanvasTexture(canvas);
+        const material = new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true, // 使背景透明
+            side: THREE.DoubleSide, // 让标签的两面都可见
+        });
+
+        // 创建平面几何体作为标签
+        const planeGeometry = new THREE.PlaneGeometry(length, width / 2); // 使用与立方体相匹配的长和适当比例的宽
+        const plane = new THREE.Mesh(planeGeometry, material);
+
+        // 让平面躺下
+        plane.rotation.x = -Math.PI / 2; // 沿 X 轴旋转 90 度，使其平躺
+
+        // 设置平面的位置
+        plane.position.set(position[0], position[1] + height / 2 + 0.1, position[2]); // 标签在立方体顶部稍微偏移一点高度
+
+        // 将标签添加到场景中
+        this.scene.add(plane);
     },
     addConveyorBelts() {
       // 添加传送带-最下方
@@ -127,25 +168,46 @@ export default {
       this.createConveyorBelt([54, 5, -51], 30, 9, 3, [90, -90, 90], 10);
     },
     addFunctionalBlocks() {
-      // 添加预热区（蓝色区域块）
+      const wordArr = ['G', 'F', 'E', 'D', 'C', 'B', 'A']
+      // 添加预热区（蓝色-下区域块）
       const preheatBlocksCount = 7;
-      const preheatBlockWidth = 40;
-      const preheatBlockHeight = 1.7;
-      const preheatBlockLength = 12;
-      for (let i = 0; i < preheatBlocksCount; i++) {
-        const xOffset = -46 + i * (preheatBlockLength + 3); // 调整偏移量使其更加整齐
-        this.createFunctionalBlock([xOffset, preheatBlockHeight / 2 + 1.5, 33], preheatBlockLength, preheatBlockWidth, preheatBlockHeight, 0x0000ff);
-      }
+        const preheatBlockWidth = 20;
+        const preheatBlockHeight = 1.7;
+        const preheatBlockLength = 12;
+        for (let i = 0; i < preheatBlocksCount; i++) {
+            const xOffset = -46 + i * (preheatBlockLength + 3); // 调整偏移量使其更加整齐
+            this.createFunctionalBlock([xOffset, preheatBlockHeight / 2 + 1.5, 44], preheatBlockLength, preheatBlockWidth, preheatBlockHeight, 0x0000ff, wordArr[i] + "1");
+        }
 
-      // 添加消毒区（黄色区域块）
-      const disinfectionBlocksCount = 7;
-      const disinfectionBlockWidth = 56;
-      const disinfectionBlockHeight = 1;
-      const disinfectionBlockLength = 12;
-      for (let i = 0; i < disinfectionBlocksCount; i++) {
-        const xOffset = -47 + i * (disinfectionBlockLength + 3); // 调整偏移量使其更加整齐
-        this.createFunctionalBlock([xOffset, disinfectionBlockHeight / 2 + 1.5, -30], disinfectionBlockLength, disinfectionBlockWidth, disinfectionBlockHeight, 0xffff00);
-      }
+        // 添加预热区（蓝色-上区域块）
+        const preheatBlocksCount2 = 7;
+        const preheatBlockWidth2 = 20;
+        const preheatBlockHeight2 = 1.7;
+        const preheatBlockLength2 = 12;
+        for (let i = 0; i < preheatBlocksCount2; i++) {
+            const xOffset = -46 + i * (preheatBlockLength2 + 3); // 调整偏移量使其更加整齐
+            this.createFunctionalBlock([xOffset, preheatBlockHeight2 / 2 + 1.5, 23], preheatBlockLength2, preheatBlockWidth2, preheatBlockHeight2, 0x0000ff, wordArr[i] + "2");
+        }
+
+        // 添加消毒区（黄色区域-下块）
+        const disinfectionBlocksCount = 7;
+        const disinfectionBlockWidth = 28;
+        const disinfectionBlockHeight = 1;
+        const disinfectionBlockLength = 12;
+        for (let i = 0; i < disinfectionBlocksCount; i++) {
+            const xOffset = -47 + i * (disinfectionBlockLength + 3); // 调整偏移量使其更加整齐
+            this.createFunctionalBlock([xOffset, disinfectionBlockHeight / 2 + 1.5, -45], disinfectionBlockLength, disinfectionBlockWidth, disinfectionBlockHeight, 0xffff00, wordArr[i] + "1");
+        }
+
+        // 添加消毒区（黄色区域-上块）
+        const disinfectionBlocksCount2 = 7;
+        const disinfectionBlockWidth2 = 28;
+        const disinfectionBlockHeight2 = 1;
+        const disinfectionBlockLength2 = 12;
+        for (let i = 0; i < disinfectionBlocksCount2; i++) {
+            const xOffset = -47 + i * (disinfectionBlockLength2 + 3); // 调整偏移量使其更加整齐
+            this.createFunctionalBlock([xOffset, disinfectionBlockHeight2 / 2 + 1.5, -15], disinfectionBlockLength2, disinfectionBlockWidth2, disinfectionBlockHeight2, 0xffff00, wordArr[i] + "2");
+        }
     },
     updateTime() {
       // 初始化当前时间并设置定时器更新
