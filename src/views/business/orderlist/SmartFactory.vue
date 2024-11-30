@@ -81,14 +81,15 @@ export default {
     createConveyorBelt(position, length, width, height, rotation = [0, 0, 0], beltSegments) {
     const conveyorBeltGroup = new THREE.Group();
 
-    // 滚轮材质设置
+    // 材质设置
     const rollerMaterial = new THREE.MeshStandardMaterial({ color: 0x8b8b8b, metalness: 0.6, roughness: 0.3 });
     const chainMaterial = new THREE.MeshStandardMaterial({ color: 0x708090, metalness: 0.5, roughness: 0.4 });
     const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x3b3b3b, metalness: 0.4, roughness: 0.6 });
+    const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x505050, metalness: 0.4, roughness: 0.5 }); // 包围框材质
 
     // 计算每段的长度
     const segmentLength = length / beltSegments;
-    
+
     for (let i = 0; i < beltSegments; i++) {
         // 创建链条段
         const segmentGeometry = new THREE.BoxGeometry(segmentLength - 0.2, height / 10, width + 0.5);
@@ -99,7 +100,7 @@ export default {
 
         // 创建滚轮
         const rollerRadius = height / 3; // 滚轮的半径
-        const rollerHeight = width + 1; // 使用固定的高度，确保所有滚轮一致
+        const rollerHeight = width + 0.85; // 使用固定的高度，确保所有滚轮一致
         const rollerGeometry = new THREE.CylinderGeometry(rollerRadius, rollerRadius, rollerHeight, 32);
         const roller = new THREE.Mesh(rollerGeometry, rollerMaterial);
         roller.rotation.x = Math.PI / 2; // 使滚轮竖向放置，与链条段方向一致
@@ -113,6 +114,22 @@ export default {
         conveyorBeltGroup.add(base);
     }
 
+    // 添加传送带侧边包围
+    const sideHeight = height - 0.4; // 包围框高度（比传送带高一点）
+    const sideThickness = 0.2; // 包围框厚度
+
+    // 左侧包围框
+    const leftSideGeometry = new THREE.BoxGeometry(length, sideHeight, sideThickness);
+    const leftSide = new THREE.Mesh(leftSideGeometry, frameMaterial);
+    leftSide.position.set(0, sideHeight / 2, -(width / 2 + sideThickness / 2 + 0.2)); // 放置在传送带左侧
+    conveyorBeltGroup.add(leftSide);
+
+    // 右侧包围框
+    const rightSideGeometry = new THREE.BoxGeometry(length, sideHeight, sideThickness);
+    const rightSide = new THREE.Mesh(rightSideGeometry, frameMaterial);
+    rightSide.position.set(0, sideHeight / 2, width / 2 + sideThickness / 2 + 0.2); // 放置在传送带右侧
+    conveyorBeltGroup.add(rightSide);
+
     // 设置传送带的位置和旋转
     conveyorBeltGroup.position.set(...position);
     conveyorBeltGroup.rotation.x = rotation[0] * Math.PI / 180;
@@ -121,7 +138,8 @@ export default {
 
     // 将传送带组添加到场景中
     this.scene.add(conveyorBeltGroup);
-},
+}
+,
     // 创建功能区块（预热区和消毒区）
     createFunctionalBlock(position, length, width, height, color, label, textColor) {
       // 创建功能性方块
