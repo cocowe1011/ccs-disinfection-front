@@ -117,7 +117,7 @@ export default {
     // 添加传送带侧边包围
     const sideHeight = height - 0.4; // 包围框高度（比传送带高一点）
     const sideThickness = 0.2; // 包围框厚度
-
+    
     // 左侧包围框
     const leftSideGeometry = new THREE.BoxGeometry(length, sideHeight, sideThickness);
     const leftSide = new THREE.Mesh(leftSideGeometry, frameMaterial);
@@ -197,43 +197,43 @@ export default {
       // 最上方
       this.createConveyorBelt([-2, 5, -60], 102.2, 11, 3, [0, 0, 0], 30);
       // 右侧竖着的
-      this.createConveyorBelt([54, 5, 43], 40, 7, 3, [90, -90, 90], 18);
+      this.createConveyorBelt([54, 5, 43.5], 40, 7, 3, [90, -90, 90], 18);
       // 右侧上货区
-      this.createConveyorBelt([64.5, 5, 27], 13, 7, 3, [0, 0, 0], 4);
+      this.createConveyorBelt([64.5, 5, 27.5], 13, 7, 3, [0, 0, 0], 4);
       // 下货区竖着的
-      this.createConveyorBelt([54, 5, -51], 30, 9, 3, [90, -90, 90], 10);
+      this.createConveyorBelt([54, 5, -52], 30, 9, 3, [90, -90, 90], 10);
     },
     addFunctionalBlocks() {
       const wordArr = ['G', 'F', 'E', 'D', 'C', 'B', 'A']
       // 添加预热区（蓝色-下区域块）
       const preheatBlocksCount = 7;
-        const preheatBlockWidth = 20;
-        const preheatBlockHeight = 1.7;
+        const preheatBlockWidth = 19;
+        const preheatBlockHeight = 2;
         const preheatBlockLength = 12;
         for (let i = 0; i < preheatBlocksCount; i++) {
             const xOffset = -46 + i * (preheatBlockLength + 3); // 调整偏移量使其更加整齐
-            this.createFunctionalBlock([xOffset, preheatBlockHeight / 2 + 1.5, 44], preheatBlockLength, preheatBlockWidth, preheatBlockHeight, 0xFFD580, wordArr[i] + "1", 'white');
+            this.createFunctionalBlock([xOffset, 2.4, 43.9], preheatBlockLength, preheatBlockWidth, preheatBlockHeight, 0xFFD580, wordArr[i] + "1", 'white');
         }
 
         // 添加预热区（蓝色-上区域块）
         const preheatBlocksCount2 = 7;
-        const preheatBlockWidth2 = 20;
-        const preheatBlockHeight2 = 1.7;
+        const preheatBlockWidth2 = 19;
+        const preheatBlockHeight2 = 2;
         const preheatBlockLength2 = 12;
         for (let i = 0; i < preheatBlocksCount2; i++) {
             const xOffset = -46 + i * (preheatBlockLength2 + 3); // 调整偏移量使其更加整齐
-            this.createFunctionalBlock([xOffset, preheatBlockHeight2 / 2 + 1.5, 23], preheatBlockLength2, preheatBlockWidth2, preheatBlockHeight2, 0xFFD580, wordArr[i] + "2",'white');
+            this.createFunctionalBlock([xOffset, 2.4, 23.2], preheatBlockLength2, preheatBlockWidth2, preheatBlockHeight2, 0xFFD580, wordArr[i] + "2",'white');
         }
 
 
         // 添加消毒区（黄色区域-上块）
         const disinfectionBlocksCount2 = 7;
-        const disinfectionBlockWidth2 = 56;
-        const disinfectionBlockHeight2 = 1;
+        const disinfectionBlockWidth2 = 54;
+        const disinfectionBlockHeight2 = 2;
         const disinfectionBlockLength2 = 12;
         for (let i = 0; i < disinfectionBlocksCount2; i++) {
             const xOffset = -47 + i * (disinfectionBlockLength2 + 3); // 调整偏移量使其更加整齐
-            this.createFunctionalBlock([xOffset, disinfectionBlockHeight2 / 2 + 1.5, -30], disinfectionBlockLength2, disinfectionBlockWidth2, disinfectionBlockHeight2, 0xB22222, i + 1 + "#", 'white');
+            this.createFunctionalBlock([xOffset, 2, -29.5], disinfectionBlockLength2, disinfectionBlockWidth2, disinfectionBlockHeight2, 0xB22222, i + 1 + "#", 'white');
         }
     },
     updateTime() {
