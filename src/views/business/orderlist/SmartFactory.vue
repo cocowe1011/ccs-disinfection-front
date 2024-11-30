@@ -1,9 +1,5 @@
 <template>
   <div style="width: 100%;height: 100%;">
-    <div class="header">
-      <h1>智慧工厂实时监控</h1>
-      <div>当前时间：<span>{{ currentTime }}</span></div>
-    </div>
     <div class="canvas-container">
       <canvas ref="factoryCanvas"></canvas>
     </div>
@@ -271,18 +267,9 @@ body {
   overflow: hidden;
   color: #e0e0e0;
 }
-.header {
-  height: 60px;
-  background: linear-gradient(45deg, #1a75ff, #003f8a);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 30px;
-  color: #f0f0f0;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-}
 .canvas-container {
-  height: calc(100% - 60px);
+  height: 100%;
   width: 100%;
+  position: relative;
 }
 </style>
