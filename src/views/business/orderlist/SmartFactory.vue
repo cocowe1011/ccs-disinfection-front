@@ -79,31 +79,49 @@ export default {
     // rotation = [0, 0, 0] 旋转
     // beltSegments 滚轮数
     createConveyorBelt(position, length, width, height, rotation = [0, 0, 0], beltSegments) {
-        const conveyorBeltGroup = new THREE.Group();
+    const conveyorBeltGroup = new THREE.Group();
 
-        const beltGeometry = new THREE.BoxGeometry(length, height / 2, width);
-        const beltMaterial = new THREE.MeshStandardMaterial({ color: 0xb8b6a8, metalness: 0.7, roughness: 0.4 });
-        const conveyorBelt = new THREE.Mesh(beltGeometry, beltMaterial);
-        conveyorBelt.position.set(0, height / 4, 0);
-        conveyorBeltGroup.add(conveyorBelt);
+    // 滚轮材质设置
+    const rollerMaterial = new THREE.MeshStandardMaterial({ color: 0x8b8b8b, metalness: 0.6, roughness: 0.3 });
+    const chainMaterial = new THREE.MeshStandardMaterial({ color: 0x708090, metalness: 0.5, roughness: 0.4 });
+    const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x3b3b3b, metalness: 0.4, roughness: 0.6 });
 
-        const segmentLength = length / beltSegments;
-        const chainMaterial = new THREE.MeshStandardMaterial({ color: 0x708090, metalness: 0.5, roughness: 0.4 });
-        for (let i = 0; i < beltSegments; i++) {
-            const segmentGeometry = new THREE.BoxGeometry(segmentLength - 0.2, height / 10, width + 0.5);
-            const segment = new THREE.Mesh(segmentGeometry, chainMaterial);
-            const offset = -length / 2 + segmentLength * i + segmentLength / 2;
-            segment.position.set(offset, height / 2 + 0.5, 0);
-            conveyorBeltGroup.add(segment);
-        }
+    // 计算每段的长度
+    const segmentLength = length / beltSegments;
+    
+    for (let i = 0; i < beltSegments; i++) {
+        // 创建链条段
+        const segmentGeometry = new THREE.BoxGeometry(segmentLength - 0.2, height / 10, width + 0.5);
+        const segment = new THREE.Mesh(segmentGeometry, chainMaterial);
+        const offset = -length / 2 + segmentLength * i + segmentLength / 2;
+        segment.position.set(offset, height / 2 + 0.5, 0);
+        conveyorBeltGroup.add(segment);
 
-        conveyorBeltGroup.position.set(...position);
-        conveyorBeltGroup.rotation.x = rotation[0] * Math.PI / 180;
-        conveyorBeltGroup.rotation.y = rotation[1] * Math.PI / 180;
-        conveyorBeltGroup.rotation.z = rotation[2] * Math.PI / 180;
+        // 创建滚轮
+        const rollerRadius = height / 3; // 滚轮的半径
+        const rollerHeight = width + 1; // 使用固定的高度，确保所有滚轮一致
+        const rollerGeometry = new THREE.CylinderGeometry(rollerRadius, rollerRadius, rollerHeight, 32);
+        const roller = new THREE.Mesh(rollerGeometry, rollerMaterial);
+        roller.rotation.x = Math.PI / 2; // 使滚轮竖向放置，与链条段方向一致
+        roller.position.set(offset, rollerRadius, 0); // 滚轮位置与链条段对齐
+        conveyorBeltGroup.add(roller);
 
-        this.scene.add(conveyorBeltGroup);
-    },
+        // 创建滚轮底座平面
+        const baseGeometry = new THREE.BoxGeometry(segmentLength, height / 20, width + 1);
+        const base = new THREE.Mesh(baseGeometry, baseMaterial);
+        base.position.set(offset, rollerRadius - height / 3 - height / 20, 0); // 将底座放在滚轮的正下方，不交叉
+        conveyorBeltGroup.add(base);
+    }
+
+    // 设置传送带的位置和旋转
+    conveyorBeltGroup.position.set(...position);
+    conveyorBeltGroup.rotation.x = rotation[0] * Math.PI / 180;
+    conveyorBeltGroup.rotation.y = rotation[1] * Math.PI / 180;
+    conveyorBeltGroup.rotation.z = rotation[2] * Math.PI / 180;
+
+    // 将传送带组添加到场景中
+    this.scene.add(conveyorBeltGroup);
+},
     // 创建功能区块（预热区和消毒区）
     createFunctionalBlock(position, length, width, height, color, label, textColor) {
       // 创建功能性方块
@@ -176,7 +194,7 @@ export default {
         const preheatBlockLength = 12;
         for (let i = 0; i < preheatBlocksCount; i++) {
             const xOffset = -46 + i * (preheatBlockLength + 3); // 调整偏移量使其更加整齐
-            this.createFunctionalBlock([xOffset, preheatBlockHeight / 2 + 1.5, 44], preheatBlockLength, preheatBlockWidth, preheatBlockHeight, 0xFFD580, wordArr[i] + "1", 0x003366);
+            this.createFunctionalBlock([xOffset, preheatBlockHeight / 2 + 1.5, 44], preheatBlockLength, preheatBlockWidth, preheatBlockHeight, 0xFFD580, wordArr[i] + "1", 'white');
         }
 
         // 添加预热区（蓝色-上区域块）
@@ -186,7 +204,7 @@ export default {
         const preheatBlockLength2 = 12;
         for (let i = 0; i < preheatBlocksCount2; i++) {
             const xOffset = -46 + i * (preheatBlockLength2 + 3); // 调整偏移量使其更加整齐
-            this.createFunctionalBlock([xOffset, preheatBlockHeight2 / 2 + 1.5, 23], preheatBlockLength2, preheatBlockWidth2, preheatBlockHeight2, 0xFFD580, wordArr[i] + "2",0x003366);
+            this.createFunctionalBlock([xOffset, preheatBlockHeight2 / 2 + 1.5, 23], preheatBlockLength2, preheatBlockWidth2, preheatBlockHeight2, 0xFFD580, wordArr[i] + "2",'white');
         }
 
 
