@@ -83,7 +83,7 @@ export default {
   },
   data() {
     return {
-      logs: [],
+      logs: ['托盘B 移动到 缓冲1区', '托盘B 移动到 预热区 A1-G2', '托盘B 移动到 缓冲2区', '托盘B 移动到 预热区 A1-G2', '托盘B 移动到 缓冲1区'],
       plcStatus: '连接中',
       currentLoadInfo: '暂无',
       draggedTray: null,
