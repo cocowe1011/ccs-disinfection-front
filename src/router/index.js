@@ -28,7 +28,7 @@ const routes = [
       },
       {
         path: 'orderList',
-        component: () => import('../views/business/orderlist/SmartFactory.vue'),
+        component: () => import('../views/business/orderlist/MainPage.vue'),
         name: 'OrderList'
       },
       {

@@ -38,7 +38,7 @@ export default {
       // 创建 WebGLRenderer 渲染器
       this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
       this.renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
-      this.renderer.setClearColor(0xe8f7ff); // 更加工业化风格的背景色
+      this.renderer.setClearColor(0x2c5364); // 更加工业化风格的背景色
       this.renderer.setPixelRatio(window.devicePixelRatio);
       // 创建场景和相机
       this.scene = new THREE.Scene();
