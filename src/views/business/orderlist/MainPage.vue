@@ -40,7 +40,7 @@
     </div>
 
     <!-- 右侧队列信息区域 -->
-    <div class="side-info-panel right-panel">
+    <div class="side-info-panel right-panel" :style="{'width' : isQueueExpanded? '800px': '20%'}">
       <!-- 队列信息区域 -->
       <div class="queue-section" :class="{ 'expanded': isQueueExpanded }">
         <div class="section-header" @click="isQueueExpanded = !isQueueExpanded">
