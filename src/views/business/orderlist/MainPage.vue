@@ -40,14 +40,14 @@
     </div>
 
     <!-- 右侧队列信息区域 -->
-    <div class="side-info-panel right-panel" :style="{'width' : isQueueExpanded? '800px': '20%'}">
+    <div class="side-info-panel-queue right-panel" :style="{'width' : isQueueExpanded? '800px': '20%'}">
       <!-- 队列信息区域 -->
       <div class="queue-section" :class="{ 'expanded': isQueueExpanded }">
         <div class="section-header" @click="isQueueExpanded = !isQueueExpanded">
           <h3>队列信息</h3>
           <span class="arrow-icon" :class="{'expanded-arrow': isQueueExpanded}">▼</span>
         </div>
-        <div v-if="isQueueExpanded" class="expandable-content full-height">
+        <div v-if="isQueueExpanded" class="expandable-content-queue">
           <div class="queue-container">
             <div
               v-for="(queue, index) in queues"
@@ -169,6 +169,19 @@ export default {
   box-sizing: border-box;
 }
 
+.side-info-panel-queue {
+  width: 20%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
 .left-panel {
   left: 0;
 }
@@ -221,8 +234,13 @@ h3 {
   transform: rotate(180deg);
 }
 
-.expandable-content.full-height {
+.expandable-content {
   max-height: calc(100vh - 80px);
+}
+
+.expandable-content-queue {
+  max-height: calc(100vh - 80px);
+  width: 100%;
 }
 
 .status-overview {
