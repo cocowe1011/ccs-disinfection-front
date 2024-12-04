@@ -79,6 +79,45 @@
         factoryBase.rotation.x = -Math.PI / 2;
         scene.add(factoryBase);
 
+
+
+      function  createLabel(text, x, y, z, color, textSize) {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        // 设置画布大小，确保足够大以保持文字清晰
+        canvas.width = 512;
+        canvas.height = 256;
+        // 设置文本样式
+        context.font = 'Bold ' + textSize + 'px Arial';
+        context.fillStyle = color;
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        // 绘制水平文字
+        context.fillText(text, canvas.width / 2, canvas.height / 2);
+        // 创建纹理并用于材质
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        // 创建材质和几何体
+        const material = new THREE.MeshBasicMaterial({
+          map: texture,
+          transparent: true,
+          side: THREE.DoubleSide,
+        });
+        const planeGeometry = new THREE.PlaneGeometry(20, 10); // 调整几何体的大小使文字合适
+        const labelMesh = new THREE.Mesh(planeGeometry, material);
+        // 设置位置和旋转，让文字平躺并与其他元素保持一致
+        labelMesh.position.set(x, y, z);
+        labelMesh.rotation.x = -Math.PI / 2; // 使文字平躺
+        // 将标签添加到场景中
+        scene.add(labelMesh);
+      }
+
+       // 添加预热房标识
+       createLabel('预热房', -58, 10, 40, '#0000ff','100');
+
+        // 添加灭菌区标识
+        createLabel('灭菌区', -61, 10, -20, '#ffff00', '135');
+
         // 创建传送带路径
         // position 位置（x,y,z）
         // length 长度

@@ -67,6 +67,41 @@ export default {
       // 添加传送带和功能区块
       this.addConveyorBelts();
       this.addFunctionalBlocks();
+      // 添加预热房标识
+      this.createLabel('预热房', -58, 10, 40, '#ffab00','100');
+
+      // 添加灭菌区标识
+      this.createLabel('灭菌区', -61, 10, -20, '#960505', '135');
+    },
+    createLabel(text, x, y, z, color, textSize) {
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      // 设置画布大小，确保足够大以保持文字清晰
+      canvas.width = 512;
+      canvas.height = 256;
+      // 设置文本样式
+      context.font = 'Bold ' + textSize + 'px Arial';
+      context.fillStyle = color;
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      // 绘制水平文字
+      context.fillText(text, canvas.width / 2, canvas.height / 2);
+      // 创建纹理并用于材质
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      // 创建材质和几何体
+      const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true,
+        side: THREE.DoubleSide,
+      });
+      const planeGeometry = new THREE.PlaneGeometry(20, 10); // 调整几何体的大小使文字合适
+      const labelMesh = new THREE.Mesh(planeGeometry, material);
+      // 设置位置和旋转，让文字平躺并与其他元素保持一致
+      labelMesh.position.set(x, y, z);
+      labelMesh.rotation.x = -Math.PI / 2; // 使文字平躺
+      // 将标签添加到场景中
+      this.scene.add(labelMesh);
     },
     // 创建传送带路径
     // position 位置（x,y,z）
@@ -207,7 +242,7 @@ export default {
     },
     addFunctionalBlocks() {
       const wordArr = ['G', 'F', 'E', 'D', 'C', 'B', 'A']
-      // 添加预热区（蓝色-下区域块）
+      // 添加预热区（黄色-下区域块）
       const preheatBlocksCount = 7;
         const preheatBlockWidth = 19;
         const preheatBlockHeight = 2;
@@ -217,7 +252,7 @@ export default {
             this.createFunctionalBlock([xOffset, 2.4, 43.9], preheatBlockLength, preheatBlockWidth, preheatBlockHeight, 0xFFD580, wordArr[i] + "1", 'white');
         }
 
-        // 添加预热区（蓝色-上区域块）
+        // 添加预热区（黄色-上区域块）
         const preheatBlocksCount2 = 7;
         const preheatBlockWidth2 = 19;
         const preheatBlockHeight2 = 2;
@@ -228,7 +263,7 @@ export default {
         }
 
 
-        // 添加消毒区（黄色区域-上块）
+        // 添加消毒区（红色区域）
       const disinfectionBlocksCount2 = 7;
       const disinfectionBlockWidth2 = 54;
       const disinfectionBlockHeight2 = 2;

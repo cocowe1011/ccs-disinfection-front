@@ -123,7 +123,7 @@ export default {
   border-radius: 50%;
   position: absolute;
   right: 24px;
-  top: 77px;
+  bottom: 77px;
   z-index: 4000;
   cursor: pointer;
   display: flex;
