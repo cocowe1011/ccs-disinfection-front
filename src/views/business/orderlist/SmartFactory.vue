@@ -17,6 +17,7 @@ export default {
       renderer: null,  // 渲染器
       scene: null,     // Three.js 场景
       camera: null,    // 相机
+      heatingBlocks: [] // 加热区块
     };
   },
   created() {},
@@ -139,15 +140,20 @@ export default {
     // 创建功能区块（预热区和消毒区）
     createFunctionalBlock(position, length, width, height, color, label, textColor) {
       // 创建功能性方块
-    const blockGeometry = new THREE.BoxGeometry(length, height, width);
-    const blockMaterial = new THREE.MeshStandardMaterial({ color: color});
-    const functionalBlock = new THREE.Mesh(blockGeometry, blockMaterial);
-    functionalBlock.position.set(...position);
-    this.scene.add(functionalBlock);
+      const blockGeometry = new THREE.BoxGeometry(length, height, width);
+      const blockMaterial = new THREE.MeshStandardMaterial({ color: color });
+      const functionalBlock = new THREE.Mesh(blockGeometry, blockMaterial);
+      functionalBlock.position.set(...position);
+      this.scene.add(functionalBlock);
 
-    // 创建标签 (使用动态大小的平面)
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
+      // 检查是否为加热区块
+      if (label.match(/^\d+#$/)) {
+        this.heatingBlocks.push(functionalBlock);
+      }
+
+      // 创建标签 (使用动态大小的平面)
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
 
     // 设置画布大小，根据传入的长和宽调整
     canvas.width = length * 20;  // 使用适当的比例来转换长和宽，这里用 20 作为比例因子，您可以根据需要进行调整
@@ -158,23 +164,23 @@ export default {
         // context.fillRect(0, 0, canvas.width, canvas.height); // 绘制矩形，覆盖整个画布
 
         // 设置文本样式
-    context.font = 'Bold 150px Arial';
-    context.fillStyle = textColor;  // 文字颜色为红色
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
+      context.font = 'Bold 150px Arial';
+      context.fillStyle = textColor;  // 文字颜色为红色
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
     context.fillText(label, canvas.width / 2, canvas.height / 2);  // 在画布上绘制文本
 
     // 创建纹理并用于材质
-    const texture = new THREE.CanvasTexture(canvas);
-    const material = new THREE.MeshBasicMaterial({
+      const texture = new THREE.CanvasTexture(canvas);
+      const material = new THREE.MeshBasicMaterial({
         map: texture,
             transparent: true, // 使背景透明
             side: THREE.DoubleSide, // 让标签的两面都可见
-    });
+      });
 
     // 创建平面几何体作为标签
     const planeGeometry = new THREE.PlaneGeometry(length, width / 2); // 使用与立方体相匹配的长和适当比例的宽
-    const plane = new THREE.Mesh(planeGeometry, material);
+      const plane = new THREE.Mesh(planeGeometry, material);
 
     // 让平面躺下
     plane.rotation.x = -Math.PI / 2; // 沿 X 轴旋转 90 度，使其平躺
@@ -183,8 +189,8 @@ export default {
     plane.position.set(position[0], position[1] + height / 2 + 0.1, position[2]); // 标签在立方体顶部稍微偏移一点高度
 
     // 将标签添加到场景中
-    this.scene.add(plane);
-},
+      this.scene.add(plane);
+    },
     addConveyorBelts() {
       // 添加传送带-最下方
       this.createConveyorBelt([0, 5, 60], 100, 6, 3, [0, 0, 0], 30);
@@ -223,14 +229,14 @@ export default {
 
 
         // 添加消毒区（黄色区域-上块）
-        const disinfectionBlocksCount2 = 7;
-        const disinfectionBlockWidth2 = 54;
-        const disinfectionBlockHeight2 = 2;
-        const disinfectionBlockLength2 = 12;
-        for (let i = 0; i < disinfectionBlocksCount2; i++) {
+      const disinfectionBlocksCount2 = 7;
+      const disinfectionBlockWidth2 = 54;
+      const disinfectionBlockHeight2 = 2;
+      const disinfectionBlockLength2 = 12;
+      for (let i = 0; i < disinfectionBlocksCount2; i++) {
             const xOffset = -47 + i * (disinfectionBlockLength2 + 3); // 调整偏移量使其更加整齐
-            this.createFunctionalBlock([xOffset, 2, -29.5], disinfectionBlockLength2, disinfectionBlockWidth2, disinfectionBlockHeight2, 0xB22222, i + 1 + "#", 'white');
-        }
+        this.createFunctionalBlock([xOffset, 2, -29.5], disinfectionBlockLength2, disinfectionBlockWidth2, disinfectionBlockHeight2, 0xB22222, i + 1 + "#", 'white');
+      }
     },
     updateTime() {
       // 初始化当前时间并设置定时器更新
@@ -251,10 +257,19 @@ export default {
     // 动画渲染
     startAnimation() {
       const animate = () => {
-        requestAnimationFrame(animate); // 循环动画
-        this.renderer.render(this.scene, this.camera); // 渲染场景
+        requestAnimationFrame(animate);
+        this.animateHeatingBlocks(); // 加热区块动画
+        this.renderer.render(this.scene, this.camera);
       };
       animate();
+    },
+    animateHeatingBlocks() {
+      this.heatingBlocks.forEach((block) => {
+        const color = new THREE.Color(0xB22222);
+        const emissiveColor = new THREE.Color(0xff4500);
+        const intensity = (Math.sin(Date.now() * 0.002) + 1) / 2; // 双次振荡作用来回收线性动画
+        block.material.color.lerpColors(color, emissiveColor, intensity);
+      });
     }
   }
 };
