@@ -76,6 +76,19 @@
         </div>
       </div>
     </div>
+    <!-- 操作区 -->
+    <div class="operation-panel">
+      <div class="panel-header">
+        <h3>操作面板</h3>
+      </div>
+      <div class="operation-buttons">
+        <button @click="toggleButtonState('start')" :class="{'pressed': buttonStates.start}">全线启动</button>
+        <button @click="toggleButtonState('stop')" :class="{'pressed': buttonStates.stop}">全线停止</button>
+        <button @click="toggleButtonState('reset')" :class="{'pressed': buttonStates.reset}">全线复位</button>
+        <button @click="toggleButtonState('fault_reset')" :class="{'pressed': buttonStates.fault_reset}">故障复位</button>
+        <button @click="toggleButtonState('clear')" :class="{'pressed': buttonStates.clear}">全线清空</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -120,7 +133,14 @@ export default {
         { name: '下货区', trays: [] },
         { name: '下货区', trays: [] }
       ],
-      nowTrays: []
+      nowTrays: [],
+        buttonStates: {
+        start: false,
+        stop: false,
+        reset: false,
+        fault_reset: false,
+        clear: false
+      }
     };
   },
   methods: {
@@ -142,6 +162,13 @@ export default {
         // 清空拖拽状态
         this.draggedTray = null;
       }
+    },
+    toggleButtonState(button) {
+      this.buttonStates[button] = !this.buttonStates[button]; // 切换按钮的按下/恢复状态
+    },
+    handleOperation(action) {
+      console.log(`执行操作: ${action}`);
+      // 在这里处理操作逻辑
     }
   }
 };
@@ -197,7 +224,6 @@ export default {
 }
 
 .side-info-panel-queue {
-  width: 22%;
   height: 100%;
   position: absolute;
   top: 0;
@@ -207,6 +233,7 @@ export default {
   gap: 20px;
   padding: 20px;
   box-sizing: border-box;
+  transition: width 0.3s ease-in-out;
 }
 
 .left-panel {
@@ -313,16 +340,26 @@ h3 {
   width: 100%;
 }
 
+.queue-contaier-left {
+  flex: 1;
+  height: 100%;
+  padding-right: 10px; /* 给右侧和左侧之间留出间隔 */
+  overflow-y: auto;
+  box-sizing: border-box;
+  border-right: 2px solid #2a3a46; /* 添加右侧边界 */
+}
+
 .queue-contaier-right {
   width: 280px;
   height: 100%;
-  overflow: auto;
-}
-
-.queue-contaier-left {
-  float: left;
-  width: calc(100% - 280px);
-  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* 居中对齐 */
+  align-items: center; /* 居中对齐 */
+  gap: 15px; /* 卡片间距 */
+  padding-left: 10px; /* 给左侧和右侧之间留出间隔 */
+  box-sizing: border-box;
 }
 
 .queue {
@@ -420,5 +457,67 @@ h3 {
 .queue-contaier-left::-webkit-scrollbar-track {
   background-color: #2a3a46; /* 滚动条轨道背景颜色 */
   border-radius: 10px;
+}
+
+.operation-panel {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(40, 50, 60, 0.9);
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  color: #ffffff;
+  width: 400px;  /* 更宽的容器以适应横向排列的按钮 */
+  z-index: 3;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.6em; /* 和其他区域一致 */
+  color: #0ac5a8;
+}
+
+.operation-buttons {
+  display: flex;
+  justify-content: space-between;  /* 横向排列按钮 */
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.operation-buttons button {
+  width: 80px;  /* 设置按钮为正方形 */
+  height: 80px; /* 设置按钮为正方形 */
+  font-size: 1em;
+  color: #fff;
+  background: linear-gradient(135deg, #0ac5a8, #0f6b58);
+  border: none;
+  border-radius: 12px;  /* 保持圆角效果 */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 0;  /* 移除内边距，保持按钮为正方形 */
+  font-size: 0.9em; /* 调整字体大小以适应按钮 */
+}
+
+.operation-buttons button:hover {
+  background: linear-gradient(135deg, #4caf50, #0f6b58);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.operation-buttons button.pressed {
+  background: linear-gradient(135deg, #4caf50, #2e8b57);  /* 按下后的颜色 */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  transform: scale(0.95);  /* 按钮按下时缩小 */
+}
+
+.operation-buttons button:active {
+  transform: scale(0.95);  /* 按钮按下时缩小 */
 }
 </style>
