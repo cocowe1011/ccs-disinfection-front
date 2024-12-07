@@ -49,22 +49,27 @@
         </div>
         <div v-if="isQueueExpanded" class="expandable-content-queue">
           <div class="queue-container">
-            <div
-              v-for="(queue, index) in queues"
-              :key="index"
-              class="queue"
-              @dragover.prevent
-              @drop="handleDrop(index)"
-            >
-              <h4>{{ queue.name }}</h4>
+            <div class="queue-contaier-left">
+                <div
+                  v-for="(tray, trayIndex) in nowTrays"
+                  :key="tray.id"
+                  class="tray"
+                  draggable="true"
+                  @dragstart="handleDrag(tray, index, trayIndex)"
+                >
+                  {{ tray.name }}
+                </div>
+            </div>
+            <div class="queue-contaier-right">
               <div
-                v-for="(tray, trayIndex) in queue.trays"
-                :key="tray.id"
-                class="tray"
-                draggable="true"
-                @dragstart="handleDrag(tray, index, trayIndex)"
+                v-for="(queue, index) in queues"
+                :key="index"
+                class="queue"
+                @dragover.prevent
+                @drop="handleDrop(index)"
+                @click="showTrays(index)"
               >
-                {{ tray.name }}
+                <h4>{{ queue.name }}</h4>
               </div>
             </div>
           </div>
@@ -91,15 +96,37 @@ export default {
       queues: [
         { name: '上货区', trays: [{ id: 1, name: '托盘A' }, { id: 2, name: '托盘B' }] },
         { name: '缓冲1区', trays: [] },
-        { name: '预热区 A1-G2', trays: [] },
+        { name: 'A1', trays: [] },
+        { name: 'B1', trays: [] },
+        { name: 'C1', trays: [] },
+        { name: 'D1', trays: [] },
+        { name: 'E1', trays: [] },
+        { name: 'F1', trays: [] },
+        { name: 'G1', trays: [] },
+        { name: 'A2', trays: [] },
+        { name: 'B2', trays: [] },
+        { name: 'C2', trays: [] },
+        { name: 'D2', trays: [] },
+        { name: 'E2', trays: [] },
+        { name: 'F2', trays: [] },
+        { name: 'G2', trays: [] },
         { name: '缓冲2区', trays: [] },
         { name: '消毒区 1#-7#', trays: [] },
         { name: '缓冲3区', trays: [] },
+        { name: '下货区', trays: [] },
+        { name: '下货区', trays: [] },
+        { name: '下货区', trays: [] },
+        { name: '下货区', trays: [] },
+        { name: '下货区', trays: [] },
         { name: '下货区', trays: [] }
-      ]
+      ],
+      nowTrays: []
     };
   },
   methods: {
+    showTrays(index) {
+      this.nowTrays = this.queues[index].trays
+    },
     handleDrag(tray, queueIndex, trayIndex) {
       this.draggedTray = { tray, queueIndex, trayIndex };
     },
@@ -239,7 +266,7 @@ h3 {
 }
 
 .expandable-content-queue {
-  max-height: calc(100vh - 80px);
+  height: 800px;
   width: 100%;
 }
 
@@ -275,20 +302,33 @@ h3 {
 
 .queue-container {
   display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center;
+  height: 100%;
+  width: 100%;
+}
+
+.queue-contaier-right {
+  width: 250px;
+  height: 100%;
+  overflow: auto;
+}
+
+.queue-contaier-left {
+  float: left;
+  width: calc(100% - 250px);
+  height: 100%;
 }
 
 .queue {
   background: #394867;
-  padding: 10px;
   border-radius: 10px;
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
-  width: 200px;
-  min-height: 100px;
+  width: 220px;
+  height: 80px;
+  line-height: 80px;
+  text-align: center;
   transition: transform 0.4s, box-shadow 0.4s;
   color: #ffffff;
+  margin-bottom: 15px;
 }
 
 .queue:hover {
@@ -304,7 +344,10 @@ h3 {
   border-radius: 10px;
   text-align: center;
   cursor: grab;
+  width: 200px;
+  height: 50px;
   transition: background 0.3s, box-shadow 0.3s;
+  float: left;
 }
 
 .tray:hover {
