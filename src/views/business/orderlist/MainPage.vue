@@ -7,18 +7,6 @@
 
     <!-- 左右状态与其他信息区域，悬浮在流水线之上，不遮挡中间 -->
     <div class="side-info-panel left-panel">
-      <!-- 日志区域 -->
-      <div class="log-section">
-        <div class="section-header">
-          <h3>日志区</h3>
-        </div>
-        <div class="expandable-content scrollable-content">
-          <ul>
-            <li v-for="log in logs" :key="log.id">{{ log.message }}</li>
-          </ul>
-        </div>
-      </div>
-
       <!-- PLC状态与订单信息区域 -->
       <div class="plc-info-section">
         <div class="section-header">
@@ -35,6 +23,18 @@
               <span class="status-value">{{ currentLoadInfo }}</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- 日志区域 -->
+      <div class="log-section">
+        <div class="section-header">
+          <h3>日志区</h3>
+        </div>
+        <div class="expandable-content scrollable-content">
+          <ul>
+            <li v-for="log in logs" :key="log.id">{{ log.message }}</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -79,14 +79,24 @@
     <!-- 操作区 -->
     <div class="operation-panel">
       <div class="panel-header">
-        <h3>操作面板</h3>
+        <h3>操作区</h3>
       </div>
       <div class="operation-buttons">
-        <button @click="toggleButtonState('start')" :class="{'pressed': buttonStates.start}">全线启动</button>
-        <button @click="toggleButtonState('stop')" :class="{'pressed': buttonStates.stop}">全线停止</button>
-        <button @click="toggleButtonState('reset')" :class="{'pressed': buttonStates.reset}">全线复位</button>
-        <button @click="toggleButtonState('fault_reset')" :class="{'pressed': buttonStates.fault_reset}">故障复位</button>
-        <button @click="toggleButtonState('clear')" :class="{'pressed': buttonStates.clear}">全线清空</button>
+        <button @click="toggleButtonState('start')" :class="{'pressed': buttonStates.start}">
+          <i class="el-icon-switch-button"></i><span>全线启动</span>
+        </button>
+        <button @click="toggleButtonState('stop')" :class="{'pressed': buttonStates.stop}">
+          <i class="el-icon-error"></i><span>全线停止</span>
+        </button>
+        <button @click="toggleButtonState('reset')" :class="{'pressed': buttonStates.reset}">
+          <i class="el-icon-video-pause"></i><span>全线暂停</span>
+        </button>
+        <button @click="toggleButtonState('fault_reset')" :class="{'pressed': buttonStates.fault_reset}">
+          <i class="el-icon-refresh"></i><span>故障复位</span>
+        </button>
+        <button @click="toggleButtonState('clear')" :class="{'pressed': buttonStates.clear}">
+          <i class="el-icon-delete"></i><span>全线清空</span>
+        </button>
       </div>
     </div>
   </div>
@@ -219,7 +229,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 20px;
+  padding: 6px;
   box-sizing: border-box;
 }
 
@@ -461,14 +471,14 @@ h3 {
 
 .operation-panel {
   position: absolute;
-  bottom: 20px;
-  right: 20px;
-  background: rgba(40, 50, 60, 0.9);
-  padding: 20px;
+  top: 6px;
+  left: 383px;
+  background: rgba(30, 42, 56, 0.8); /* 透明度略小，保持背景效果 */
+  padding: 15px;
   border-radius: 15px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-  color: #ffffff;
-  width: 400px;  /* 更宽的容器以适应横向排列的按钮 */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+  color: #f5f5f5;
+  box-sizing: border-box;
   z-index: 3;
 }
 
@@ -476,8 +486,8 @@ h3 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 1.6em; /* 和其他区域一致 */
-  color: #0ac5a8;
+  cursor: pointer;
+  transition: color 0.3s ease;
 }
 
 .operation-buttons {
@@ -488,22 +498,32 @@ h3 {
 }
 
 .operation-buttons button {
-  width: 80px;  /* 设置按钮为正方形 */
-  height: 80px; /* 设置按钮为正方形 */
-  font-size: 1em;
+  width: 80px;  /* 保持正方形 */
+  height: 80px; /* 保持正方形 */
+  font-size: 0.8em; /* 调整字体大小 */
   color: #fff;
   background: linear-gradient(135deg, #0ac5a8, #0f6b58);
   border: none;
-  border-radius: 12px;  /* 保持圆角效果 */
+  border-radius: 12px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
-  padding: 0;  /* 移除内边距，保持按钮为正方形 */
-  font-size: 0.9em; /* 调整字体大小以适应按钮 */
+  padding: 0;
+  gap: 5px; /* 图标和文字之间的间距 */
+}
+
+.operation-buttons button i {
+  font-size: 2em; /* 图标的大小 */
+}
+
+.operation-buttons button span {
+  font-size: 1.1em; /* 文字大小，保持合适 */
+  line-height: 1.5; /* 适当的行高，防止文字过于紧凑 */
 }
 
 .operation-buttons button:hover {
@@ -512,12 +532,12 @@ h3 {
 }
 
 .operation-buttons button.pressed {
-  background: linear-gradient(135deg, #4caf50, #2e8b57);  /* 按下后的颜色 */
+  background: linear-gradient(135deg, #4caf50, #2e8b57);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-  transform: scale(0.95);  /* 按钮按下时缩小 */
+  transform: scale(0.95);
 }
 
 .operation-buttons button:active {
-  transform: scale(0.95);  /* 按钮按下时缩小 */
+  transform: scale(0.95);
 }
 </style>
