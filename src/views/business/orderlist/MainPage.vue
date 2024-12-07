@@ -7,22 +7,27 @@
 
     <!-- 左右状态与其他信息区域，悬浮在流水线之上，不遮挡中间 -->
     <div class="side-info-panel left-panel">
-      <!-- PLC状态与订单信息区域 -->
-      <div class="plc-info-section">
-        <div class="section-header">
-          <h3>订单信息与PLC状态</h3>
+      <!-- 操作区 -->
+      <div class="operation-panel">
+        <div class="panel-header">
+          <h3>操作区</h3>
         </div>
-        <div class="expandable-content scrollable-content">
-          <div class="status-overview">
-            <div class="status-item">
-              <span class="status-label">PLC状态：</span>
-              <span class="status-value" :class="{'connected': plcStatus === '连接中', 'disconnected': plcStatus !== '连接中'}">{{ plcStatus }}</span>
-            </div>
-            <div class="status-item">
-              <span class="status-label">当前上货信息：</span>
-              <span class="status-value">{{ currentLoadInfo }}</span>
-            </div>
-          </div>
+        <div class="operation-buttons">
+          <button @click="toggleButtonState('start')" :class="{'pressed': buttonStates.start}">
+            <i class="el-icon-switch-button"></i><span>全线启动</span>
+          </button>
+          <button @click="toggleButtonState('stop')" :class="{'pressed': buttonStates.stop}">
+            <i class="el-icon-error"></i><span>全线停止</span>
+          </button>
+          <button @click="toggleButtonState('reset')" :class="{'pressed': buttonStates.reset}">
+            <i class="el-icon-video-pause"></i><span>全线暂停</span>
+          </button>
+          <button @click="toggleButtonState('fault_reset')" :class="{'pressed': buttonStates.fault_reset}">
+            <i class="el-icon-refresh"></i><span>故障复位</span>
+          </button>
+          <button @click="toggleButtonState('clear')" :class="{'pressed': buttonStates.clear}">
+            <i class="el-icon-delete"></i><span>全线清空</span>
+          </button>
         </div>
       </div>
 
@@ -76,27 +81,23 @@
         </div>
       </div>
     </div>
-    <!-- 操作区 -->
-    <div class="operation-panel">
-      <div class="panel-header">
-        <h3>操作区</h3>
+    
+    <!-- PLC状态与订单信息区域 -->
+    <div class="plc-info-section">
+      <div class="section-header">
+        <h3>订单信息与PLC状态</h3>
       </div>
-      <div class="operation-buttons">
-        <button @click="toggleButtonState('start')" :class="{'pressed': buttonStates.start}">
-          <i class="el-icon-switch-button"></i><span>全线启动</span>
-        </button>
-        <button @click="toggleButtonState('stop')" :class="{'pressed': buttonStates.stop}">
-          <i class="el-icon-error"></i><span>全线停止</span>
-        </button>
-        <button @click="toggleButtonState('reset')" :class="{'pressed': buttonStates.reset}">
-          <i class="el-icon-video-pause"></i><span>全线暂停</span>
-        </button>
-        <button @click="toggleButtonState('fault_reset')" :class="{'pressed': buttonStates.fault_reset}">
-          <i class="el-icon-refresh"></i><span>故障复位</span>
-        </button>
-        <button @click="toggleButtonState('clear')" :class="{'pressed': buttonStates.clear}">
-          <i class="el-icon-delete"></i><span>全线清空</span>
-        </button>
+      <div class="expandable-content scrollable-content">
+        <div class="status-overview">
+          <div class="status-item">
+            <span class="status-label">PLC状态：</span>
+            <span class="status-value" :class="{'connected': plcStatus === '连接中', 'disconnected': plcStatus !== '连接中'}">{{ plcStatus }}</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">当前上货信息：</span>
+            <span class="status-value">{{ currentLoadInfo }}</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -221,7 +222,6 @@ export default {
 }
 
 .side-info-panel {
-  width: 22%;
   height: 100%;
   position: absolute;
   top: 0;
@@ -229,7 +229,7 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 6px;
+  padding: 20px;
   box-sizing: border-box;
 }
 
@@ -255,8 +255,8 @@ export default {
 }
 
 .log-section,
-.plc-info-section,
-.queue-section {
+.queue-section,
+.operation-panel {
   background: rgba(30, 42, 56, 0.8); /* 透明度略小，保持背景效果 */
   padding: 15px;
   border-radius: 15px;
@@ -269,6 +269,20 @@ export default {
 .plc-info-section {
   height: 220px;
   overflow-y: auto;
+}
+
+
+.plc-info-section {
+  position: absolute;
+  top: 20px;
+  left: 420px;
+  background: rgba(30, 42, 56, 0.8); /* 透明度略小，保持背景效果 */
+  padding: 15px;
+  border-radius: 15px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+  color: #f5f5f5;
+  box-sizing: border-box;
+  z-index: 2;
 }
 
 .scrollable-content {
@@ -467,19 +481,6 @@ h3 {
 .queue-contaier-left::-webkit-scrollbar-track {
   background-color: #2a3a46; /* 滚动条轨道背景颜色 */
   border-radius: 10px;
-}
-
-.operation-panel {
-  position: absolute;
-  top: 6px;
-  left: 383px;
-  background: rgba(30, 42, 56, 0.8); /* 透明度略小，保持背景效果 */
-  padding: 15px;
-  border-radius: 15px;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
-  color: #f5f5f5;
-  box-sizing: border-box;
-  z-index: 3;
 }
 
 .panel-header {
