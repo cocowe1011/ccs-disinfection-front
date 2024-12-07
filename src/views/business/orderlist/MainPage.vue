@@ -10,9 +10,9 @@
       <!-- PLC状态与订单信息区域 -->
       <div class="plc-info-section">
         <div class="section-header">
-          <h3>订单信息与PLC状态</h3>
+          订单信息与PLC状态
         </div>
-        <div class="expandable-content scrollable-content">
+        <div class="scrollable-content">
           <div class="status-overview">
             <div class="status-item">
               <span class="status-label">PLC状态：</span>
@@ -27,8 +27,8 @@
       </div>
       <!-- 操作区 -->
       <div class="operation-panel">
-        <div class="panel-header">
-          <h3>操作区</h3>
+        <div class="section-header">
+          操作区
         </div>
         <div class="operation-buttons">
           <button @click="toggleButtonState('start')" :class="{'pressed': buttonStates.start}">
@@ -52,9 +52,9 @@
       <!-- 日志区域 -->
       <div class="log-section">
         <div class="section-header">
-          <h3>日志区</h3>
+          日志区
         </div>
-        <div class="expandable-content scrollable-content">
+        <div class="scrollable-content">
           <ul>
             <li v-for="log in logs" :key="log.id">{{ log.message }}</li>
           </ul>
@@ -67,7 +67,7 @@
       <!-- 队列信息区域 -->
       <div class="queue-section" :class="{ 'expanded': isQueueExpanded }">
         <div class="section-header" @click="isQueueExpanded = !isQueueExpanded">
-          <h3>队列信息</h3>
+          队列信息
           <span class="arrow-icon" :class="{'expanded-arrow': isQueueExpanded}">▼</span>
         </div>
         <div v-if="isQueueExpanded" class="expandable-content-queue">
@@ -227,8 +227,8 @@ export default {
   z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 20px;
+  gap: 10px;
+  padding: 8px;
   box-sizing: border-box;
 }
 
@@ -239,7 +239,6 @@ export default {
   z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 20px;
   padding: 20px;
   box-sizing: border-box;
   transition: width 0.3s ease-in-out;
@@ -258,22 +257,15 @@ export default {
 .queue-section,
 .operation-panel {
   background: rgba(30, 42, 56, 0.8); /* 透明度略小，保持背景效果 */
-  padding: 15px;
+  padding: 10px;
   border-radius: 15px;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
   color: #f5f5f5;
   box-sizing: border-box;
 }
 
-.log-section,
-.plc-info-section {
-  height: 220px;
-  overflow-y: auto;
-}
-
 .scrollable-content {
   overflow-y: auto;
-  max-height: 180px;
 }
 
 .section-header {
@@ -282,6 +274,9 @@ export default {
   align-items: center;
   cursor: pointer;
   transition: color 0.3s ease;
+  font-size: 22px;
+  color: #0ac5a8;
+  font-weight: 900;
 }
 
 h3 {
@@ -291,7 +286,6 @@ h3 {
 }
 
 .arrow-icon {
-  font-size: 1.8em;
   transition: transform 0.3s ease, color 0.3s ease;
 }
 
@@ -301,11 +295,6 @@ h3 {
 
 .expanded-arrow {
   transform: rotate(180deg);
-}
-
-.expandable-content {
-  max-height: calc(100vh - 100px);
-  transition: max-height 0.3s ease-in-out;
 }
 
 .expandable-content-queue {
@@ -469,19 +458,11 @@ h3 {
   border-radius: 10px;
 }
 
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  transition: color 0.3s ease;
-}
-
 .operation-buttons {
   display: flex;
   justify-content: space-between;  /* 横向排列按钮 */
   gap: 10px;
-  margin-top: 20px;
+  margin-top: 5px;
 }
 
 .operation-buttons button {
