@@ -68,7 +68,7 @@ export default {
       this.addConveyorBelts();
       this.addFunctionalBlocks();
       // 添加预热房标识
-      this.createLabel('预热房', -58, 10, 40, '#ffab00','100');
+      this.createLabel('预热房', -58, 10, 40, '#ffc800','100');
 
       // 添加灭菌区标识
       this.createLabel('灭菌区', -61, 10, -20, '#960505', '135');
