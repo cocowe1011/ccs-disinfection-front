@@ -154,7 +154,7 @@ export default {
   position: relative;
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.85), rgba(15, 32, 39, 0.95));
   padding: 0;
   font-family: 'Roboto', sans-serif;
   overflow: hidden;
@@ -170,7 +170,7 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #203a43;
+  background: #2a3a46;
   box-sizing: border-box;
   overflow: hidden;
   z-index: 1;
@@ -180,11 +180,11 @@ export default {
   height: 100%;
   width: 100%;
   border-radius: 0;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
 }
 
 .side-info-panel {
-  width: 20%;
+  width: 22%;
   height: 100%;
   position: absolute;
   top: 0;
@@ -197,7 +197,7 @@ export default {
 }
 
 .side-info-panel-queue {
-  width: 20%;
+  width: 22%;
   height: 100%;
   position: absolute;
   top: 0;
@@ -220,23 +220,23 @@ export default {
 .log-section,
 .plc-info-section,
 .queue-section {
-  background: rgba(30, 42, 56, 0.8);
-  padding: 10px;
+  background: rgba(30, 42, 56, 0.8); /* 透明度略小，保持背景效果 */
+  padding: 15px;
   border-radius: 15px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-  color: #ffffff;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+  color: #f5f5f5;
   box-sizing: border-box;
 }
 
 .log-section,
 .plc-info-section {
-  height: 200px;
+  height: 220px;
   overflow-y: auto;
 }
 
 .scrollable-content {
   overflow-y: auto;
-  max-height: 160px;
+  max-height: 180px;
 }
 
 .section-header {
@@ -244,17 +244,22 @@ export default {
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
+  transition: color 0.3s ease;
 }
 
 h3 {
   margin: 0;
-  font-size: 1.5em;
-  color: #a8d0e6;
+  font-size: 1.6em;
+  color: #0ac5a8;
 }
 
 .arrow-icon {
-  font-size: 1.5em;
-  transition: transform 0.2s ease;
+  font-size: 1.8em;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.arrow-icon:hover {
+  color: #0ac5a8;
 }
 
 .expanded-arrow {
@@ -262,17 +267,19 @@ h3 {
 }
 
 .expandable-content {
-  max-height: calc(100vh - 80px);
+  max-height: calc(100vh - 100px);
+  transition: max-height 0.3s ease-in-out;
 }
 
 .expandable-content-queue {
   height: 800px;
   width: 100%;
+  display: flex;
 }
 
 .status-overview {
   display: flex;
-  gap: 20px;
+  gap: 25px;
 }
 
 .status-item {
@@ -283,12 +290,12 @@ h3 {
 
 .status-label {
   font-weight: bold;
-  font-size: 1.1em;
-  color: #a8d0e6;
+  font-size: 1.2em;
+  color: #0ac5a8;
 }
 
 .status-value {
-  font-size: 1.5em;
+  font-size: 1.6em;
   color: #ffffff;
 }
 
@@ -307,51 +314,111 @@ h3 {
 }
 
 .queue-contaier-right {
-  width: 250px;
+  width: 280px;
   height: 100%;
   overflow: auto;
 }
 
 .queue-contaier-left {
   float: left;
-  width: calc(100% - 250px);
+  width: calc(100% - 280px);
   height: 100%;
 }
 
 .queue {
-  background: #394867;
-  border-radius: 10px;
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
-  width: 220px;
-  height: 80px;
-  line-height: 80px;
+  background: #304155;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  width: 240px;
+  height: 90px;
+  line-height: 90px;
   text-align: center;
-  transition: transform 0.4s, box-shadow 0.4s;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
   color: #ffffff;
   margin-bottom: 15px;
+  cursor: pointer;
+  position: relative;
 }
 
 .queue:hover {
-  transform: scale(1.08);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+  transform: scale(1.05);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6);
+  background: #4e6d85; /* Hover effect with slight color change */
 }
 
 .tray {
-  background: linear-gradient(135deg, #3a6073, #16222a);
+  background: linear-gradient(135deg, #4c6a82, #2c3e50);
   color: #ffffff;
-  padding: 10px;
-  margin: 10px 0;
-  border-radius: 10px;
+  padding: 12px;
+  margin: 12px 0;
+  border-radius: 12px;
   text-align: center;
   cursor: grab;
-  width: 200px;
-  height: 50px;
-  transition: background 0.3s, box-shadow 0.3s;
+  width: 220px;
+  height: 55px;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
   float: left;
 }
 
 .tray:hover {
-  background: linear-gradient(135deg, #5069d6, #2e3c78);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(135deg, #2e5a8d, #2c3e50);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.5);
+}
+
+.tray:active {
+  transform: scale(0.98);
+}
+
+.queue, .tray {
+  transition: transform 0.2s ease;
+}
+
+.queue, .tray {
+  transition: transform 0.3s ease;
+}
+
+.tray:active {
+  transform: scale(0.98);
+}
+
+/* 自定义滚动条 */
+.queue-contaier-right::-webkit-scrollbar {
+  width: 12px; /* 设置滚动条的宽度 */
+}
+
+.queue-contaier-right::-webkit-scrollbar-thumb {
+  background-color: #0ac5a8; /* 滚动条的颜色 */
+  border-radius: 10px; /* 滚动条的圆角 */
+  border: 3px solid #2a3a46; /* 滚动条的边框颜色 */
+  transition: background-color 0.3s ease;
+}
+
+.queue-contaier-right::-webkit-scrollbar-thumb:hover {
+  background-color: #4caf50; /* 滚动条的悬停颜色 */
+}
+
+.queue-contaier-right::-webkit-scrollbar-track {
+  background-color: #2a3a46; /* 滚动条轨道背景颜色 */
+  border-radius: 10px;
+}
+
+.queue-contaier-left::-webkit-scrollbar {
+  width: 12px; /* 设置滚动条的宽度 */
+}
+
+.queue-contaier-left::-webkit-scrollbar-thumb {
+  background-color: #0ac5a8; /* 滚动条的颜色 */
+  border-radius: 10px; /* 滚动条的圆角 */
+  border: 3px solid #2a3a46; /* 滚动条的边框颜色 */
+  transition: background-color 0.3s ease;
+}
+
+.queue-contaier-left::-webkit-scrollbar-thumb:hover {
+  background-color: #4caf50; /* 滚动条的悬停颜色 */
+}
+
+.queue-contaier-left::-webkit-scrollbar-track {
+  background-color: #2a3a46; /* 滚动条轨道背景颜色 */
+  border-radius: 10px;
 }
 </style>
