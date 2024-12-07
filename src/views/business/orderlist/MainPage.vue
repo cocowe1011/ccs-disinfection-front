@@ -12,15 +12,37 @@
         <div class="section-header">
           订单信息与PLC状态
         </div>
-        <div class="scrollable-content">
+        <div class="scrollable-content" style="margin-top: 5px;">
           <div class="status-overview">
-            <div class="status-item">
-              <span class="status-label">PLC状态：</span>
-              <span class="status-value" :class="{'connected': plcStatus === '连接中', 'disconnected': plcStatus !== '连接中'}">{{ plcStatus }}</span>
+            <div class="data-card">
+              <div class="data-card-border">
+                <div class="data-card-border-borderTop granient-text">灭菌批号</div>
+                <div class="data-card-border-borderDown" style="font-size: 1.3vw;">123456678</div>
+              </div>
             </div>
-            <div class="status-item">
-              <span class="status-label">当前上货信息：</span>
-              <span class="status-value">{{ currentLoadInfo }}</span>
+            <div class="data-card">
+              <div class="data-card-border">
+                <div class="data-card-border-borderTop">箱子长度</div>
+                <div class="data-card-border-borderDown">100mm</div>
+              </div>
+            </div>
+            <div class="data-card">
+              <div class="data-card-border">
+                <div class="data-card-border-borderTop">箱子宽度</div>
+                <div class="data-card-border-borderDown">300mm</div>
+              </div>
+            </div>
+            <div class="data-card">
+              <div class="data-card-border">
+                <div class="data-card-border-borderTop">箱子高度</div>
+                <div class="data-card-border-borderDown">200mm</div>
+              </div>
+            </div>
+            <div class="data-card">
+              <div class="data-card-border">
+                <div class="data-card-border-borderTop">束下设置速度</div>
+                <div class="data-card-border-borderDown">10540mm/分钟</div>
+              </div>
             </div>
           </div>
         </div>
@@ -144,13 +166,16 @@ export default {
         { name: '下货区', trays: [] }
       ],
       nowTrays: [],
-        buttonStates: {
+      buttonStates: {
         start: false,
         stop: false,
         reset: false,
         fault_reset: false,
         clear: false
-      }
+      },
+      orderNumber: 'ORD-12345',  // 新增订单号
+      orderQuantity: 500,        // 新增订单数量
+      currentLoadQuantity: 100,  // 新增当前上货数量
     };
   },
   methods: {
@@ -184,7 +209,7 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="less" scoped>
 .smart-workshop {
   width: 100%;
   height: 100%;
@@ -301,11 +326,6 @@ h3 {
   height: 800px;
   width: 100%;
   display: flex;
-}
-
-.status-overview {
-  display: flex;
-  gap: 25px;
 }
 
 .status-item {
@@ -508,4 +528,58 @@ h3 {
 .operation-buttons button:active {
   transform: scale(0.95);
 }
+
+.status-overview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;  /* 两列布局 */
+  gap: 10px;
+  .data-card {
+      box-sizing: border-box;
+      height: 80px;
+      width: 225px;
+      &-border {
+        width: 100%;
+        height: 100%;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #2b3d51, #3c4c63);  /* 新增渐变背景 */
+        // box-shadow: 0px 20px 50px 0px rgba(0, 0, 0, 0.25);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);  /* 更柔和的阴影 */
+        &-borderTop {
+          font-weight: 400;
+          letter-spacing: 0px;
+          color: rgba(189, 189, 189, 1);
+          text-align: left;
+          vertical-align: top;
+          font-size: 14px;
+          line-height: 38px;
+          padding-left: 14px;
+        }
+        .granient-text {
+          background-image: linear-gradient(to right, rgba(72, 146, 254, 1) , rgba(71, 207, 245, 1));
+          background-clip: text;
+          -webkit-background-clip: text;
+          color: transparent;
+        }
+        .granient-text-order {
+          background-image: linear-gradient(to right, rgba(112, 225, 245, 1) , rgba(255, 209, 148, 1));
+          // background-image: linear-gradient(to right, rgba(255, 95, 109, 1) , rgba(255, 195, 113, 1));
+          
+          background-clip: text;
+          -webkit-background-clip: text;
+          color: transparent;
+        }
+        &-borderDown {
+          font-weight: 700;
+          letter-spacing: 0px;
+          color: rgba(255, 255, 255, 1);
+          text-align: left;
+          vertical-align: top;
+          font-size: 28px;
+          line-height: 32px;
+          padding-left: 14px;
+        }
+      }
+    }
+}
+
 </style>
