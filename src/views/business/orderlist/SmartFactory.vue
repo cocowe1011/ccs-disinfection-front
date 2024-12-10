@@ -7,6 +7,7 @@
 </template>
 <script>
 import * as THREE from "three";
+import debounce from 'lodash/debounce';
 export default {
   name: "SmartFactory",
   components: {},
@@ -16,17 +17,18 @@ export default {
       renderer: null,  // 渲染器
       scene: null,     // Three.js 场景
       camera: null,    // 相机
-      heatingBlocks: [] // 加热区块
+      heatingBlocks: [], // 加热区块
+      isRunBelt: false
     };
   },
   created() {},
   mounted() {
     this.initScene();       // 初始化 Three.js 场景
     this.startAnimation();  // 启动动画循环
-    window.addEventListener("resize", this.onWindowResize);
+    window.addEventListener("resize", this.debouncedOnWindowResize);
   },
   beforeDestroy() {
-    window.removeEventListener("resize", this.onWindowResize);
+    window.removeEventListener("resize", this.debouncedOnWindowResize);
   },
   methods: {
     initScene(){
@@ -109,81 +111,80 @@ export default {
     // rotation = [0, 0, 0] 旋转
     // beltSegments 滚轮数
     createConveyorBelt(position, length, width, height, rotation = [0, 0, 0], beltSegments, direction = 'left') {
-    const conveyorBeltGroup = new THREE.Group();
+      const conveyorBeltGroup = new THREE.Group();
 
-    // 储存传送带的链条段
-    conveyorBeltGroup.chainSegments = [];
+      // 储存传送带的链条段
+      conveyorBeltGroup.chainSegments = [];
 
-    // 保存传送带的滚动方向
-    conveyorBeltGroup.userData.direction = direction;
+      // 保存传送带的滚动方向
+      conveyorBeltGroup.userData.direction = direction;
 
-    // 材质设置
-    const rollerMaterial = new THREE.MeshStandardMaterial({ color: 0x8b8b8b, metalness: 0.6, roughness: 0.3 });
-    const chainMaterial = new THREE.MeshStandardMaterial({ color: 0x708090, metalness: 0.5, roughness: 0.4 });
-    const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x3b3b3b, metalness: 0.4, roughness: 0.6 });
-    const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x505050, metalness: 0.4, roughness: 0.5 }); // 包围框材质
+      // 材质设置
+      const rollerMaterial = new THREE.MeshStandardMaterial({ color: 0x8b8b8b, metalness: 0.6, roughness: 0.3 });
+      const chainMaterial = new THREE.MeshStandardMaterial({ color: 0x708090, metalness: 0.5, roughness: 0.4 });
+      const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x3b3b3b, metalness: 0.4, roughness: 0.6 });
+      const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x505050, metalness: 0.4, roughness: 0.5 }); // 包围框材质
 
-    // 计算每段的长度
-    const segmentLength = length / beltSegments;
+      // 计算每段的长度
+      const segmentLength = length / beltSegments;
 
-    for (let i = 0; i < beltSegments; i++) {
-      // 创建链条段
-      const segmentGeometry = new THREE.BoxGeometry(segmentLength - 0.2, height / 10, width + 0.5);
-      const segment = new THREE.Mesh(segmentGeometry, chainMaterial);
-      const offset = -length / 2 + segmentLength * i + segmentLength / 2;
-      segment.position.set(offset, height / 2 + 0.5, 0);
-      conveyorBeltGroup.add(segment);
+      for (let i = 0; i < beltSegments; i++) {
+        // 创建链条段
+        const segmentGeometry = new THREE.BoxGeometry(segmentLength - 0.2, height / 10, width + 0.5);
+        const segment = new THREE.Mesh(segmentGeometry, chainMaterial);
+        const offset = -length / 2 + segmentLength * i + segmentLength / 2;
+        segment.position.set(offset, height / 2 + 0.5, 0);
+        conveyorBeltGroup.add(segment);
 
-      // 将链条段添加到传送带的链条数组中
-      if (direction !== '') {
-        conveyorBeltGroup.chainSegments.push(segment);
+        // 将链条段添加到传送带的链条数组中
+        if (direction !== '') {
+          conveyorBeltGroup.chainSegments.push(segment);
+        }
+        // 创建滚轮
+          const rollerRadius = height / 3; // 滚轮的半径
+          const rollerHeight = width + 0.85; // 使用固定的高度，确保所有滚轮一致
+        const rollerGeometry = new THREE.CylinderGeometry(rollerRadius, rollerRadius, rollerHeight, 32);
+        const roller = new THREE.Mesh(rollerGeometry, rollerMaterial);
+          roller.rotation.x = Math.PI / 2; // 使滚轮竖向放置，与链条段方向一致
+          roller.position.set(offset, rollerRadius, 0); // 滚轮位置与链条段对齐
+        conveyorBeltGroup.add(roller);
+
+          // 创建滚轮底座平面
+        const baseGeometry = new THREE.BoxGeometry(segmentLength, height / 20, width + 1);
+        const base = new THREE.Mesh(baseGeometry, baseMaterial);
+          base.position.set(offset, rollerRadius - height / 3 - height / 20, 0); // 将底座放在滚轮的正下方，不交叉
+        conveyorBeltGroup.add(base);
       }
-      // 创建滚轮
-        const rollerRadius = height / 3; // 滚轮的半径
-        const rollerHeight = width + 0.85; // 使用固定的高度，确保所有滚轮一致
-      const rollerGeometry = new THREE.CylinderGeometry(rollerRadius, rollerRadius, rollerHeight, 32);
-      const roller = new THREE.Mesh(rollerGeometry, rollerMaterial);
-        roller.rotation.x = Math.PI / 2; // 使滚轮竖向放置，与链条段方向一致
-        roller.position.set(offset, rollerRadius, 0); // 滚轮位置与链条段对齐
-      conveyorBeltGroup.add(roller);
 
-        // 创建滚轮底座平面
-      const baseGeometry = new THREE.BoxGeometry(segmentLength, height / 20, width + 1);
-      const base = new THREE.Mesh(baseGeometry, baseMaterial);
-        base.position.set(offset, rollerRadius - height / 3 - height / 20, 0); // 将底座放在滚轮的正下方，不交叉
-      conveyorBeltGroup.add(base);
-    }
+      // 添加传送带侧边包围
+      const sideHeight = height - 0.4; // 包围框高度（比传送带高一点）
+      const sideThickness = 0.2; // 包围框厚度
 
-    // 添加传送带侧边包围
-    const sideHeight = height - 0.4; // 包围框高度（比传送带高一点）
-    const sideThickness = 0.2; // 包围框厚度
+      // 左侧包围框
+      const leftSideGeometry = new THREE.BoxGeometry(length, sideHeight, sideThickness);
+      const leftSide = new THREE.Mesh(leftSideGeometry, frameMaterial);
+      leftSide.position.set(0, sideHeight / 2, -(width / 2 + sideThickness / 2 + 0.2)); // 放置在传送带左侧
+      conveyorBeltGroup.add(leftSide);
 
-    // 左侧包围框
-    const leftSideGeometry = new THREE.BoxGeometry(length, sideHeight, sideThickness);
-    const leftSide = new THREE.Mesh(leftSideGeometry, frameMaterial);
-    leftSide.position.set(0, sideHeight / 2, -(width / 2 + sideThickness / 2 + 0.2)); // 放置在传送带左侧
-    conveyorBeltGroup.add(leftSide);
+      // 右侧包围框
+      const rightSideGeometry = new THREE.BoxGeometry(length, sideHeight, sideThickness);
+      const rightSide = new THREE.Mesh(rightSideGeometry, frameMaterial);
+      rightSide.position.set(0, sideHeight / 2, width / 2 + sideThickness / 2 + 0.2); // 放置在传送带右侧
+      conveyorBeltGroup.add(rightSide);
 
-    // 右侧包围框
-    const rightSideGeometry = new THREE.BoxGeometry(length, sideHeight, sideThickness);
-    const rightSide = new THREE.Mesh(rightSideGeometry, frameMaterial);
-    rightSide.position.set(0, sideHeight / 2, width / 2 + sideThickness / 2 + 0.2); // 放置在传送带右侧
-    conveyorBeltGroup.add(rightSide);
+      // 保存传送带的其他属性
+      conveyorBeltGroup.beltLength = length;
 
-    // 保存传送带的其他属性
-    conveyorBeltGroup.beltLength = length;
+      // 设置传送带的位置和旋转
+      conveyorBeltGroup.position.set(...position);
+      conveyorBeltGroup.rotation.set(rotation[0] * Math.PI / 180, rotation[1] * Math.PI / 180, rotation[2] * Math.PI / 180);
 
-    // 设置传送带的位置和旋转
-    conveyorBeltGroup.position.set(...position);
-    conveyorBeltGroup.rotation.set(rotation[0] * Math.PI / 180, rotation[1] * Math.PI / 180, rotation[2] * Math.PI / 180);
+      // 设置传送带为一个特殊的用户数据，用于动画控制
+      conveyorBeltGroup.userData.isConveyorBelt = true;
 
-    // 设置传送带为一个特殊的用户数据，用于动画控制
-    conveyorBeltGroup.userData.isConveyorBelt = true;
-
-    // 将传送带添加到场景
-    this.scene.add(conveyorBeltGroup);
-  }
-,
+      // 将传送带添加到场景
+      this.scene.add(conveyorBeltGroup);
+    },
     // 创建功能区块（预热区和消毒区）
     createFunctionalBlock(position, length, width, height, color, label, textColor) {
       // 创建功能性方块
@@ -240,17 +241,29 @@ export default {
     },
     addConveyorBelts() {
       // 添加传送带-最下方
-      this.createConveyorBelt([0, 5, 60], 100, 6, 3, [0, 0, 0], 110,'left');
+      this.createConveyorBelt([0, 5, 60], 100, 6, 3, [0, 0, 0], 100,'left');
       // 中间
-      this.createConveyorBelt([-1, 5, 10], 100, 8, 3, [0, 0, 0], 110,'left');
+      this.createConveyorBelt([-1, 5, 10], 100, 8, 3, [0, 0, 0], 95,'left');
       // 最上方
-      this.createConveyorBelt([-2, 5, -60], 102.2, 11, 3, [0, 0, 0], 110,'right');
+      this.createConveyorBelt([-2, 5, -60], 102.2, 11, 3, [0, 0, 0], 90,'right');
       // 右侧竖着的
-      this.createConveyorBelt([54, 5, 43.5], 40, 7, 3, [90, -90, 90], 70,'right');
+      this.createConveyorBelt([54, 5, 43.5], 40, 7, 3, [90, -90, 90], 60,'right');
       // 右侧上货区
       this.createConveyorBelt([64.5, 5, 27.5], 13, 7, 3, [0, 0, 0], 18,'left');
       // 下货区竖着的
-      this.createConveyorBelt([54, 5, -52], 30, 9, 3, [90, -90, 90], 25,'');
+      this.createConveyorBelt([54, 5, -52], 30, 9, 3, [90, -90, 90], 15,'');
+
+      // this.createConveyorBelt([0, 5, 60], 100, 6, 3, [0, 0, 0], 100,'left');
+      // // 中间
+      // this.createConveyorBelt([-1, 5, 10], 100, 8, 3, [0, 0, 0], 90,'left');
+      // // 最上方
+      // this.createConveyorBelt([-2, 5, -60], 102.2, 11, 3, [0, 0, 0], 80,'right');
+      // // 右侧竖着的
+      // this.createConveyorBelt([54, 5, 43.5], 40, 7, 3, [90, -90, 90], 60,'right');
+      // // 右侧上货区
+      // this.createConveyorBelt([64.5, 5, 27.5], 13, 7, 3, [0, 0, 0], 15,'left');
+      // // 下货区竖着的
+      // this.createConveyorBelt([54, 5, -52], 30, 9, 3, [90, -90, 90], 15,'');
     },
     addFunctionalBlocks() {
       const wordArr = ['G', 'F', 'E', 'D', 'C', 'B', 'A']
@@ -282,7 +295,7 @@ export default {
       const disinfectionBlockLength2 = 12;
       for (let i = 0; i < disinfectionBlocksCount2; i++) {
             const xOffset = -47 + i * (disinfectionBlockLength2 + 3); // 调整偏移量使其更加整齐
-        this.createFunctionalBlock([xOffset, 2, -29.5], disinfectionBlockLength2, disinfectionBlockWidth2, disinfectionBlockHeight2, 0xB22222, i + 1 + "#", 'white');
+        this.createFunctionalBlock([xOffset, 2, -29.5], disinfectionBlockLength2, disinfectionBlockWidth2, disinfectionBlockHeight2, 0xff4500, i + 1 + "#", 'white');
       }
     },
     onWindowResize() {
@@ -298,7 +311,7 @@ export default {
     startAnimation() {
       const animate = () => {
         requestAnimationFrame(animate);
-        this.animateHeatingBlocks(); // 加热区块动画
+        // this.animateHeatingBlocks(); // 加热区块动画
         this.animateConveyorBelt();  // 传送带链条动画
         this.renderer.render(this.scene, this.camera);
       };
@@ -312,32 +325,43 @@ export default {
         block.material.color.lerpColors(color, emissiveColor, intensity);
       });
     },
+    runbelt(flag) {
+      this.isRunBelt = flag
+    },
     animateConveyorBelt() {
-  // 遍历场景中的每个传送带对象，找到带有链条段的传送带
-  this.scene.children.forEach(child => {
-    if (child.userData && child.userData.isConveyorBelt) {  // 如果是传送带
-      child.chainSegments.forEach((segment) => {
-        const speed = 0.03;  // 设置链条的移动速度
-        const direction = child.userData.direction;
+      if (!this.isRunBelt) {
+        return
+      }
+      // 遍历场景中的每个传送带对象，找到带有链条段的传送带
+      this.scene.children.forEach(child => {
+        if (child.userData && child.userData.isConveyorBelt) {  // 如果是传送带
+          child.chainSegments.forEach((segment) => {
+            const speed = 0.02;  // 设置链条的移动速度
+            const direction = child.userData.direction;
 
-        // 根据传送带的方向决定移动的方向
-        if (direction === 'left') {
-          segment.position.x -= speed;
-        } else if (direction === 'right') {
-          segment.position.x += speed;
-        }
+            // 根据传送带的方向决定移动的方向
+            if (direction === 'left') {
+              segment.position.x -= speed;
+            } else if (direction === 'right') {
+              segment.position.x += speed;
+            }
 
-        // 如果链条段超出了传送带的长度范围，则重置其位置
-        if (segment.position.x < -child.beltLength / 2) {
-          segment.position.x = child.beltLength / 2;
-        }
-        if (segment.position.x > child.beltLength / 2) {
-          segment.position.x = -child.beltLength / 2;
+            // 如果链条段超出了传送带的长度范围，则重置其位置
+            if (segment.position.x < -child.beltLength / 2) {
+              segment.position.x = child.beltLength / 2;
+            }
+            if (segment.position.x > child.beltLength / 2) {
+              segment.position.x = -child.beltLength / 2;
+            }
+          });
         }
       });
     }
-  });
-}
+  },
+  computed: {
+    debouncedOnWindowResize() {
+      return debounce(this.onWindowResize, 100);
+    }
   }
 };
 </script>

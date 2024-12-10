@@ -2,7 +2,10 @@
   <div class="smart-workshop">
     <!-- 流水线动画区，占整个主区域 -->
     <div class="conveyor-section">
-      <SmartFactory class="conveyor-animation"/>
+      <SmartFactory class="conveyor-animation" ref="smartref"/>
+      <el-button type="primary" v-for="tag in tags" :key="tag.id" class="tag" :style="tagComputedStyle(tag)">
+        {{ tag.text }}
+      </el-button>
     </div>
 
     <!-- 左右状态与其他信息区域，悬浮在流水线之上，不遮挡中间 -->
@@ -126,6 +129,7 @@
 
 <script>
 import SmartFactory from './SmartFactory.vue';
+import debounce from 'lodash/debounce';
 export default {
   name: "MainPage",
   components: {
@@ -176,7 +180,18 @@ export default {
       orderNumber: 'ORD-12345',  // 新增订单号
       orderQuantity: 500,        // 新增订单数量
       currentLoadQuantity: 100,  // 新增当前上货数量
+      tags: [
+        { id: 'tag1', text: 'Tag 1', relativeX: 0.5, relativeY: -0.5 },
+        { id: 'tag2', text: 'Tag 2', relativeX: 0.5, relativeY: -0.5 }
+      ]
     };
+  },
+  mounted() {
+    this.updateLayout();
+    window.addEventListener('resize', this.debouncedUpdateLayout);
+  },
+  beforeDestroy() {
+    window.removeEventListener('resize', this.debouncedUpdateLayout);
   },
   methods: {
     showTrays(index) {
@@ -199,11 +214,50 @@ export default {
       }
     },
     toggleButtonState(button) {
+      this.buttonStates = {
+        start: false,
+        stop: false,
+        reset: false,
+        fault_reset: false,
+        clear: false
+      }
       this.buttonStates[button] = !this.buttonStates[button]; // 切换按钮的按下/恢复状态
+      if (button === 'start') {
+        this.$refs.smartref.runbelt(true)
+      }
+      if (button === 'stop') {
+        this.$refs.smartref.runbelt(false)
+      }
     },
     handleOperation(action) {
       console.log(`执行操作: ${action}`);
       // 在这里处理操作逻辑
+    },
+    updateLayout() {
+      // Update tags based on the new dimensions
+      const canvasContainer = this.$el.querySelector('.conveyor-animation');
+      const screenWidth = canvasContainer.clientWidth;
+      const screenHeight = canvasContainer.clientWidth;
+      this.tags.forEach(tag => {
+        const x = tag.relativeX * screenWidth;
+        const y = tag.relativeY * screenHeight;
+        this.$set(tag, 'style', this.calculateTagStyle(x, y)); // Use Vue.set for reactivity
+      });
+    },
+    calculateTagStyle(x, y) {
+      return {
+        position: 'absolute',
+        transform: `translate(${x}px, ${y}px)`,
+        transformOrigin: 'top left'
+      };
+    },
+    tagComputedStyle(tag) {
+      return tag.style || {};
+    }
+  },
+  computed: {
+    debouncedUpdateLayout() {
+      return debounce(this.updateLayout, 100);
     }
   }
 };
@@ -226,16 +280,6 @@ export default {
 .conveyor-section {
   width: 100%;
   height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #2a3a46;
-  box-sizing: border-box;
-  overflow: hidden;
-  z-index: 1;
 }
 
 .conveyor-animation {
@@ -581,5 +625,7 @@ h3 {
       }
     }
 }
-
+.tag {
+  transition: transform 0.2s ease-in-out; // Smooth transitions for moving tags
+}
 </style>
