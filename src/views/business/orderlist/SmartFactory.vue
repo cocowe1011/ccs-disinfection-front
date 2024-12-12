@@ -8,6 +8,7 @@
 <script>
 import * as THREE from "three";
 import debounce from 'lodash/debounce';
+import throttle from 'lodash/throttle'; // 引入节流函数
 export default {
   name: "SmartFactory",
   components: {},
@@ -29,13 +30,13 @@ export default {
     this.initScene();       // 初始化 Three.js 场景
     this.startAnimation();  // 启动动画循环
     window.addEventListener("resize", this.debouncedOnWindowResize);
-    this.$refs.factoryCanvas.addEventListener('mousemove', this.onMouseMove);
+    this.$refs.factoryCanvas.addEventListener('mousemove', this.throttledOnMouseMove);
     this.$refs.factoryCanvas.addEventListener('mouseleave', this.onMouseLeave); // 添加鼠标移出事件
     this.$refs.factoryCanvas.addEventListener('click', this.onOverlayClick);
   },
   beforeDestroy() {
     window.removeEventListener("resize", this.debouncedOnWindowResize);
-    this.$refs.factoryCanvas.removeEventListener('mousemove', this.onMouseMove);
+    this.$refs.factoryCanvas.removeEventListener('mousemove', this.throttledOnMouseMove);
     this.$refs.factoryCanvas.removeEventListener('mouseleave', this.onMouseLeave);
     this.$refs.factoryCanvas.removeEventListener('click', this.onOverlayClick);
   },
@@ -194,9 +195,9 @@ export default {
       // 添加透明浮层
       const overlayGeometry = new THREE.BoxGeometry(length, 0.1, width);
       const overlayMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffffff, // 初始化为白色
+        color: 0xadd8e6, // 初始化为白色
         transparent: true,
-        opacity: 1, // 初始不透明
+        opacity: 0, // 初始不透明
         side: THREE.DoubleSide
       });
       const overlay = new THREE.Mesh(overlayGeometry, overlayMaterial);
@@ -225,9 +226,9 @@ export default {
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
 
-    // 设置画布大小，根据传入的长和宽调整
-    canvas.width = length * 20;  // 使用适当的比例来转换长和宽，这里用 20 作为比例因子，您可以根据需要进行调整
-    canvas.height = width * 10;  // 使用适当的比例来转换长和宽
+      // 设置画布大小，根据传入的长和宽调整
+      canvas.width = length * 20;  // 使用适当的比例来转换长和宽，这里用 20 作为比例因子，您可以根据需要进行调整
+      canvas.height = width * 10;  // 使用适当的比例来转换长和宽
 
         // 设置背景颜色
         // context.fillStyle = 'rgba(0, 0, 0, 0.5)'; // 设置背景颜色为半透明的黑色 (您可以更改颜色和透明度)
@@ -238,9 +239,9 @@ export default {
       context.fillStyle = textColor;  // 文字颜色为红色
       context.textAlign = 'center';
       context.textBaseline = 'middle';
-    context.fillText(label, canvas.width / 2, canvas.height / 2);  // 在画布上绘制文本
+      context.fillText(label, canvas.width / 2, canvas.height / 2);  // 在画布上绘制文本
 
-    // 创建纹理并用于材质
+      // 创建纹理并用于材质
       const texture = new THREE.CanvasTexture(canvas);
       const material = new THREE.MeshBasicMaterial({
         map: texture,
@@ -248,18 +249,19 @@ export default {
             side: THREE.DoubleSide, // 让标签的两面都可见
       });
 
-    // 创建平面几何体作为标签
-    const planeGeometry = new THREE.PlaneGeometry(length, width / 2); // 使用与立方体相匹配的长和适当比例的宽
+      // 创建平面几何体作为标签
+      const planeGeometry = new THREE.PlaneGeometry(length, width / 2); // 使用与立方体相匹配的长和适当比例的宽
       const plane = new THREE.Mesh(planeGeometry, material);
 
-    // 让平面躺下
-    plane.rotation.x = -Math.PI / 2; // 沿 X 轴旋转 90 度，使其平躺
+      // 让平面躺下
+      plane.rotation.x = -Math.PI / 2; // 沿 X 轴旋转 90 度，使其平躺
 
-    // 设置平面的位置
-    plane.position.set(position[0], position[1] + height / 2 + 0.1, position[2]); // 标签在立方体顶部稍微偏移一点高度
+      // 设置平面的位置
+      plane.position.set(position[0], position[1] + height / 2 + 0.1, position[2]); // 标签在立方体顶部稍微偏移一点高度
 
-    // 将标签添加到场景中
+      // 将标签添加到场景中
       this.scene.add(plane);
+      this.overlays.push(functionalBlock); // 将功能块本身也添加到overlays
     },
     addConveyorBelts() {
       // 添加传送带-最下方
@@ -386,15 +388,15 @@ export default {
       this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       this.raycaster.setFromCamera(this.mouse, this.camera);
 
+      const intersects = this.raycaster.intersectObjects(this.overlays);
       this.overlays.forEach(overlay => {
-        const intersects = this.raycaster.intersectObject(overlay);
-        overlay.material.color.set(intersects.length > 0 ? 0xff0000 : 0xffffff);
+        overlay.material.opacity = intersects.find(intersect => intersect.object === overlay) ? 0.5 : 0;
       });
     },
     onMouseLeave(event) {
       // 重置所有浮层颜色
       this.overlays.forEach(overlay => {
-        overlay.material.color.set(0xffffff);
+        overlay.material.opacity = 0;
       });
     },
     onOverlayClick(event) {
@@ -411,6 +413,9 @@ export default {
   computed: {
     debouncedOnWindowResize() {
       return debounce(this.onWindowResize, 100);
+    },
+    throttledOnMouseMove() {
+      return throttle(this.onMouseMove, 100);
     }
   }
 };
