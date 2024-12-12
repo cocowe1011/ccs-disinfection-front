@@ -3,9 +3,6 @@
     <!-- 流水线动画区，占整个主区域 -->
     <div class="conveyor-section">
       <SmartFactory class="conveyor-animation" ref="smartref"/>
-      <el-button type="primary" v-for="tag in tags" :key="tag.id" class="tag" :style="tagComputedStyle(tag)">
-        {{ tag.text }}
-      </el-button>
     </div>
 
     <!-- 左右状态与其他信息区域，悬浮在流水线之上，不遮挡中间 -->
@@ -180,18 +177,12 @@ export default {
       orderNumber: 'ORD-12345',  // 新增订单号
       orderQuantity: 500,        // 新增订单数量
       currentLoadQuantity: 100,  // 新增当前上货数量
-      tags: [
-        { id: 'tag1', text: 'Tag 1', relativeX: 0.5, relativeY: -0.5 },
-        { id: 'tag2', text: 'Tag 2', relativeX: 0.5, relativeY: -0.5 }
-      ]
     };
   },
   mounted() {
     this.updateLayout();
-    window.addEventListener('resize', this.debouncedUpdateLayout);
   },
   beforeDestroy() {
-    window.removeEventListener('resize', this.debouncedUpdateLayout);
   },
   methods: {
     showTrays(index) {
@@ -232,32 +223,6 @@ export default {
     handleOperation(action) {
       console.log(`执行操作: ${action}`);
       // 在这里处理操作逻辑
-    },
-    updateLayout() {
-      // Update tags based on the new dimensions
-      const canvasContainer = this.$el.querySelector('.conveyor-animation');
-      const screenWidth = canvasContainer.clientWidth;
-      const screenHeight = canvasContainer.clientWidth;
-      this.tags.forEach(tag => {
-        const x = tag.relativeX * screenWidth;
-        const y = tag.relativeY * screenHeight;
-        this.$set(tag, 'style', this.calculateTagStyle(x, y)); // Use Vue.set for reactivity
-      });
-    },
-    calculateTagStyle(x, y) {
-      return {
-        position: 'absolute',
-        transform: `translate(${x}px, ${y}px)`,
-        transformOrigin: 'top left'
-      };
-    },
-    tagComputedStyle(tag) {
-      return tag.style || {};
-    }
-  },
-  computed: {
-    debouncedUpdateLayout() {
-      return debounce(this.updateLayout, 100);
     }
   }
 };

@@ -203,6 +203,7 @@ export default {
       const overlay = new THREE.Mesh(overlayGeometry, overlayMaterial);
       overlay.position.set(0, height - 0.5, 0);  // 适当调整浮层的高度
       conveyorBeltGroup.add(overlay);
+      overlay.userData.type = 'conveyorBeltOverlay';
       this.overlays.push(overlay); // 将浮层添加到数组中
 
       // 将传送带添加到场景
@@ -261,6 +262,8 @@ export default {
 
       // 将标签添加到场景中
       this.scene.add(plane);
+      functionalBlock.userData.type = 'functionalBlock';
+      functionalBlock.userData.color = color;
       this.overlays.push(functionalBlock); // 将功能块本身也添加到overlays
     },
     addConveyorBelts() {
@@ -390,13 +393,31 @@ export default {
 
       const intersects = this.raycaster.intersectObjects(this.overlays);
       this.overlays.forEach(overlay => {
-        overlay.material.opacity = intersects.find(intersect => intersect.object === overlay) ? 0.5 : 0;
+        if (overlay.userData.type) {
+          switch (overlay.userData.type) {
+            case 'conveyorBeltOverlay':
+              overlay.material.opacity = intersects.find(intersect => intersect.object === overlay) ? 0.5 : 0;
+              break;
+            case 'functionalBlock':
+              overlay.material.color.set(intersects.find(intersect => intersect.object === overlay) ? 0xadd8e6 : overlay.userData.color);  // 重置颜色
+              break;
+          }
+        }
       });
     },
     onMouseLeave(event) {
       // 重置所有浮层颜色
       this.overlays.forEach(overlay => {
-        overlay.material.opacity = 0;
+        if (overlay.userData.type) {
+          switch (overlay.userData.type) {
+            case 'conveyorBeltOverlay':
+              overlay.material.opacity = 0;
+              break;
+            case 'functionalBlock':
+              overlay.material.color.set(overlay.userData.color);  // 重置颜色
+              break;
+          }
+        }
       });
     },
     onOverlayClick(event) {
