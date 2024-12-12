@@ -18,7 +18,10 @@ export default {
       scene: null,     // Three.js 场景
       camera: null,    // 相机
       heatingBlocks: [], // 加热区块
-      isRunBelt: false
+      isRunBelt: false,
+      raycaster: new THREE.Raycaster(),
+      mouse: new THREE.Vector2(),
+      overlays: [], // 存储所有浮层引用的数组
     };
   },
   created() {},
@@ -26,9 +29,15 @@ export default {
     this.initScene();       // 初始化 Three.js 场景
     this.startAnimation();  // 启动动画循环
     window.addEventListener("resize", this.debouncedOnWindowResize);
+    this.$refs.factoryCanvas.addEventListener('mousemove', this.onMouseMove);
+    this.$refs.factoryCanvas.addEventListener('mouseleave', this.onMouseLeave); // 添加鼠标移出事件
+    this.$refs.factoryCanvas.addEventListener('click', this.onOverlayClick);
   },
   beforeDestroy() {
     window.removeEventListener("resize", this.debouncedOnWindowResize);
+    this.$refs.factoryCanvas.removeEventListener('mousemove', this.onMouseMove);
+    this.$refs.factoryCanvas.removeEventListener('mouseleave', this.onMouseLeave);
+    this.$refs.factoryCanvas.removeEventListener('click', this.onOverlayClick);
   },
   methods: {
     initScene(){
@@ -181,6 +190,19 @@ export default {
 
       // 设置传送带为一个特殊的用户数据，用于动画控制
       conveyorBeltGroup.userData.isConveyorBelt = true;
+
+      // 添加透明浮层
+      const overlayGeometry = new THREE.BoxGeometry(length, 0.1, width);
+      const overlayMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff, // 初始化为白色
+        transparent: true,
+        opacity: 1, // 初始不透明
+        side: THREE.DoubleSide
+      });
+      const overlay = new THREE.Mesh(overlayGeometry, overlayMaterial);
+      overlay.position.set(0, height - 0.5, 0);  // 适当调整浮层的高度
+      conveyorBeltGroup.add(overlay);
+      this.overlays.push(overlay); // 将浮层添加到数组中
 
       // 将传送带添加到场景
       this.scene.add(conveyorBeltGroup);
@@ -354,6 +376,34 @@ export default {
               segment.position.x = -child.beltLength / 2;
             }
           });
+        }
+      });
+    },
+    onMouseMove(event) {
+      // 为每个浮层处理鼠标移动事件
+      const rect = this.$refs.factoryCanvas.getBoundingClientRect();
+      this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      this.raycaster.setFromCamera(this.mouse, this.camera);
+
+      this.overlays.forEach(overlay => {
+        const intersects = this.raycaster.intersectObject(overlay);
+        overlay.material.color.set(intersects.length > 0 ? 0xff0000 : 0xffffff);
+      });
+    },
+    onMouseLeave(event) {
+      // 重置所有浮层颜色
+      this.overlays.forEach(overlay => {
+        overlay.material.color.set(0xffffff);
+      });
+    },
+    onOverlayClick(event) {
+      // 处理点击事件
+      this.raycaster.setFromCamera(this.mouse, this.camera);
+      this.overlays.forEach(overlay => {
+        const intersects = this.raycaster.intersectObject(overlay);
+        if (intersects.length > 0) {
+          console.log('Overlay clicked!', overlay);
         }
       });
     }

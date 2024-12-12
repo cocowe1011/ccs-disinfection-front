@@ -302,7 +302,6 @@ export default {
 }
 
 .side-info-panel-queue {
-  height: 100%;
   position: absolute;
   top: 0;
   z-index: 2;
