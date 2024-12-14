@@ -16,32 +16,38 @@
           <div class="status-overview">
             <div class="data-card">
               <div class="data-card-border">
-                <div class="data-card-border-borderTop granient-text">灭菌批号</div>
+                <div class="data-card-border-borderTop granient-text">当前批次id</div>
                 <div class="data-card-border-borderDown" style="font-size: 1.3vw;">123456678</div>
               </div>
             </div>
             <div class="data-card">
               <div class="data-card-border">
-                <div class="data-card-border-borderTop">箱子长度</div>
-                <div class="data-card-border-borderDown">100mm</div>
+                <div class="data-card-border-borderTop">产品名称</div>
+                <div class="data-card-border-borderDown">一次性口罩</div>
               </div>
             </div>
             <div class="data-card">
               <div class="data-card-border">
-                <div class="data-card-border-borderTop">箱子宽度</div>
-                <div class="data-card-border-borderDown">300mm</div>
+                <div class="data-card-border-borderTop">指定预热房</div>
+                <div class="data-card-border-borderDown">A1</div>
               </div>
             </div>
             <div class="data-card">
               <div class="data-card-border">
-                <div class="data-card-border-borderTop">箱子高度</div>
-                <div class="data-card-border-borderDown">200mm</div>
+                <div class="data-card-border-borderTop">指定灭菌柜</div>
+                <div class="data-card-border-borderDown">1#</div>
               </div>
             </div>
             <div class="data-card">
               <div class="data-card-border">
-                <div class="data-card-border-borderTop">束下设置速度</div>
-                <div class="data-card-border-borderDown">10540mm/分钟</div>
+                <div class="data-card-border-borderTop">进货口</div>
+                <div class="data-card-border-borderDown">一楼</div>
+              </div>
+            </div>
+            <div class="data-card">
+              <div class="data-card-border">
+                <div class="data-card-border-borderTop">出货口</div>
+                <div class="data-card-border-borderDown">立体库</div>
               </div>
             </div>
           </div>
@@ -544,7 +550,7 @@ h3 {
   .data-card {
       box-sizing: border-box;
       height: 80px;
-      width: 225px;
+      width: 220px;
       &-border {
         width: 100%;
         height: 100%;

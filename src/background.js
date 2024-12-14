@@ -169,7 +169,7 @@ app.on('ready', () => {
     fs.appendFile("D://css_temp_data/log/" + ((new Date()).toLocaleDateString() + ".txt").replaceAll('/','-'), arg + '\n', function(err) {});
   })
   // 同步映射加速器数据
-  synAccData();
+  // synAccData();
 });
 
 function synAccData() {
