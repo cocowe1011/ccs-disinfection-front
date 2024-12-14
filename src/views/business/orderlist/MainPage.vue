@@ -108,7 +108,7 @@
               @click="markAsRead(log)"
             >
               <div class="log-time">{{ formatTime(log.timestamp) }}</div>
-              <div class="log-message">{{ log.message }}</div>
+              <div class="log-item-content">{{ log.message }}</div>
             </div>
           </div>
         </div>
@@ -300,7 +300,7 @@ export default {
         {
           id: 3,
           type: 'running',
-          message: '托盘C-03 开���消毒处理，预计持续时间30分钟',
+          message: '托盘C-03 开始消毒处理，预计持续时间30分钟',
           timestamp: new Date().getTime() - 20000,
           unread: false
         },
@@ -486,11 +486,6 @@ export default {
         second: '2-digit'
       });
     },
-    getLogIcon(type) {
-      return type === 'alarm' 
-        ? 'el-icon-warning-outline' 
-        : 'el-icon-info';
-    },
     markAsRead(log) {
       if (log.type === 'alarm') {
         log.unread = false;
@@ -545,7 +540,7 @@ export default {
 }
 
 .side-info-panel {
-  height: 100%;
+  width: 486px;
   position: absolute;
   top: 0;
   z-index: 2;
@@ -996,7 +991,7 @@ h3 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 10px 10px;
+    padding: 0px 0px 8px 0px;
     color: #0ac5a8;
     font-size: 22px;
     font-weight: 900;
@@ -1068,14 +1063,18 @@ h3 {
 
   .log-list {
     padding: 0 10px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .log-item {
-    padding: 8px 12px;
-    margin-bottom: 5px;
     background: rgba(255, 255, 255, 0.03);
     border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 8px;
     cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
 
     &:hover {
       background: rgba(255, 255, 255, 0.05);
@@ -1093,13 +1092,20 @@ h3 {
     .log-time {
       font-size: 12px;
       color: rgba(255, 255, 255, 0.4);
-      margin-bottom: 4px;
+      margin-bottom: 6px;
     }
 
-    .log-message {
+    .log-item-content {
       color: rgba(255, 255, 255, 0.9);
       font-size: 13px;
-      line-height: 1.4;
+      line-height: 1.6;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+      word-break: normal;
+      hyphens: auto;
+      display: block;
+      width: 100%;
+      padding-right: 10px;
     }
   }
 }
