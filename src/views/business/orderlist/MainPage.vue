@@ -1,5 +1,17 @@
 <template>
   <div class="smart-workshop">
+    <!-- 添加标题区域 -->
+    <div class="page-title">
+      <div class="title-content">
+        <div class="title-main">采纳监控系统</div>
+        <div class="title-sub">Smart Factory Monitoring System</div>
+      </div>
+      <div class="system-time">
+        {{ currentTime }}
+        <div class="pulse-dot"></div>
+      </div>
+    </div>
+
     <!-- 流水线动画区，占整个主区域 -->
     <div class="conveyor-section">
       <SmartFactory class="conveyor-animation" ref="smartref"/>
@@ -364,9 +376,13 @@ export default {
         }
       ],
       logSearchKey: '', // 日志搜索关键字
+      currentTime: '',
     };
   },
   mounted() {
+    this.updateTime();
+    // 每秒更新时间
+    setInterval(this.updateTime, 1000);
   },
   beforeDestroy() {
   },
@@ -508,7 +524,19 @@ export default {
         timestamp: new Date().getTime(),
         unread: true
       });
-    }
+    },
+    updateTime() {
+      const now = new Date();
+      this.currentTime = now.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+    },
   }
 };
 </script>
@@ -557,7 +585,7 @@ export default {
   z-index: 2;
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  padding: 8px;
   box-sizing: border-box;
   transition: width 0.3s ease-in-out;
   height: 100%;
@@ -1123,5 +1151,113 @@ h3 {
 
 .log-fade-move {
   transition: transform 0.3s ease;
+}
+
+/* 添加标题样式 */
+.page-title {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 35px;
+  padding: 15px 30px;
+  background: linear-gradient(
+    135deg, 
+    rgba(30, 42, 56, 0.85), 
+    rgba(30, 42, 56, 0.65)
+  );
+  border-radius: 20px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.title-content {
+  text-align: center;
+  padding: 0 10px;
+}
+
+.title-main {
+  font-size: 28px;
+  font-weight: 900;
+  margin-bottom: 6px;
+  letter-spacing: 3px;
+  background: linear-gradient(
+    45deg,
+    #ffffff 10%,
+    #0ac5a8 50%,
+    #4cddff 90%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 2px 15px rgba(10, 197, 168, 0.3);
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(10, 197, 168, 0.5),
+      transparent
+    );
+  }
+}
+
+.title-sub {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 1.5px;
+  font-weight: 300;
+}
+
+.system-time {
+  font-size: 17px;
+  color: rgba(255, 255, 255, 0.9);
+  padding-left: 25px;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 300;
+  letter-spacing: 0.5px;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background: linear-gradient(45deg, #0ac5a8, #4cddff);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+  box-shadow: 0 0 10px rgba(10, 197, 168, 0.5);
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(10, 197, 168, 0.7);
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+    box-shadow: 0 0 0 8px rgba(10, 197, 168, 0);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(10, 197, 168, 0);
+  }
 }
 </style>
