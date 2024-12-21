@@ -568,7 +568,7 @@ export default {
 }
 
 .side-info-panel {
-  width: 486px;
+  width: 420px;
   position: absolute;
   top: 0;
   z-index: 2;
@@ -881,15 +881,16 @@ h3 {
 
 .operation-buttons {
   display: flex;
-  justify-content: space-between;  /* 横向排列按钮 */
-  gap: 10px;
+  justify-content: space-between;
+  gap: 8px;
   margin-top: 5px;
+  padding: 5px;
 }
 
 .operation-buttons button {
-  width: 80px;  /* 保持正方形 */
-  height: 80px; /* 保持正方形 */
-  font-size: 0.8em; /* 调整字体大小 */
+  width: 70px;
+  height: 70px;
+  font-size: 0.8em;
   color: #fff;
   background: linear-gradient(135deg, #0ac5a8, #0f6b58);
   border: none;
@@ -902,17 +903,17 @@ h3 {
   justify-content: center;
   align-items: center;
   text-align: center;
-  padding: 0;
-  gap: 5px; /* 图标和文字间的间距 */
+  padding: 8px;
+  gap: 5px;
 }
 
 .operation-buttons button i {
-  font-size: 2em; /* 图标的大小 */
+  font-size: 1.8em;
 }
 
 .operation-buttons button span {
-  font-size: 1.1em; /* 文字大小，保持合适 */
-  line-height: 1.5; /* 适当的行高，防止文字过于紧凑 */
+  font-size: 12px;
+  margin-top: 4px;
 }
 
 .operation-buttons button:hover {
@@ -932,55 +933,52 @@ h3 {
 
 .status-overview {
   display: grid;
-  grid-template-columns: 1fr 1fr;  /* 两列布局 */
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
   .data-card {
-      box-sizing: border-box;
-      height: 80px;
-      width: 220px;
-      &-border {
-        width: 100%;
-        height: 100%;
-        border-radius: 20px;
-        background: linear-gradient(135deg, #2b3d51, #3c4c63);  /* 新增渐变背景 */
-        // box-shadow: 0px 20px 50px 0px rgba(0, 0, 0, 0.25);
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);  /* 更柔和的阴影 */
-        &-borderTop {
-          font-weight: 400;
-          letter-spacing: 0px;
-          color: rgba(189, 189, 189, 1);
-          text-align: left;
-          vertical-align: top;
-          font-size: 14px;
-          line-height: 38px;
-          padding-left: 14px;
-        }
-        .granient-text {
-          background-image: linear-gradient(to right, rgba(72, 146, 254, 1) , rgba(71, 207, 245, 1));
-          background-clip: text;
-          -webkit-background-clip: text;
-          color: transparent;
-        }
-        .granient-text-order {
-          background-image: linear-gradient(to right, rgba(112, 225, 245, 1) , rgba(255, 209, 148, 1));
-          // background-image: linear-gradient(to right, rgba(255, 95, 109, 1) , rgba(255, 195, 113, 1));
-          
-          background-clip: text;
-          -webkit-background-clip: text;
-          color: transparent;
-        }
-        &-borderDown {
-          font-weight: 700;
-          letter-spacing: 0px;
-          color: rgba(255, 255, 255, 1);
-          text-align: left;
-          vertical-align: top;
-          font-size: 28px;
-          line-height: 32px;
-          padding-left: 14px;
-        }
+    box-sizing: border-box;
+    height: 75px;
+    width: 185px;
+    &-border {
+      width: 100%;
+      height: 100%;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #2b3d51, #3c4c63);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+      &-borderTop {
+        font-weight: 400;
+        letter-spacing: 0px;
+        color: rgba(189, 189, 189, 1);
+        text-align: left;
+        vertical-align: top;
+        font-size: 13px;
+        line-height: 34px;
+        padding-left: 12px;
+      }
+      .granient-text {
+        background-image: linear-gradient(to right, rgba(72, 146, 254, 1) , rgba(71, 207, 245, 1));
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+      }
+      .granient-text-order {
+        background-image: linear-gradient(to right, rgba(112, 225, 245, 1) , rgba(255, 209, 148, 1));
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+      }
+      &-borderDown {
+        font-weight: 700;
+        letter-spacing: 0px;
+        color: rgba(255, 255, 255, 1);
+        text-align: left;
+        vertical-align: top;
+        font-size: 24px;
+        line-height: 28px;
+        padding-left: 12px;
       }
     }
+  }
 }
 .tag {
   transition: transform 0.2s ease-in-out; // Smooth transitions for moving tags
@@ -1027,7 +1025,7 @@ h3 {
 
     .log-tabs {
       display: flex;
-      gap: 20px;
+      gap: 5px;
     }
 
     .log-tab {
@@ -1258,6 +1256,26 @@ h3 {
     transform: scale(1);
     opacity: 1;
     box-shadow: 0 0 0 0 rgba(10, 197, 168, 0);
+  }
+}
+
+@media screen and (max-width: 1600px) {
+  .smart-workshop {
+    grid-template-columns: 380px 1fr 20%;  // 从 400px 改为 380px
+  }
+  
+  .side-info-panel.left-panel {
+    width: 380px;  // 从 400px 改为 380px
+  }
+}
+
+@media screen and (max-width: 1366px) {
+  .smart-workshop {
+    grid-template-columns: 320px 1fr 20%;  // 从 350px 改为 320px
+  }
+  
+  .side-info-panel.left-panel {
+    width: 320px;  // 从 350px 改为 320px
   }
 }
 </style>

@@ -23,6 +23,14 @@ export default {
       raycaster: new THREE.Raycaster(),
       mouse: new THREE.Vector2(),
       overlays: [], // 存储所有浮层引用的数组
+      scanners: [
+        { id: 1, position: { x: -35, y: 12, z: 69 }, active: false },   // 调整到更下方的位置
+      ],
+      scannerMeshes: [], // 存储光电机器的3D对象
+      motors: [
+        { id: 1, position: { x: -30, y: 12, z: 69 }, active: false },  // 与光电扫描器保持同一高度
+      ],
+      motorMeshes: [], // 存储电机的3D对象
     };
   },
   created() {},
@@ -33,6 +41,8 @@ export default {
     this.$refs.factoryCanvas.addEventListener('mousemove', this.throttledOnMouseMove);
     this.$refs.factoryCanvas.addEventListener('mouseleave', this.onMouseLeave); // 添加鼠标移出事件
     this.$refs.factoryCanvas.addEventListener('click', this.onOverlayClick);
+    this.createScanners();
+    this.createMotors();
   },
   beforeDestroy() {
     window.removeEventListener("resize", this.debouncedOnWindowResize);
@@ -391,6 +401,7 @@ export default {
       this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       this.raycaster.setFromCamera(this.mouse, this.camera);
 
+      let isHovered, scanner, motor;  // 添加 motor 变量
       const intersects = this.raycaster.intersectObjects(this.overlays);
       this.overlays.forEach(overlay => {
         if (overlay.userData.type) {
@@ -399,14 +410,32 @@ export default {
               overlay.material.opacity = intersects.find(intersect => intersect.object === overlay) ? 0.5 : 0;
               break;
             case 'functionalBlock':
-              overlay.material.color.set(intersects.find(intersect => intersect.object === overlay) ? 0xadd8e6 : overlay.userData.color);  // 重置颜色
+              overlay.material.color.set(intersects.find(intersect => intersect.object === overlay) ? 0xadd8e6 : overlay.userData.color);
+              break;
+            case 'scanner':
+              isHovered = intersects.find(intersect => intersect.object === overlay);
+              scanner = this.scannerMeshes.find(s => s.inner === overlay);
+              if (scanner) {
+                overlay.material.emissive.setHex(isHovered ? 0x00ff00 : 0x666666);
+                overlay.material.emissiveIntensity = isHovered ? 1.0 : 0.5;
+                scanner.glow.material.opacity = isHovered ? 0.4 : 0.2;
+              }
+              break;
+            case 'motor':
+              isHovered = intersects.find(intersect => intersect.object === overlay);
+              motor = this.motorMeshes.find(m => m.inner === overlay);
+              if (motor) {
+                overlay.material.emissive.setHex(isHovered ? 0x0000ff : 0x666666);
+                overlay.material.emissiveIntensity = isHovered ? 1.0 : 0.5;
+                motor.glow.material.opacity = isHovered ? 0.4 : 0.2;
+              }
               break;
           }
         }
       });
     },
     onMouseLeave(event) {
-      // 重置所有浮层颜色
+      let scanner, motor;  // 添加 motor 变量
       this.overlays.forEach(overlay => {
         if (overlay.userData.type) {
           switch (overlay.userData.type) {
@@ -414,7 +443,23 @@ export default {
               overlay.material.opacity = 0;
               break;
             case 'functionalBlock':
-              overlay.material.color.set(overlay.userData.color);  // 重置颜色
+              overlay.material.color.set(overlay.userData.color);
+              break;
+            case 'scanner':
+              scanner = this.scannerMeshes.find(s => s.inner === overlay);
+              if (scanner) {
+                overlay.material.emissive.setHex(0x666666);
+                overlay.material.emissiveIntensity = 0.5;
+                scanner.glow.material.opacity = 0.2;
+              }
+              break;
+            case 'motor':
+              motor = this.motorMeshes.find(m => m.inner === overlay);
+              if (motor) {
+                overlay.material.emissive.setHex(0x666666);
+                overlay.material.emissiveIntensity = 0.5;
+                motor.glow.material.opacity = 0.2;
+              }
               break;
           }
         }
@@ -428,6 +473,215 @@ export default {
         if (intersects.length > 0) {
           console.log('Overlay clicked!', overlay);
         }
+      });
+    },
+    createScanners() {
+      this.scanners.forEach((scanner, index) => {
+        // 创建文字标签
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 2560;
+        canvas.height = 2560;
+        context.font = 'Bold 600px Arial';
+        context.fillStyle = '#ffffff';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        context.shadowBlur = 30;
+        context.shadowOffsetX = 2;
+        context.shadowOffsetY = 2;
+        context.fillText(`${String.fromCharCode(65 + index)}`, canvas.width / 2, canvas.height / 2);
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        const labelMaterial = new THREE.MeshBasicMaterial({
+          map: texture,
+          transparent: true,
+          side: THREE.DoubleSide,
+        });
+        const labelGeometry = new THREE.PlaneGeometry(8, 8);
+        const label = new THREE.Mesh(labelGeometry, labelMaterial);
+        label.position.set(scanner.position.x - 2, scanner.position.y, scanner.position.z);
+        label.rotation.order = 'YXZ';
+        label.rotation.x = -Math.PI / 2;
+        label.rotation.y = 0;
+        label.rotation.z = 0;
+        this.scene.add(label);
+
+        // 创建外圈
+        const ringGeometry = new THREE.RingGeometry(0.6, 0.8, 32);
+        const ringMaterial = new THREE.MeshStandardMaterial({
+          color: 0x333333,
+          metalness: 0.8,
+          roughness: 0.2,
+          side: THREE.DoubleSide
+        });
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        
+        // 创建内部发光圆
+        const innerGeometry = new THREE.CircleGeometry(0.5, 32);
+        const innerMaterial = new THREE.MeshStandardMaterial({
+          color: 0x222222,
+          metalness: 0.7,
+          roughness: 0.3,
+          emissive: 0x666666,
+          emissiveIntensity: 0.5
+        });
+        const inner = new THREE.Mesh(innerGeometry, innerMaterial);
+        inner.position.z = 0.01;
+
+        // 创建发光效果
+        const glowMaterial = new THREE.MeshBasicMaterial({
+          color: 0x00ff00,
+          transparent: true,
+          opacity: 0.2,
+          side: THREE.DoubleSide
+        });
+        const glowGeometry = new THREE.CircleGeometry(1.0, 32);
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+        glow.position.z = -0.01;
+
+        // 创建光电扫描器组
+        const scannerGroup = new THREE.Group();
+        scannerGroup.add(ring);
+        scannerGroup.add(inner);
+        scannerGroup.add(glow);
+        
+        scannerGroup.rotation.x = -Math.PI / 2;
+        scannerGroup.position.set(scanner.position.x, scanner.position.y, scanner.position.z);
+        
+        this.scene.add(scannerGroup);
+        inner.userData.type = 'scanner';
+        inner.userData.active = scanner.active;
+        this.overlays.push(inner);
+        
+        this.scannerMeshes.push({
+          inner,
+          glow: glow,
+          active: scanner.active
+        });
+      });
+    },
+    createMotors() {
+      this.motors.forEach((motor, index) => {
+        // 创建文字标签
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 2560;
+        canvas.height = 2560;
+        context.font = 'Bold 600px Arial';
+        context.fillStyle = '#ffffff';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        context.shadowBlur = 30;
+        context.shadowOffsetX = 2;
+        context.shadowOffsetY = 2;
+        context.fillText('M', canvas.width / 2, canvas.height / 2);
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        const labelMaterial = new THREE.MeshBasicMaterial({
+          map: texture,
+          transparent: true,
+          side: THREE.DoubleSide,
+        });
+        const labelGeometry = new THREE.PlaneGeometry(8, 8);
+        const label = new THREE.Mesh(labelGeometry, labelMaterial);
+        label.position.set(motor.position.x - 2, motor.position.y, motor.position.z);
+        label.rotation.x = -Math.PI / 2;
+        this.scene.add(label);
+
+        // 创建六边形外框
+        const hexagonShape = new THREE.Shape();
+        const size = 0.8;
+        for (let i = 0; i < 6; i++) {
+          const angle = (i / 6) * Math.PI * 2;
+          const x = size * Math.cos(angle);
+          const y = size * Math.sin(angle);
+          if (i === 0) {
+            hexagonShape.moveTo(x, y);
+          } else {
+            hexagonShape.lineTo(x, y);
+          }
+        }
+        hexagonShape.closePath();
+        
+        const hexGeometry = new THREE.ShapeGeometry(hexagonShape);
+        const ringMaterial = new THREE.MeshStandardMaterial({
+          color: 0x333333,
+          metalness: 0.8,
+          roughness: 0.2,
+          side: THREE.DoubleSide
+        });
+        const hexagon = new THREE.Mesh(hexGeometry, ringMaterial);
+        
+        // 创建内部发光圆
+        const innerHexagonShape = new THREE.Shape();
+        const innerSize = 0.6;
+        for (let i = 0; i < 6; i++) {
+          const angle = (i / 6) * Math.PI * 2;
+          const x = innerSize * Math.cos(angle);
+          const y = innerSize * Math.sin(angle);
+          if (i === 0) {
+            innerHexagonShape.moveTo(x, y);
+          } else {
+            innerHexagonShape.lineTo(x, y);
+          }
+        }
+        innerHexagonShape.closePath();
+        const innerGeometry = new THREE.ShapeGeometry(innerHexagonShape);
+        const innerMaterial = new THREE.MeshStandardMaterial({
+          color: 0x222222,
+          metalness: 0.7,
+          roughness: 0.3,
+          emissive: 0x666666,
+          emissiveIntensity: 0.5
+        });
+        const inner = new THREE.Mesh(innerGeometry, innerMaterial);
+        inner.position.z = 0.01;
+
+        // 创建发光效果
+        const glowMaterial = new THREE.MeshBasicMaterial({
+          color: 0x0000ff,
+          transparent: true,
+          opacity: 0.2,
+          side: THREE.DoubleSide
+        });
+        // 创建更大的六边形作为发光效果
+        const glowShape = new THREE.Shape();
+        const glowSize = 1.0;
+        for (let i = 0; i < 6; i++) {
+          const angle = (i / 6) * Math.PI * 2;
+          const x = glowSize * Math.cos(angle);
+          const y = glowSize * Math.sin(angle);
+          if (i === 0) {
+            glowShape.moveTo(x, y);
+          } else {
+            glowShape.lineTo(x, y);
+          }
+        }
+        glowShape.closePath();
+        const glowGeometry = new THREE.ShapeGeometry(glowShape);
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+        glow.position.z = -0.01;
+
+        const motorGroup = new THREE.Group();
+        motorGroup.add(hexagon);
+        motorGroup.add(inner);
+        motorGroup.add(glow);
+        
+        motorGroup.rotation.x = -Math.PI / 2;
+        motorGroup.position.set(motor.position.x, motor.position.y, motor.position.z);
+        
+        this.scene.add(motorGroup);
+        inner.userData.type = 'motor';
+        inner.userData.active = motor.active;
+        this.overlays.push(inner);
+        
+        this.motorMeshes.push({
+          inner,
+          glow: glow,
+          active: motor.active
+        });
       });
     }
   },
