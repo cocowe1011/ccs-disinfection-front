@@ -13,8 +13,6 @@
           <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal" @select="handleSelect">
             <el-menu-item index="1">首页</el-menu-item>
             <el-menu-item index="2">业务处理</el-menu-item>
-            <el-menu-item index="3">报表管理</el-menu-item>
-            <el-menu-item index="4">配置管理</el-menu-item>
             <el-menu-item index="5">关于</el-menu-item>
           </el-menu>
         </div>
@@ -110,27 +108,9 @@ export default {
           break;
         case '2':
           this.$nextTick(() => {
-            if (this.$route.path !== '/homePage/orderList') {
+            if (this.$route.path !== '/homePage/mainPage') {
               this.$router.replace({
-                path: '/homePage/orderList'
-              });
-            }
-          });
-          break;
-        case '3':
-          this.$nextTick(() => {
-            if (this.$route.path !== '/homePage/report') {
-              this.$router.replace({
-                path: '/homePage/report'
-              });
-            }
-          });
-          break;
-        case '4':
-          this.$nextTick(() => {
-            if (this.$route.path !== '/homePage/config') {
-              this.$router.replace({
-                path: '/homePage/config'
+                path: '/homePage/mainPage'
               });
             }
           });

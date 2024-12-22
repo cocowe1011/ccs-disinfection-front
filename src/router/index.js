@@ -27,24 +27,14 @@ const routes = [
         name: 'WelcomPage'
       },
       {
-        path: 'orderList',
-        component: () => import('../views/business/orderlist/MainPage.vue'),
-        name: 'OrderList'
+        path: 'mainPage',
+        component: () => import('../views/home/MainPage.vue'),
+        name: 'mainPage'
       },
       {
         path: 'aboutPage',
         component: () => import('../views/home/AboutPage.vue'),
         name: 'AboutPage'
-      },
-      {
-        path: 'report',
-        component: () => import('../views/business/report/Report.vue'),
-        name: 'Report'
-      },
-      {
-        path: 'config',
-        component: () => import('../views/config/SystemConfig.vue'),
-        name: 'SystemConfig'
       }
     ]
   }
