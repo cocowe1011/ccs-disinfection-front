@@ -108,9 +108,9 @@ export default {
           break;
         case '2':
           this.$nextTick(() => {
-            if (this.$route.path !== '/homePage/mainPage') {
+            if (this.$route.path !== '/homePage/MonitorScreen') {
               this.$router.replace({
-                path: '/homePage/mainPage'
+                path: '/homePage/MonitorScreen'
               });
             }
           });

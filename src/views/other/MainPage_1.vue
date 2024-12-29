@@ -14,7 +14,7 @@
 
     <!-- 流水线动画区，占整个主区域 -->
     <div class="conveyor-section">
-      <SmartFactory class="conveyor-animation" ref="smartref"/>
+      <SmartFactory class="conveyor-animation" ref="smartref" v-show="false"/>
     </div>
 
     <!-- 左右状态与其他信息区域，悬浮在流水线之上，不遮挡中间 -->

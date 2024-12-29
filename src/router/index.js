@@ -27,9 +27,9 @@ const routes = [
         name: 'WelcomPage'
       },
       {
-        path: 'mainPage',
-        component: () => import('../views/home/MainPage.vue'),
-        name: 'mainPage'
+        path: 'MonitorScreen',
+        component: () => import('../views/home/MonitorScreen.vue'),
+        name: 'MonitorScreen'
       },
       {
         path: 'aboutPage',
