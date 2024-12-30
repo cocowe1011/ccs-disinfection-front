@@ -88,24 +88,46 @@
                 class="order-item"
                 :class="order.status"
               >
-                <div class="order-header">
-                  <span class="order-id">订单号：{{ order.id }}</span>
-                  <span class="order-status">{{ getStatusText(order.status) }}</span>
+                <div class="order-main">
+                  <div class="order-header">
+                    <span class="order-id">{{ order.id }}</span>
+                    <span class="order-status">{{ getStatusText(order.status) }}</span>
+                  </div>
+                  <div class="order-info">
+                    <div class="info-row">
+                      <div class="info-item">
+                        <span class="info-label">产品名称</span>
+                        <span class="info-value">{{ order.productName }}</span>
+                      </div>
+                    </div>
+                    <div class="info-row">
+                      <div class="info-item">
+                        <span class="info-label">订单时间</span>
+                        <span class="info-value">{{ formatDateTime(order.startTime) }}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div class="order-info">
-                  <div class="info-row">
-                    <span class="label">产品名称：</span>
-                    <span class="value">{{ order.productName }}</span>
-                  </div>
-                  <div class="info-row">
-                    <span class="label">批次数量：</span>
-                    <span class="value">{{ order.quantity }}</span>
-                  </div>
-                  <div class="info-row">
-                    <span class="label">开始时间：</span>
-                    <span class="value">{{ formatDateTime(order.startTime) }}</span>
-                  </div>
-                </div>
+                <button 
+                  v-if="order.status === 'pending'"
+                  class="switch-order-btn" 
+                  :class="{ 'loading': order.isLoading }"
+                  @click="switchOrder(order)"
+                  :disabled="order.isLoading"
+                >
+                  <i v-if="order.isLoading" class="el-icon-loading"></i>
+                  <span>{{ order.isLoading ? '切换中' : '切换订单' }}</span>
+                </button>
+                <button 
+                  v-if="order.status === 'running'"
+                  class="switch-order-btn complete-btn" 
+                  :class="{ 'loading': order.isLoading }"
+                  @click="switchOrder(order)"
+                  :disabled="order.isLoading"
+                >
+                  <i v-if="order.isLoading" class="el-icon-loading"></i>
+                  <span>{{ order.isLoading ? '切换中' : '完成订单' }}</span>
+                </button>
               </div>
             </div>
           </div>
@@ -914,8 +936,8 @@
 .order-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 10px 0;
+  gap: 8px;
+  padding: 8px 0;
   width: 100%;
   box-sizing: border-box;
 }
@@ -923,67 +945,189 @@
 .order-item {
   width: 100%;
   box-sizing: border-box;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  padding: 12px;
+  background: linear-gradient(90deg, 
+    rgba(30, 42, 56, 0.95) 0%, 
+    rgba(48, 65, 86, 0.85) 50%,
+    rgba(48, 65, 86, 0.75) 100%
+  );
+  border-radius: 6px;
+  padding: 12px 15px;
   transition: all 0.3s ease;
-  word-break: break-word;
+  position: relative;
+  height: 80px;  /* 增加高度 */
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
 .order-item:hover {
-  transform: translateX(5px);
-  background: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(90deg, 
+    rgba(30, 42, 56, 0.98) 0%, 
+    rgba(48, 65, 86, 0.9) 50%,
+    rgba(48, 65, 86, 0.85) 100%
+  );
+  transform: translateX(4px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
 }
 
-.order-item.pending {
-  border-left: 4px solid #e6a23c;
+.order-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3px;
+  height: 100%;
+  background: transparent;
+  transition: all 0.3s ease;
 }
 
-.order-item.running {
-  border-left: 4px solid #409eff;
+.order-item.pending::before {
+  background: #e6a23c;
 }
 
-.order-item.completed {
-  border-left: 4px solid #67c23a;
+.order-item.running::before {
+  background: #409eff;
+}
+
+.order-item.completed::before {
+  background: #67c23a;
+}
+
+.order-item:hover {
+  background: linear-gradient(90deg, rgba(30, 42, 56, 0.9) 0%, rgba(48, 65, 86, 0.5) 100%);
+  transform: translateX(4px);
+}
+
+.order-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding-right: 100px;
 }
 
 .order-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  border: none;
 }
 
 .order-id {
-  font-weight: bold;
-  color: #0ac5a8;
+  font-weight: 600;
+  color: #fff;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .order-status {
-  font-size: 12px;
+  font-size: 11px;
   padding: 2px 8px;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  white-space: nowrap;
+}
+
+.order-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0;
 }
 
 .info-row {
   display: flex;
-  margin: 4px 0;
-  flex-wrap: nowrap;
+  align-items: center;
 }
 
-.info-row .label {
-  color: rgba(255, 255, 255, 0.6);
-  width: 80px;
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.info-label {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 12px;
+  white-space: nowrap;
+  width: 60px;  /* 固定标签宽度 */
   flex-shrink: 0;
 }
 
-.info-row .value {
-  color: rgba(255, 255, 255, 0.9);
+.info-value {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   flex: 1;
   min-width: 0;
+}
+
+/* 基础按钮样式 */
+.switch-order-btn {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+  padding: 0 15px;
+  border-radius: 4px;
+  font-size: 12px;
+  height: 28px;
+  min-width: 85px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+/* 普通按钮hover效果 */
+.switch-order-btn:not(.complete-btn):hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 完成订单按钮样式 */
+.switch-order-btn.complete-btn {
+  background: linear-gradient(45deg, #67c23a 0%, #85ce61 100%);
+  border: 1px solid rgba(103, 194, 58, 0.2);
+  color: #fff;
+  font-weight: 500;
+}
+
+/* 完成订单按钮hover效果，提高优先级 */
+.order-item .switch-order-btn.complete-btn:hover {
+  border-color: rgba(103, 194, 58, 0.4);
+}
+
+/* 禁用和加载状态 */
+.switch-order-btn:disabled,
+.switch-order-btn.loading {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.loading-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #fff;
 }
 
 .floor-container {
@@ -1874,6 +2018,61 @@
   transition: all 0.3s ease;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+/* 添加切换订单按钮样式 */
+.switch-order-btn {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+  padding: 0 15px;
+  border-radius: 4px;
+  font-size: 12px;
+  height: 28px;
+  min-width: 85px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+/* 普通按钮hover效果 */
+.switch-order-btn:not(.complete-btn):hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 完成订单按钮样式 */
+.switch-order-btn.complete-btn {
+  background: linear-gradient(45deg, #67c23a 0%, #85ce61 100%);
+  border: 1px solid rgba(103, 194, 58, 0.2);
+  color: #fff;
+  font-weight: 500;
+}
+
+/* 完成订单按钮hover效果，提高优先级 */
+.order-item .switch-order-btn.complete-btn:hover {
+  border-color: rgba(103, 194, 58, 0.4);
+}
+
+/* 禁用和加载状态 */
+.switch-order-btn:disabled,
+.switch-order-btn.loading {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.loading-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #fff;
+}
 </style>
 
 <script>
@@ -1898,6 +2097,7 @@ export default {
           quantity: 10000,
           status: 'running',
           startTime: new Date(),
+          isLoading: false
         },
         {
           id: 'ORD2024002',
@@ -1905,6 +2105,7 @@ export default {
           quantity: 5000,
           status: 'pending',
           startTime: new Date(),
+          isLoading: false
         },
         {
           id: 'ORD2024003',
@@ -1912,6 +2113,7 @@ export default {
           quantity: 2000,
           status: 'completed',
           startTime: new Date(Date.now() - 24 * 60 * 60 * 1000),
+          isLoading: false
         },
       ],
       runningLogs: [
@@ -2327,6 +2529,29 @@ export default {
       this.draggedTray = null;
       this.dragSourceQueue = null;
       this.isDragging = false;
+    },
+    async switchOrder(order) {
+      // 设置加载状态
+      order.isLoading = true;
+      
+      try {
+        // 模拟API调用
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // 更新订单状态
+        if (order.status === 'pending') {
+          order.status = 'running';
+          this.$message.success(`订单 ${order.id} 已开始执行`);
+        } else if (order.status === 'running') {
+          order.status = 'completed';
+          this.$message.success(`订单 ${order.id} 已完成`);
+        }
+      } catch (error) {
+        this.$message.error('切换订单失败，请重试');
+      } finally {
+        // 清除加载状态
+        order.isLoading = false;
+      }
     }
   }
 };
