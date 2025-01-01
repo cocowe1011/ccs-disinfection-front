@@ -462,7 +462,7 @@
     <div class="side-info-panel-queue" :style="{'width' : isQueueExpanded? '800px': 'auto'}">
       <!-- 队列信息区域 -->
       <div class="queue-section" :class="{ 'expanded': isQueueExpanded }">
-        <div class="section-header" @click="isQueueExpanded = !isQueueExpanded">
+        <div class="section-header" @click="changeQueueExpanded">
           <template v-if="isQueueExpanded">
             <span><i class="el-icon-s-data"></i> 队列信息</span>
             <span class="arrow-icon" :class="{'expanded-arrow': isQueueExpanded}">▼</span>
@@ -484,28 +484,40 @@
                 @dragover.prevent
                 @drop="handleDrop(index)"
               >
-                <span class="queue-name">{{ queue.name }}</span>
-                <span class="tray-count">{{ queue.trays.length }}</span>
+                <span class="queue-name">{{ queue.queueName }}</span>
+                <span class="tray-count">{{ queue.trayInfo?.length || 0 }}</span>
               </div>
             </div>
             
             <!-- 右侧托盘列表 -->
             <div class="queue-container-right">
               <div class="selected-queue-header" v-if="selectedQueue">
-                <h3>{{ selectedQueue.name }}</h3>
-                <span class="tray-total">托盘数量: {{ nowTrays.length }}</span>
+                <h3>{{ selectedQueue.queueName }}</h3>
+                <span class="tray-total">托盘数量: {{ selectedQueue.trayInfo?.length || 0 }}</span>
               </div>
               <div class="tray-list">
-                <div
-                  v-for="(tray, trayIndex) in nowTrays"
-                  :key="tray.id"
-                  class="tray-item"
-                  :class="{ 'dragging': isDragging && draggedTray?.id === tray.id }"
-                  draggable="true"
-                  @dragstart="handleDragStart($event, tray, selectedQueueIndex, trayIndex)"
-                  @dragend="handleDragEnd"
-                >
-                  <span class="tray-name">{{ tray.name }}</span>
+                <template v-if="nowTrays && nowTrays.length > 0">
+                  <div
+                    v-for="tray in nowTrays"
+                    :key="tray.id"
+                    class="tray-item"
+                    :class="{ 'dragging': isDragging && draggedTray?.id === tray.id }"
+                    draggable="true"
+                    @dragstart="handleDragStart($event, tray, selectedQueueIndex)"
+                    @dragend="handleDragEnd"
+                  >
+                    <div class="tray-info">
+                      <div class="tray-info-row">
+                        <span class="tray-name">{{ tray.name }}</span>
+                        <span class="tray-batch">批次号: {{ tray.batchId }}</span>
+                      </div>
+                      <span class="tray-time">{{ tray.time }}</span>
+                    </div>
+                  </div>
+                </template>
+                <div v-else class="empty-state">
+                  <i class="el-icon-box"></i>
+                  <p>暂无托盘信息</p>
                 </div>
               </div>
             </div>
@@ -857,85 +869,7 @@ export default {
           image: require('@/assets/cart.png')
         }
       ],
-      queues: [
-        { 
-          id: 1, 
-          name: '上货区', 
-          type: 'loading', 
-          trays: [
-            { id: 1, name: '托盘A-01', status: 'idle' },
-            { id: 2, name: '托盘A-02', status: 'idle' },
-            { id: 3, name: '托盘A-03', status: 'idle' },
-            { id: 4, name: '托盘A-04', status: 'idle' },
-            { id: 5, name: '托盘A-05', status: 'idle' }
-          ]
-        },
-        { 
-          id: 2, 
-          name: '缓冲1区', 
-          type: 'buffer', 
-          trays: [
-            { id: 6, name: '托盘B-01', status: 'waiting' },
-            { id: 7, name: '托盘B-02', status: 'waiting' },
-            { id: 8, name: '托盘B-03', status: 'waiting' }
-          ] 
-        },
-        // 预热区 A1-G2
-        ...Array.from({ length: 14 }, (_, i) => {
-          const row = String.fromCharCode(65 + (i % 7)); // A-G
-          const col = Math.floor(i / 7) + 1; // 1-2
-          return {
-            id: i + 3,
-            name: `${row}${col}`,
-            type: 'preheat',
-            trays: i % 3 === 0 ? [ // 每隔三个区域添加一些托盘
-              { id: 20 + i * 2, name: `托盘P-${row}${col}-01`, status: 'heating' },
-              { id: 21 + i * 2, name: `托盘P-${row}${col}-02`, status: 'heating' }
-            ] : []
-          };
-        }),
-        { 
-          id: 17, 
-          name: '缓冲2区', 
-          type: 'buffer', 
-          trays: [
-            { id: 50, name: '托盘C-01', status: 'waiting' },
-            { id: 51, name: '托盘C-02', status: 'waiting' },
-            { id: 52, name: '托盘C-03', status: 'waiting' },
-            { id: 53, name: '托盘C-04', status: 'waiting' }
-          ] 
-        },
-        // 消毒区 1#-7#
-        ...Array.from({ length: 7 }, (_, i) => ({
-          id: i + 18,
-          name: `${i + 1}#`,
-          type: 'sterilize',
-          trays: i % 2 === 0 ? [ // 偶数消毒添加托盘
-            { id: 60 + i * 3, name: `托盘S-${i + 1}-01`, status: 'sterilizing' },
-            { id: 61 + i * 3, name: `托盘S-${i + 1}-02`, status: 'sterilizing' },
-            { id: 62 + i * 3, name: `托盘S-${i + 1}-03`, status: 'sterilizing' }
-          ] : []
-        })),
-        { 
-          id: 25, 
-          name: '缓冲3区', 
-          type: 'buffer', 
-          trays: [
-            { id: 90, name: '托盘D-01', status: 'waiting' },
-            { id: 91, name: '托盘D-02', status: 'waiting' }
-          ] 
-        },
-        { 
-          id: 26, 
-          name: '下货区', 
-          type: 'unloading', 
-          trays: [
-            { id: 95, name: '托盘E-01', status: 'completed' },
-            { id: 96, name: '托盘E-02', status: 'completed' },
-            { id: 97, name: '托盘E-03', status: 'completed' }
-          ] 
-        }
-      ],
+      queues: [],
       nowTrays: [],
       draggedTray: null,
       dragSourceQueue: null,
@@ -981,8 +915,29 @@ export default {
     this.updateTime();
     setInterval(this.updateTime, 1000);
     this.initializeMarkers();
+    this.queryQueueList();
   },
   methods: {
+    changeQueueExpanded() {
+      this.isQueueExpanded = !this.isQueueExpanded;
+      this.queryQueueList();
+    },
+    queryQueueList() {
+      HttpUtil.post('/queue_info/queryQueueList', {}).then((res)=> {
+        // 处理队列数据，解析trayInfo
+        const processedQueues = res.data.map(queue => ({
+          ...queue,
+          trayInfo: queue.trayInfo ? JSON.parse(queue.trayInfo) : []
+        }));
+        this.queues = processedQueues;
+        // 如果当前没有选中的队列，默认选中第一个
+        if (this.selectedQueueIndex === 0) {
+          this.showTrays(0);
+        }
+      }).catch((err)=> {
+        this.$message.error('查询队列失败，请重试' + err);
+      })
+    },
     toggleButtonState(button) {
       this.buttonStates = {
         start: false,
@@ -1014,15 +969,6 @@ export default {
         '3': '已完成'
       };
       return statusMap[status] || status;
-    },
-    formatDateTime(date) {
-      return new Date(date).toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
     },
     updateTime() {
       this.currentTime = new Date().toLocaleString('zh-CN', {
@@ -1104,10 +1050,31 @@ export default {
       return cart ? cart.currentPosition : null;
     },
     showTrays(index) {
+      if (index < 0 || index >= this.queues.length) return;
+      
       this.selectedQueueIndex = index;
-      this.nowTrays = this.queues[index].trays;
+      const selectedQueue = this.queues[index];
+      
+      if (!selectedQueue) {
+        this.nowTrays = [];
+        return;
+      }
+
+      try {
+        this.nowTrays = selectedQueue.trayInfo?.map(tray => ({
+          id: tray.trayCode,
+          name: `托盘 ${tray.trayCode}`,
+          time: tray.traytime,
+          batchId: tray.batchId || '--'  // 添加batchId
+        })) || [];
+      } catch (error) {
+        console.error('处理托盘信息时出错:', error);
+        this.nowTrays = [];
+      }
     },
-    handleDragStart(event, tray, queueIndex, trayIndex) {
+    handleDragStart(event, tray, queueIndex) {
+      if (!tray || queueIndex === undefined) return;
+
       this.isDragging = true;
       this.draggedTray = tray;
       this.dragSourceQueue = queueIndex;
@@ -1130,15 +1097,32 @@ export default {
       const sourceQueue = this.queues[this.dragSourceQueue];
       const targetQueue = this.queues[targetQueueIndex];
 
-      const trayIndex = sourceQueue.trays.findIndex(t => t.id === this.draggedTray.id);
-      if (trayIndex > -1) {
-        sourceQueue.trays.splice(trayIndex, 1);
+      // 检查源队列和目标队列是否存在
+      if (!sourceQueue || !targetQueue) return;
+
+      // 确保源队列和目标队列的trayInfo都是数组
+      if (!Array.isArray(sourceQueue.trayInfo)) {
+        sourceQueue.trayInfo = [];
+      }
+      if (!Array.isArray(targetQueue.trayInfo)) {
+        targetQueue.trayInfo = [];
       }
 
-      targetQueue.trays.push(this.draggedTray);
+      // 从源队列中移除托盘
+      const trayIndex = sourceQueue.trayInfo.findIndex(t => t.trayCode === this.draggedTray.id);
+      if (trayIndex > -1) {
+        const [movedTray] = sourceQueue.trayInfo.splice(trayIndex, 1);
+        // 添加到目标队列
+        targetQueue.trayInfo.push(movedTray);
 
+        // 更新后端数据
+        this.updateQueueTrays(sourceQueue.id, sourceQueue.trayInfo);
+        this.updateQueueTrays(targetQueue.id, targetQueue.trayInfo);
+      }
+
+      // 更新显示
       if (this.selectedQueueIndex === targetQueueIndex) {
-        this.nowTrays = targetQueue.trays;
+        this.showTrays(targetQueueIndex);
       }
 
       this.draggedTray = null;
@@ -1346,6 +1330,18 @@ export default {
       this.currentQrCode3B = '';
       this.currentQrCodeUpload = '';
       this.currentUploadQrCode = '';
+    },
+    // 添加更新队列托盘的方法
+    updateQueueTrays(queueId, trayInfo) {
+      const param = {
+        id: queueId,
+        trayInfo: JSON.stringify(trayInfo)
+      };
+      HttpUtil.post('/queue_info/update', param).catch(err => {
+        this.$message.error('更新队列信息失败');
+        // 失败后刷新队列列表
+        this.queryQueueList();
+      });
     },
   }
 };
@@ -2661,15 +2657,11 @@ export default {
   align-items: center;
   background: rgba(48, 65, 85, 0.9);
   border-radius: 8px;
-  padding: 10px 12px;
+  padding: 12px 15px;
   margin-bottom: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
   border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.queue:last-child {
-  margin-bottom: 0;
 }
 
 .queue:hover {
@@ -2681,13 +2673,6 @@ export default {
 .queue.active {
   background: rgba(10, 197, 168, 0.15);
   border-color: rgba(10, 197, 168, 0.5);
-  transform: none;
-}
-
-.queue-name {
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 14px;
 }
 
 .tray-count {
@@ -2716,12 +2701,7 @@ export default {
 .tray-item:hover {
   background: rgba(48, 65, 85, 1);
   border-color: rgba(10, 197, 168, 0.5);
-}
-
-.tray-item .tray-name {
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 14px;
+  transform: translateX(2px);
 }
 
 .tray-item.dragging {
@@ -3139,5 +3119,39 @@ export default {
   background: rgba(10, 197, 168, 0.3);
   border-color: rgba(10, 197, 168, 0.5);
   color: #fff;
+}
+
+.tray-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.tray-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.tray-name {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+}
+
+.tray-batch {
+  font-size: 12px;
+  color: #0ac5a8;
+  background: rgba(10, 197, 168, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.tray-time {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
 }
 </style>
