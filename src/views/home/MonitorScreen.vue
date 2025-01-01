@@ -78,20 +78,23 @@
               >
                 历史订单
               </div>
+              <div class="refresh-btn" @click="refreshOrders" :class="{ 'is-loading': isRefreshing }">
+                <i class="el-icon-refresh"></i>
+              </div>
             </div>
           </div>
           <div class="scrollable-content">
             <div class="order-list">
               <div 
                 v-for="order in ordersList" 
-                :key="order.id"
+                :key="order.orderId"
                 class="order-item"
-                :class="order.status"
+                :class="order.orderStatus === '0' ? 'pending' : order.orderStatus === '1' ? 'running' : order.orderStatus === '2' ? 'paused' : 'complete'"
               >
                 <div class="order-main">
                   <div class="order-header">
-                    <span class="order-id">{{ order.id }}</span>
-                    <span class="order-status">{{ getStatusText(order.status) }}</span>
+                    <span class="order-id">{{ order.orderId }}</span>
+                    <span class="order-status">{{ getStatusText(order.orderStatus) }}</span>
                   </div>
                   <div class="order-info">
                     <div class="info-row">
@@ -103,30 +106,30 @@
                     <div class="info-row">
                       <div class="info-item">
                         <span class="info-label">订单时间</span>
-                        <span class="info-value">{{ formatDateTime(order.startTime) }}</span>
+                        <span class="info-value">{{ order.insertTime }}</span>
                       </div>
                     </div>
                   </div>
                 </div>
                 <button 
-                  v-if="order.status === 'pending'"
+                  v-if="order.orderStatus === '0'"
                   class="switch-order-btn" 
                   :class="{ 'loading': order.isLoading }"
                   @click="switchOrder(order)"
                   :disabled="order.isLoading"
                 >
                   <i v-if="order.isLoading" class="el-icon-loading"></i>
-                  <span>{{ order.isLoading ? '切换中' : '切换订单' }}</span>
+                  <span>切换订单</span>
                 </button>
                 <button 
-                  v-if="order.status === 'running'"
+                  v-if="order.orderStatus === '1'"
                   class="switch-order-btn complete-btn" 
                   :class="{ 'loading': order.isLoading }"
-                  @click="switchOrder(order)"
+                  @click="finishOrder(order)"
                   :disabled="order.isLoading"
                 >
                   <i v-if="order.isLoading" class="el-icon-loading"></i>
-                  <span>{{ order.isLoading ? '切换中' : '完成订单' }}</span>
+                  <span>完成订单</span>
                 </button>
               </div>
             </div>
@@ -539,6 +542,8 @@
 </template>
 
 <script>
+import HttpUtil from '@/utils/HttpUtil'
+import moment from 'moment';
 export default {
   name: 'MonitorScreen',
   data() {
@@ -781,7 +786,8 @@ export default {
       dragSourceQueue: null,
       isQueueExpanded: false,
       selectedQueueIndex: 0,
-      isDragging: false
+      isDragging: false,
+      isRefreshing: false
     };
   },
   computed: {
@@ -826,9 +832,10 @@ export default {
     },
     getStatusText(status) {
       const statusMap = {
-        pending: '待执行',
-        running: '正在执行',
-        completed: '已执行'
+        '0': '待执行',
+        '1': '正在执行',
+        '2': '已暂停',
+        '3': '已完成'
       };
       return statusMap[status] || status;
     },
@@ -965,25 +972,55 @@ export default {
     async switchOrder(order) {
       // 设置加载状态
       order.isLoading = true;
-      
-      try {
-        // 模拟API调用
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // 更新订单状态
-        if (order.status === 'pending') {
-          order.status = 'running';
-          this.$message.success(`订单 ${order.id} 已开始执行`);
-        } else if (order.status === 'running') {
-          order.status = 'completed';
-          this.$message.success(`订单 ${order.id} 已完成`);
-        }
-      } catch (error) {
-        this.$message.error('切换订单失败，请重试');
-      } finally {
-        // 清除加载状态
-        order.isLoading = false;
+      const param = {
+        id: order.id,
+        orderStatus: '1'
       }
+      await HttpUtil.post('/order_info/update', param).then((res)=> {
+        if(res.code === '200') {
+          this.$message.success(`订单 ${order.id} 已开始执行`);
+          this.refreshOrders();
+        } else {
+          this.$message.error('启动订单失败，请重试');
+          order.isLoading = false;
+        }
+      }).catch((err)=> {
+        this.$message.error('启动订单失败，请重试');
+        order.isLoading = false;
+      })
+    },
+    async finishOrder(order) {
+      // 设置加载状态
+      order.isLoading = true;
+      const param = {
+        id: order.id,
+        orderStatus: '3'
+      }
+      await HttpUtil.post('/order_info/update', param).then((res)=> {
+        if(res.code === '200') {
+          this.$message.success(`订单 ${order.id} 已完成`);
+          this.refreshOrders();
+        } else {
+          this.$message.error('完成订单失败，请重试');
+          order.isLoading = false;
+        }
+      }).catch((err)=> {
+        this.$message.error('完成订单失败，请重试');
+        order.isLoading = false;
+      })
+    },
+    async refreshOrders() {
+      if (this.isRefreshing) return;
+      this.isRefreshing = true;
+      // 刷新订单 列表
+      await HttpUtil.post('/order_info/queryOrderList', {}).then((res)=> {
+        this.ordersList = res.data;
+        this.$message.success('订单列表已更新');
+      }).catch((err)=> {
+        this.$message.error('刷新订单列表失败，请重试');
+      }).finally(()=> {
+        this.isRefreshing = false;
+      });
     }
   }
 };
@@ -2522,5 +2559,41 @@ export default {
   height: 14px;
   border: 2px solid rgba(255, 255, 255, 0.2);
   border-top-color: #fff;
+}
+
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-left: 8px;
+  background: rgba(10, 197, 168, 0.2);
+}
+
+.refresh-btn:hover {
+  background: rgba(10, 197, 168, 0.3);
+}
+
+.refresh-btn i {
+  font-size: 16px;
+  color: #0ac5a8;
+  transition: all 0.3s ease;
+}
+
+.refresh-btn.is-loading i {
+  animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
