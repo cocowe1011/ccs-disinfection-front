@@ -663,6 +663,55 @@
               </div>
             </div>
           </div>
+          <!-- 添加队列托盘批量移动测试部分 -->
+          <div class="test-section">
+            <span class="test-label">队列托盘批量移动:</span>
+            <div class="queue-move-container">
+              <div class="queue-select-group">
+                <div class="queue-move-label">源队列:</div>
+                <el-select v-model="queueMoveForm.sourceQueueId" size="small" placeholder="请选择源队列">
+                  <el-option
+                    v-for="queue in queues"
+                    :key="queue.id"
+                    :label="queue.queueName"
+                    :value="queue.id"
+                  ></el-option>
+                </el-select>
+              </div>
+              <div class="queue-select-group">
+                <div class="queue-move-label">目标队列:</div>
+                <el-select v-model="queueMoveForm.targetQueueId" size="small" placeholder="请选择目标队列">
+                  <el-option
+                    v-for="queue in queues"
+                    :key="queue.id"
+                    :label="queue.queueName"
+                    :value="queue.id"
+                  ></el-option>
+                </el-select>
+              </div>
+              <div class="queue-move-actions">
+                <el-button 
+                  type="primary" 
+                  size="small" 
+                  @click="moveAllTrays"
+                  :disabled="!queueMoveForm.sourceQueueId || !queueMoveForm.targetQueueId || queueMoveForm.sourceQueueId === queueMoveForm.targetQueueId"
+                >移动全部托盘</el-button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 添加托盘到上货区测试部分 -->
+          <div class="test-section">
+            <span class="test-label">托盘上货区操作:</span>
+            <div class="upload-area-actions">
+              <el-button 
+                type="primary" 
+                size="small" 
+                @click="addCurrentTraysToQueue"
+                :disabled="!currentOrder || !currentOrder.qrCode"
+              >添加托盘到上货区</el-button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -946,6 +995,10 @@ export default {
           { min: 1, max: 50, message: '长度在 1 到 50 个字符', trigger: 'blur' }
         ]
       },
+      queueMoveForm: {
+        sourceQueueId: '',
+        targetQueueId: ''
+      },
     };
   },
   computed: {
@@ -1128,7 +1181,7 @@ export default {
         this.nowTrays = trayInfo.map(tray => ({
           id: tray.trayCode || '',
           name: tray.trayCode ? `托盘 ${tray.trayCode}` : '未知托盘',
-          time: tray.traytime || '',
+          time: tray.trayTime || '',
           batchId: tray.batchId || '--'
         })).filter(tray => tray.id); // 过滤掉没有 id 的托盘
       } catch (error) {
@@ -1485,7 +1538,7 @@ export default {
         const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
         const newTray = {
           trayCode: this.newTrayForm.trayCode,
-          traytime: currentTime,
+          trayTime: currentTime,
           batchId: this.newTrayForm.batchId
         };
 
@@ -1511,6 +1564,106 @@ export default {
         }
       } finally {
         this.isSubmitting = false;
+      }
+    },
+    // 添加托盘到上货区队列的方法
+    async addCurrentTraysToQueue() {
+      if (!this.currentOrder || !this.currentOrder.qrCode) {
+        this.$message.warning('当前没有运行中的订单或托盘信息为空');
+        return;
+      }
+      
+      try {
+        // 拆分托盘信息
+        const trays = this.currentOrder.qrCode.split(',');
+        const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
+        
+        // 确保上货区队列存在且trayInfo是数组
+        if (!this.queues[0]) {
+          this.$message.error('上货区队列不存在');
+          return;
+        }
+        
+        if (!Array.isArray(this.queues[0].trayInfo)) {
+          this.queues[0].trayInfo = [];
+        }
+        
+        // 将托盘添加到上货区队列
+        trays.forEach(tray => {
+          if (tray && tray.trim()) {
+            const newTray = {
+              trayCode: tray.trim(),
+              trayTime: currentTime,
+              batchId: this.currentOrder.orderId
+            };
+            this.queues[0].trayInfo.push(newTray);
+          }
+        });
+
+        // 更新数据库
+        await this.updateQueueTrays(this.queues[0].id, this.queues[0].trayInfo);
+        
+        // 刷新队列显示
+        await this.queryQueueList();
+        
+        this.$message.success(`成功添加 ${trays.length} 个托盘到上货区队列`);
+      } catch (error) {
+        console.error('添加托盘失败:', error);
+        this.$message.error('添加托盘失败，请重试');
+      }
+    },
+    // 批量移动托盘的方法
+    async moveAllTrays() {
+      try {
+        // 找到源队列和目标队列
+        const sourceQueue = this.queues.find(q => q.id === this.queueMoveForm.sourceQueueId);
+        const targetQueue = this.queues.find(q => q.id === this.queueMoveForm.targetQueueId);
+        
+        if (!sourceQueue || !targetQueue) {
+          this.$message.error('队列不存在');
+          return;
+        }
+
+        // 确保两个队列的trayInfo都是数组
+        sourceQueue.trayInfo = Array.isArray(sourceQueue.trayInfo) ? sourceQueue.trayInfo : [];
+        targetQueue.trayInfo = Array.isArray(targetQueue.trayInfo) ? targetQueue.trayInfo : [];
+
+        if (sourceQueue.trayInfo.length === 0) {
+          this.$message.warning('源队列没有托盘可移动');
+          return;
+        }
+
+        // 确认是否移动
+        await this.$confirm(`确认要将 ${sourceQueue.queueName} 的所有托盘(${sourceQueue.trayInfo.length}个)移动到 ${targetQueue.queueName} 吗？`, '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        });
+
+        // 将源队列的所有托盘添加到目标队列
+        targetQueue.trayInfo = [...targetQueue.trayInfo, ...sourceQueue.trayInfo];
+        // 清空源队列
+        sourceQueue.trayInfo = [];
+
+        // 更新数据库
+        await Promise.all([
+          this.updateQueueTrays(sourceQueue.id, sourceQueue.trayInfo),
+          this.updateQueueTrays(targetQueue.id, targetQueue.trayInfo)
+        ]);
+
+        // 刷新队列列表
+        await this.queryQueueList();
+
+        this.$message.success('托盘批量移动成功');
+        
+        // 重置表单
+        this.queueMoveForm.sourceQueueId = '';
+        this.queueMoveForm.targetQueueId = '';
+      } catch (error) {
+        if (error !== 'cancel') {
+          console.error('移动托盘失败:', error);
+          this.$message.error('移动托盘失败，请重试');
+        }
       }
     },
   }
@@ -2500,6 +2653,7 @@ export default {
   right: 50px;
   top: 0;
   width: 300px;
+  max-height: 80vh; /* 限制最大高度为视窗高度的80% */
   background: rgba(30, 42, 56, 0.98);
   border: 1px solid rgba(10, 197, 168, 0.3);
   border-radius: 15px;
@@ -2508,6 +2662,8 @@ export default {
   transform-origin: top right;
   opacity: 1;
   transform: scale(1);
+  display: flex;
+  flex-direction: column;
 }
 
 .test-panel.collapsed {
@@ -2520,13 +2676,32 @@ export default {
   padding: 15px;
   background: rgba(10, 197, 168, 0.3);
   border-radius: 15px 15px 0 0;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
   color: #0ac5a8;
   font-weight: bold;
   pointer-events: auto;
+  flex-shrink: 0;
+}
+
+/* 添加滚动条样式 */
+.test-panel-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.test-panel-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+}
+
+.test-panel-content::-webkit-scrollbar-thumb {
+  background: rgba(10, 197, 168, 0.3);
+  border-radius: 2px;
+}
+
+.test-panel-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(10, 197, 168, 0.5);
 }
 
 .test-panel-header i {
@@ -2536,13 +2711,6 @@ export default {
 
 .test-panel-header i.rotated {
   transform: rotate(180deg);
-}
-
-.test-panel-content {
-  padding: 15px;
-  max-height: 100%;
-  overflow-y: auto;
-  pointer-events: auto;
 }
 
 .test-section {
@@ -2633,6 +2801,7 @@ export default {
   right: 50px;
   top: 0;
   width: 300px;
+  max-height: 80vh; /* 限制最大高度为视窗高度的80% */
   background: rgba(30, 42, 56, 0.98);
   border: 1px solid rgba(10, 197, 168, 0.3);
   border-radius: 15px;
@@ -2641,6 +2810,8 @@ export default {
   transform-origin: top right;
   opacity: 1;
   transform: scale(1);
+  display: flex;
+  flex-direction: column;
 }
 
 .test-panel.collapsed {
@@ -2659,6 +2830,33 @@ export default {
   color: #0ac5a8;
   font-weight: bold;
   pointer-events: auto;
+  flex-shrink: 0;
+}
+
+.test-panel-content {
+  padding: 15px;
+  overflow-y: auto;
+  pointer-events: auto;
+  flex: 1;
+}
+
+/* 添加滚动条样式 */
+.test-panel-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.test-panel-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+}
+
+.test-panel-content::-webkit-scrollbar-thumb {
+  background: rgba(10, 197, 168, 0.3);
+  border-radius: 2px;
+}
+
+.test-panel-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(10, 197, 168, 0.5);
 }
 
 .test-panel-header i {
@@ -2668,13 +2866,6 @@ export default {
 
 .test-panel-header i:hover {
   color: #ff4d4f;
-}
-
-.test-panel-content {
-  padding: 15px;
-  max-height: 100%;
-  overflow-y: auto;
-  pointer-events: auto;
 }
 
 .test-section {
@@ -3178,26 +3369,6 @@ export default {
   border-color: #0ac5a8 !important;
 }
 
-.el-select-dropdown {
-  background: rgba(30, 42, 56, 0.95) !important;
-  border: 1px solid rgba(10, 197, 168, 0.3) !important;
-  border-radius: 4px !important;
-}
-
-.el-select-dropdown__item {
-  color: #fff !important;
-}
-
-.el-select-dropdown__item.hover, 
-.el-select-dropdown__item:hover {
-  background: rgba(10, 197, 168, 0.2) !important;
-}
-
-.el-select-dropdown__item.selected {
-  background: rgba(10, 197, 168, 0.3) !important;
-  color: #0ac5a8 !important;
-}
-
 /* 添加空状态样式 */
 .empty-state {
   display: flex;
@@ -3365,5 +3536,64 @@ export default {
 
 .tray-item:hover .el-button {
   opacity: 1;
+}
+
+/* 添加队列移动相关样式 */
+.queue-move-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.queue-select-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.queue-move-label {
+  width: 60px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: right;
+}
+
+.queue-move-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 8px;
+}
+
+.upload-area-actions {
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+}
+
+.upload-area-actions .el-button {
+  background: rgba(10, 197, 168, 0.2);
+  border: 1px solid rgba(10, 197, 168, 0.3);
+  color: #0ac5a8;
+  width: 100%;
+}
+
+.upload-area-actions .el-button:hover:not(:disabled) {
+  background: rgba(10, 197, 168, 0.3);
+  border-color: rgba(10, 197, 168, 0.5);
+  color: #fff;
+}
+
+.upload-area-actions .el-button:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.4);
+  cursor: not-allowed;
 }
 </style>
