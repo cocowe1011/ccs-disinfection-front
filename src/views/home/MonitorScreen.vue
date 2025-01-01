@@ -493,7 +493,18 @@
             <div class="queue-container-right">
               <div class="selected-queue-header" v-if="selectedQueue">
                 <h3>{{ selectedQueue.queueName }}</h3>
-                <span class="tray-total">托盘数量: {{ selectedQueue.trayInfo?.length || 0 }}</span>
+                <div class="queue-header-actions">
+                  <el-button 
+                    type="primary" 
+                    size="small" 
+                    @click="showAddTrayDialog"
+                    :disabled="!selectedQueue"
+                    icon="el-icon-plus"
+                  >
+                    添加托盘
+                  </el-button>
+                  <span class="tray-total">托盘数量: {{ selectedQueue.trayInfo?.length || 0 }}</span>
+                </div>
               </div>
               <div class="tray-list">
                 <template v-if="nowTrays && nowTrays.length > 0">
@@ -513,6 +524,13 @@
                       </div>
                       <span class="tray-time">{{ tray.time }}</span>
                     </div>
+                    <el-button
+                      type="danger"
+                      size="mini"
+                      icon="el-icon-delete"
+                      circle
+                      @click.stop="deleteTray(tray)"
+                    ></el-button>
                   </div>
                 </template>
                 <div v-else class="empty-state">
@@ -705,6 +723,30 @@
         </div>
       </div>
     </el-dialog>
+
+    <!-- 添加托盘对话框 -->
+    <el-dialog
+      title="添加托盘"
+      :visible.sync="addTrayDialogVisible"
+      width="500px"
+      append-to-body
+      :close-on-click-modal="false"
+    >
+      <div class="add-tray-form">
+        <el-form :model="newTrayForm" ref="newTrayForm" label-width="100px" :rules="trayFormRules">
+          <el-form-item label="托盘编号" prop="trayCode">
+            <el-input v-model="newTrayForm.trayCode" placeholder="请输入托盘编号"></el-input>
+          </el-form-item>
+          <el-form-item label="批次号" prop="batchId">
+            <el-input v-model="newTrayForm.batchId" placeholder="请输入批次号"></el-input>
+          </el-form-item>
+        </el-form>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="addTrayDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="submitAddTray" :loading="isSubmitting">确 定</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -888,6 +930,22 @@ export default {
       currentQrCode3B: '',  // 三楼B点位扫码信息
       currentQrCodeUpload: '',  // 上货扫码区域信息
       currentUploadQrCode: '',  // 上货点扫码信息
+      addTrayDialogVisible: false,
+      isSubmitting: false,
+      newTrayForm: {
+        trayCode: '',
+        batchId: ''
+      },
+      trayFormRules: {
+        trayCode: [
+          { required: true, message: '请输入托盘编号', trigger: 'blur' },
+          { min: 1, max: 50, message: '长度在 1 到 50 个字符', trigger: 'blur' }
+        ],
+        batchId: [
+          { required: true, message: '请输入批次号', trigger: 'blur' },
+          { min: 1, max: 50, message: '长度在 1 到 50 个字符', trigger: 'blur' }
+        ]
+      },
     };
   },
   computed: {
@@ -1050,7 +1108,10 @@ export default {
       return cart ? cart.currentPosition : null;
     },
     showTrays(index) {
-      if (index < 0 || index >= this.queues.length) return;
+      if (index < 0 || index >= this.queues.length) {
+        this.nowTrays = [];
+        return;
+      }
       
       this.selectedQueueIndex = index;
       const selectedQueue = this.queues[index];
@@ -1061,12 +1122,15 @@ export default {
       }
 
       try {
-        this.nowTrays = selectedQueue.trayInfo?.map(tray => ({
-          id: tray.trayCode,
-          name: `托盘 ${tray.trayCode}`,
-          time: tray.traytime,
-          batchId: tray.batchId || '--'  // 添加batchId
-        })) || [];
+        // 确保 trayInfo 是数组
+        const trayInfo = Array.isArray(selectedQueue.trayInfo) ? selectedQueue.trayInfo : [];
+        
+        this.nowTrays = trayInfo.map(tray => ({
+          id: tray.trayCode || '',
+          name: tray.trayCode ? `托盘 ${tray.trayCode}` : '未知托盘',
+          time: tray.traytime || '',
+          batchId: tray.batchId || '--'
+        })).filter(tray => tray.id); // 过滤掉没有 id 的托盘
       } catch (error) {
         console.error('处理托盘信息时出错:', error);
         this.nowTrays = [];
@@ -1090,44 +1154,74 @@ export default {
       this.isDragging = false;
       event.target.classList.remove('dragging');
     },
-    handleDrop(targetQueueIndex) {
-      if (!this.draggedTray || this.dragSourceQueue === null) return;
+    async handleDrop(targetQueueIndex) {
+      if (!this.draggedTray || this.dragSourceQueue === null || targetQueueIndex === null) return;
       if (this.dragSourceQueue === targetQueueIndex) return;
 
       const sourceQueue = this.queues[this.dragSourceQueue];
       const targetQueue = this.queues[targetQueueIndex];
 
       // 检查源队列和目标队列是否存在
-      if (!sourceQueue || !targetQueue) return;
+      if (!sourceQueue || !targetQueue) {
+        this.$message.error('队列不存在，无法移动托盘');
+        return;
+      }
 
       // 确保源队列和目标队列的trayInfo都是数组
-      if (!Array.isArray(sourceQueue.trayInfo)) {
-        sourceQueue.trayInfo = [];
-      }
-      if (!Array.isArray(targetQueue.trayInfo)) {
-        targetQueue.trayInfo = [];
-      }
+      sourceQueue.trayInfo = Array.isArray(sourceQueue.trayInfo) ? sourceQueue.trayInfo : [];
+      targetQueue.trayInfo = Array.isArray(targetQueue.trayInfo) ? targetQueue.trayInfo : [];
 
-      // 从源队列中移除托盘
-      const trayIndex = sourceQueue.trayInfo.findIndex(t => t.trayCode === this.draggedTray.id);
-      if (trayIndex > -1) {
+      try {
+        // 检查拖动的托盘是否有效
+        if (!this.draggedTray.id) {
+          throw new Error('托盘信息无效');
+        }
+
+        // 从源队列中移除托盘
+        const trayIndex = sourceQueue.trayInfo.findIndex(t => t.trayCode === this.draggedTray.id);
+        if (trayIndex === -1) {
+          throw new Error('找不到要移动的托盘');
+        }
+
         const [movedTray] = sourceQueue.trayInfo.splice(trayIndex, 1);
         // 添加到目标队列
         targetQueue.trayInfo.push(movedTray);
 
         // 更新后端数据
-        this.updateQueueTrays(sourceQueue.id, sourceQueue.trayInfo);
-        this.updateQueueTrays(targetQueue.id, targetQueue.trayInfo);
-      }
+        await Promise.all([
+          this.updateQueueTrays(sourceQueue.id, sourceQueue.trayInfo),
+          this.updateQueueTrays(targetQueue.id, targetQueue.trayInfo)
+        ]);
 
-      // 更新显示
-      if (this.selectedQueueIndex === targetQueueIndex) {
-        this.showTrays(targetQueueIndex);
-      }
+        // 刷新队列列表以确保数据同步
+        await this.queryQueueList();
 
-      this.draggedTray = null;
-      this.dragSourceQueue = null;
-      this.isDragging = false;
+        // 更新当前显示的队列
+        const currentQueueIndex = this.selectedQueueIndex;
+        if (currentQueueIndex === targetQueueIndex || currentQueueIndex === this.dragSourceQueue) {
+          this.$nextTick(() => {
+            this.showTrays(currentQueueIndex);
+          });
+        }
+
+        // 显示成功提示
+        this.$message({
+          type: 'success',
+          message: `托盘 ${movedTray.trayCode} 已成功移动到 ${targetQueue.queueName}`,
+          duration: 2000
+        });
+
+      } catch (error) {
+        console.error('移动托盘时出错:', error);
+        this.$message.error(error.message || '移动托盘失败，请重试');
+        
+        // 发生错误时刷新队列列表以恢复状态
+        await this.queryQueueList();
+      } finally {
+        this.draggedTray = null;
+        this.dragSourceQueue = null;
+        this.isDragging = false;
+      }
     },
     handleOrderStatusChange(order, newStatus) {
       // 更新订单状态
@@ -1342,6 +1436,82 @@ export default {
         // 失败后刷新队列列表
         this.queryQueueList();
       });
+    },
+    async deleteTray(tray) {
+      if (!this.selectedQueue) return;
+
+      try {
+        // 确认是否删除
+        await this.$confirm('确认要删除该托盘吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        });
+
+        // 从队列中移除托盘
+        const trayIndex = this.selectedQueue.trayInfo.findIndex(t => t.trayCode === tray.id);
+        if (trayIndex > -1) {
+          this.selectedQueue.trayInfo.splice(trayIndex, 1);
+
+          // 更新后端数据
+          await this.updateQueueTrays(this.selectedQueue.id, this.selectedQueue.trayInfo);
+
+          // 刷新显示
+          this.showTrays(this.selectedQueueIndex);
+
+          this.$message.success('托盘删除成功');
+        }
+      } catch (error) {
+        if (error !== 'cancel') {
+          this.$message.error('删除托盘失败，请重试');
+        }
+      }
+    },
+    showAddTrayDialog() {
+      this.addTrayDialogVisible = true;
+      this.newTrayForm = {
+        trayCode: '',
+        batchId: ''
+      };
+    },
+    async submitAddTray() {
+      if (!this.selectedQueue) return;
+
+      try {
+        // 表单验证
+        await this.$refs.newTrayForm.validate();
+        
+        this.isSubmitting = true;
+        const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
+        const newTray = {
+          trayCode: this.newTrayForm.trayCode,
+          traytime: currentTime,
+          batchId: this.newTrayForm.batchId
+        };
+
+        // 确保trayInfo是数组
+        if (!Array.isArray(this.selectedQueue.trayInfo)) {
+          this.selectedQueue.trayInfo = [];
+        }
+
+        // 添加新托盘
+        this.selectedQueue.trayInfo.push(newTray);
+
+        // 更新后端数据
+        await this.updateQueueTrays(this.selectedQueue.id, this.selectedQueue.trayInfo);
+
+        // 刷新显示
+        this.showTrays(this.selectedQueueIndex);
+
+        this.$message.success('托盘添加成功');
+        this.addTrayDialogVisible = false;
+      } catch (error) {
+        if (error !== 'cancel') {
+          this.$message.error('添加托盘失败，请重试');
+        }
+      } finally {
+        this.isSubmitting = false;
+      }
     },
   }
 };
@@ -3153,5 +3323,47 @@ export default {
 .tray-time {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.5);
+}
+
+.queue-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.queue-header-actions .el-button {
+  background: rgba(10, 197, 168, 0.2);
+  border: 1px solid rgba(10, 197, 168, 0.3);
+  color: #0ac5a8;
+}
+
+.queue-header-actions .el-button:hover:not(:disabled) {
+  background: rgba(10, 197, 168, 0.3);
+  border-color: rgba(10, 197, 168, 0.5);
+  color: #fff;
+}
+
+.queue-header-actions .el-button:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.tray-item {
+  position: relative;
+  padding-right: 50px;
+}
+
+.tray-item .el-button {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.tray-item:hover .el-button {
+  opacity: 1;
 }
 </style>
