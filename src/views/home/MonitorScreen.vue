@@ -83,7 +83,7 @@
           <div class="scrollable-content">
             <div class="order-list">
               <div 
-                v-for="order in displayOrders" 
+                v-for="order in ordersList" 
                 :key="order.id"
                 class="order-item"
                 :class="order.status"
@@ -538,6 +538,456 @@
   </div>
 </template>
 
+<script>
+export default {
+  name: 'MonitorScreen',
+  data() {
+    return {
+      showTestPanel: false,
+      buttonStates: {
+        start: false,
+        stop: false,
+        reset: false,
+        fault_reset: false,
+        clear: false
+      },
+      activeLogType: 'running',
+      activeOrderTab: 'current',
+      ordersList: [],
+      runningLogs: [
+        {
+          id: 1,
+          type: 'running',
+          message: '托盘A-01 从上货区移动到缓冲1区，等待预热处理',
+          timestamp: new Date().getTime() - 30000,
+          unread: false
+        },
+        {
+          id: 2,
+          type: 'running',
+          message: '托盘B-02 完成预热，从预热区A1移动到缓冲2区',
+          timestamp: new Date().getTime() - 25000,
+          unread: false
+        },
+        {
+          id: 3,
+          type: 'running',
+          message: '托盘C-03 开始消毒处理，预计持续时间30分钟',
+          timestamp: new Date().getTime() - 20000,
+          unread: false
+        },
+        {
+          id: 4,
+          type: 'running',
+          message: '系统自动调度：将托盘D-01从缓冲3区转移至下货区',
+          timestamp: new Date().getTime() - 15000,
+          unread: false
+        },
+        {
+          id: 5,
+          type: 'running',
+          message: '批次#12345生产任务开始执行，计划生产数量: 500个',
+          timestamp: new Date().getTime() - 10000,
+          unread: false
+        },
+        {
+          id: 6,
+          type: 'running',
+          message: '预热区A2温度已达标，开始执行预热程序',
+          timestamp: new Date().getTime() - 5000,
+          unread: false
+        }
+      ],
+      alarmLogs: [
+        {
+          id: 101,
+          type: 'alarm',
+          message: '【严重警告】预热区A1温度超出正常范围（当前: 85℃，正常: 60-80℃），请立即检查！',
+          timestamp: new Date().getTime() - 28000,
+          unread: true
+        },
+        {
+          id: 102,
+          type: 'alarm',
+          message: '【设备警告】消毒柜2#压力异常，当前压力值: 2.8MPa，超出正常范围',
+          timestamp: new Date().getTime() - 23000,
+          unread: true
+        },
+        {
+          id: 103,
+          type: 'alarm',
+          message: '【系统警告】缓冲1区托盘堆积，当前数量超过预警值（8/6），请及时处理',
+          timestamp: new Date().getTime() - 18000,
+          unread: true
+        },
+        {
+          id: 104,
+          type: 'alarm',
+          message: '【网络警告】与PLC通信延迟超过500ms，请检查网络连接状态',
+          timestamp: new Date().getTime() - 13000,
+          unread: true
+        },
+        {
+          id: 105,
+          type: 'alarm',
+          message: '【维护提醒】消毒柜1#已运行超过1000小时，请按计划进行维护保养',
+          timestamp: new Date().getTime() - 8000,
+          unread: true
+        }
+      ],
+      currentTime: '',
+      positions: {
+        cart1: {
+          A1: { x: 1220, y: 1740 },  // 最下面
+          A2: { x: 1085, y: 1740 },
+          A3: { x: 905, y: 1740 },  // 扫码位
+          A4: { x: 775, y: 1740 },   // 中间
+          A5: { x: 608, y: 1740 },
+          A6: { x: 478, y: 1740 },   // 最上面
+          A7: { x: 318, y: 1740 }     // 左边
+        },
+        cart2: {
+          A1: { x: 1210, y: 795 },
+          A2: { x: 1080, y: 795 },
+          A3: { x: 905, y: 795 },
+          A4: { x: 775, y: 795 },
+          A5: { x: 610, y: 795 },
+          A6: { x: 480, y: 795 },
+          A7: { x: 330, y: 795 }
+        },
+        cart3: {
+          A1: { x: 1210, y: 230 },
+          A2: { x: 1080, y: 230 },
+          A3: { x: 905, y: 230 },
+          A4: { x: 778, y: 230 },
+          A5: { x: 613, y: 230 },
+          A6: { x: 485, y: 230 },
+          A7: { x: 335, y: 230 }
+        }
+      },
+      carts: [
+        {
+          id: 1,
+          name: '小车1',
+          cartKey: 'cart1',  // 添加cartKey用于关联positions
+          currentPosition: 'A1',
+          x: 1220,
+          y: 1740,
+          width: 150,
+          image: require('@/assets/cart.png')
+        },
+        {
+          id: 2,
+          name: '小车2',
+          cartKey: 'cart2',
+          currentPosition: 'A1',
+          x: 1210,
+          y: 795,
+          width: 150,
+          image: require('@/assets/cart.png')
+        },
+        {
+          id: 3,
+          name: '小车3',
+          cartKey: 'cart3',
+          currentPosition: 'A1',
+          x: 1210,
+          y: 226,
+          width: 145,
+          image: require('@/assets/cart.png')
+        }
+      ],
+      queues: [
+        { 
+          id: 1, 
+          name: '上货区', 
+          type: 'loading', 
+          trays: [
+            { id: 1, name: '托盘A-01', status: 'idle' },
+            { id: 2, name: '托盘A-02', status: 'idle' },
+            { id: 3, name: '托盘A-03', status: 'idle' },
+            { id: 4, name: '托盘A-04', status: 'idle' },
+            { id: 5, name: '托盘A-05', status: 'idle' }
+          ]
+        },
+        { 
+          id: 2, 
+          name: '缓冲1区', 
+          type: 'buffer', 
+          trays: [
+            { id: 6, name: '托盘B-01', status: 'waiting' },
+            { id: 7, name: '托盘B-02', status: 'waiting' },
+            { id: 8, name: '托盘B-03', status: 'waiting' }
+          ] 
+        },
+        // 预热区 A1-G2
+        ...Array.from({ length: 14 }, (_, i) => {
+          const row = String.fromCharCode(65 + (i % 7)); // A-G
+          const col = Math.floor(i / 7) + 1; // 1-2
+          return {
+            id: i + 3,
+            name: `${row}${col}`,
+            type: 'preheat',
+            trays: i % 3 === 0 ? [ // 每隔三个区域添加一些托盘
+              { id: 20 + i * 2, name: `托盘P-${row}${col}-01`, status: 'heating' },
+              { id: 21 + i * 2, name: `托盘P-${row}${col}-02`, status: 'heating' }
+            ] : []
+          };
+        }),
+        { 
+          id: 17, 
+          name: '缓冲2区', 
+          type: 'buffer', 
+          trays: [
+            { id: 50, name: '托盘C-01', status: 'waiting' },
+            { id: 51, name: '托盘C-02', status: 'waiting' },
+            { id: 52, name: '托盘C-03', status: 'waiting' },
+            { id: 53, name: '托盘C-04', status: 'waiting' }
+          ] 
+        },
+        // 消毒区 1#-7#
+        ...Array.from({ length: 7 }, (_, i) => ({
+          id: i + 18,
+          name: `${i + 1}#`,
+          type: 'sterilize',
+          trays: i % 2 === 0 ? [ // 偶数消毒添加托盘
+            { id: 60 + i * 3, name: `托盘S-${i + 1}-01`, status: 'sterilizing' },
+            { id: 61 + i * 3, name: `托盘S-${i + 1}-02`, status: 'sterilizing' },
+            { id: 62 + i * 3, name: `托盘S-${i + 1}-03`, status: 'sterilizing' }
+          ] : []
+        })),
+        { 
+          id: 25, 
+          name: '缓冲3区', 
+          type: 'buffer', 
+          trays: [
+            { id: 90, name: '托盘D-01', status: 'waiting' },
+            { id: 91, name: '托盘D-02', status: 'waiting' }
+          ] 
+        },
+        { 
+          id: 26, 
+          name: '下货区', 
+          type: 'unloading', 
+          trays: [
+            { id: 95, name: '托盘E-01', status: 'completed' },
+            { id: 96, name: '托盘E-02', status: 'completed' },
+            { id: 97, name: '托盘E-03', status: 'completed' }
+          ] 
+        }
+      ],
+      nowTrays: [],
+      draggedTray: null,
+      dragSourceQueue: null,
+      isQueueExpanded: false,
+      selectedQueueIndex: 0,
+      isDragging: false
+    };
+  },
+  computed: {
+    currentLogs() {
+      return this.activeLogType === 'running' ? this.runningLogs : this.alarmLogs;
+    },
+    unreadAlarms() {
+      return this.alarmLogs.filter(log => log.unread).length;
+    },
+    selectedQueue() {
+      return this.queues[this.selectedQueueIndex];
+    }
+  },
+  mounted() {
+    this.updateTime();
+    setInterval(this.updateTime, 1000);
+    this.initializeMarkers();
+  },
+  methods: {
+    toggleButtonState(button) {
+      this.buttonStates = {
+        start: false,
+        stop: false,
+        reset: false,
+        fault_reset: false,
+        clear: false
+      };
+      this.buttonStates[button] = !this.buttonStates[button];
+    },
+    formatTime(timestamp) {
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString('zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    },
+    markAsRead(log) {
+      if (log.type === 'alarm') {
+        log.unread = false;
+      }
+    },
+    getStatusText(status) {
+      const statusMap = {
+        pending: '待执行',
+        running: '正在执行',
+        completed: '已执行'
+      };
+      return statusMap[status] || status;
+    },
+    formatDateTime(date) {
+      return new Date(date).toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    },
+    updateTime() {
+      this.currentTime = new Date().toLocaleString('zh-CN', {
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    },
+    initializeMarkers() {
+      this.$nextTick(() => {
+        this.updateMarkerPositions();
+        window.addEventListener('resize', this.updateMarkerPositions);
+      });
+    },
+    updateMarkerPositions() {
+      const images = document.querySelectorAll('.floor-image');
+      images.forEach(image => {
+        const imageWrapper = image.parentElement;
+        if (!imageWrapper) return;
+
+        const markers = imageWrapper.querySelectorAll('.marker, .marker-with-panel');
+        const carts = imageWrapper.querySelectorAll('.cart-container');
+        const imageRect = image.getBoundingClientRect();
+        const wrapperRect = imageWrapper.getBoundingClientRect();
+        
+        // 计算图片的实际显示区域
+        const displayedWidth = image.width;
+        const displayedHeight = image.height;
+        const scaleX = displayedWidth / image.naturalWidth;
+        const scaleY = displayedHeight / image.naturalHeight;
+        
+        // 计算图片在容器中的偏移量
+        const imageOffsetX = (wrapperRect.width - displayedWidth) / 2;
+        const imageOffsetY = (wrapperRect.height - displayedHeight) / 2;
+        
+        markers.forEach(marker => {
+          const x = parseFloat(marker.dataset.x);
+          const y = parseFloat(marker.dataset.y);
+          if (!isNaN(x) && !isNaN(y)) {
+            marker.style.left = `${imageOffsetX + (x * scaleX)}px`;
+            marker.style.top = `${imageOffsetY + (y * scaleY)}px`;
+          }
+        });
+
+        // 更新小车位置和大小
+        carts.forEach(cart => {
+          const x = parseFloat(cart.dataset.x);
+          const y = parseFloat(cart.dataset.y);
+          const width = parseFloat(cart.dataset.width);
+          if (!isNaN(x) && !isNaN(y)) {
+            cart.style.left = `${imageOffsetX + (x * scaleX)}px`;
+            cart.style.top = `${imageOffsetY + (y * scaleY)}px`;
+            // 设置小车宽度，使其适应导轨
+            if (!isNaN(width)) {
+              cart.style.width = `${width * scaleX}px`;
+            }
+          }
+        });
+      });
+    },
+    beforeDestroy() {
+      window.removeEventListener('resize', this.updateMarkerPositions);
+    },
+    updateCartPosition(cartId, position) {
+      const cart = this.carts.find(c => c.id === cartId);
+      if (cart && this.positions[cart.cartKey] && this.positions[cart.cartKey][position]) {
+        cart.currentPosition = position;
+        const newPos = this.positions[cart.cartKey][position];
+        cart.x = newPos.x;
+        cart.y = newPos.y;
+        this.$nextTick(() => {
+          this.updateMarkerPositions();
+        });
+      }
+    },
+    getCartPosition(cartId) {
+      const cart = this.carts.find(c => c.id === cartId);
+      return cart ? cart.currentPosition : null;
+    },
+    showTrays(index) {
+      this.selectedQueueIndex = index;
+      this.nowTrays = this.queues[index].trays;
+    },
+    handleDragStart(event, tray, queueIndex, trayIndex) {
+      this.isDragging = true;
+      this.draggedTray = tray;
+      this.dragSourceQueue = queueIndex;
+      
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', tray.id);
+      
+      setTimeout(() => {
+        event.target.classList.add('dragging');
+      }, 0);
+    },
+    handleDragEnd(event) {
+      this.isDragging = false;
+      event.target.classList.remove('dragging');
+    },
+    handleDrop(targetQueueIndex) {
+      if (!this.draggedTray || this.dragSourceQueue === null) return;
+      if (this.dragSourceQueue === targetQueueIndex) return;
+
+      const sourceQueue = this.queues[this.dragSourceQueue];
+      const targetQueue = this.queues[targetQueueIndex];
+
+      const trayIndex = sourceQueue.trays.findIndex(t => t.id === this.draggedTray.id);
+      if (trayIndex > -1) {
+        sourceQueue.trays.splice(trayIndex, 1);
+      }
+
+      targetQueue.trays.push(this.draggedTray);
+
+      if (this.selectedQueueIndex === targetQueueIndex) {
+        this.nowTrays = targetQueue.trays;
+      }
+
+      this.draggedTray = null;
+      this.dragSourceQueue = null;
+      this.isDragging = false;
+    },
+    async switchOrder(order) {
+      // 设置加载状态
+      order.isLoading = true;
+      
+      try {
+        // 模拟API调用
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // 更新订单状态
+        if (order.status === 'pending') {
+          order.status = 'running';
+          this.$message.success(`订单 ${order.id} 已开始执行`);
+        } else if (order.status === 'running') {
+          order.status = 'completed';
+          this.$message.success(`订单 ${order.id} 已完成`);
+        }
+      } catch (error) {
+        this.$message.error('切换订单失败，请重试');
+      } finally {
+        // 清除加载状态
+        order.isLoading = false;
+      }
+    }
+  }
+};
+</script>
 <style scoped>
 .smart-workshop {
   width: 100%;
@@ -2074,485 +2524,3 @@
   border-top-color: #fff;
 }
 </style>
-
-<script>
-export default {
-  name: 'MainPage',
-  data() {
-    return {
-      showTestPanel: false,
-      buttonStates: {
-        start: false,
-        stop: false,
-        reset: false,
-        fault_reset: false,
-        clear: false
-      },
-      activeLogType: 'running',
-      activeOrderTab: 'current',
-      orders: [
-        {
-          id: 'ORD2024001',
-          productName: '一次性口罩',
-          quantity: 10000,
-          status: 'running',
-          startTime: new Date(),
-          isLoading: false
-        },
-        {
-          id: 'ORD2024002',
-          productName: '医用手套',
-          quantity: 5000,
-          status: 'pending',
-          startTime: new Date(),
-          isLoading: false
-        },
-        {
-          id: 'ORD2024003',
-          productName: '防护服',
-          quantity: 2000,
-          status: 'completed',
-          startTime: new Date(Date.now() - 24 * 60 * 60 * 1000),
-          isLoading: false
-        },
-      ],
-      runningLogs: [
-        {
-          id: 1,
-          type: 'running',
-          message: '托盘A-01 从上货区移动到缓冲1区，等待预热处理',
-          timestamp: new Date().getTime() - 30000,
-          unread: false
-        },
-        {
-          id: 2,
-          type: 'running',
-          message: '托盘B-02 完成预热，从预热区A1移动到缓冲2区',
-          timestamp: new Date().getTime() - 25000,
-          unread: false
-        },
-        {
-          id: 3,
-          type: 'running',
-          message: '托盘C-03 开始消毒处理，预计持续时间30分钟',
-          timestamp: new Date().getTime() - 20000,
-          unread: false
-        },
-        {
-          id: 4,
-          type: 'running',
-          message: '系统自动调度：将托盘D-01从缓冲3区转移至下货区',
-          timestamp: new Date().getTime() - 15000,
-          unread: false
-        },
-        {
-          id: 5,
-          type: 'running',
-          message: '批次#12345生产任务开始执行，计划生产数量: 500个',
-          timestamp: new Date().getTime() - 10000,
-          unread: false
-        },
-        {
-          id: 6,
-          type: 'running',
-          message: '预热区A2温度已达标，开始执行预热程序',
-          timestamp: new Date().getTime() - 5000,
-          unread: false
-        }
-      ],
-      alarmLogs: [
-        {
-          id: 101,
-          type: 'alarm',
-          message: '【严重警告】预热区A1温度超出正常范围（当前: 85℃，正常: 60-80℃），请立即检查！',
-          timestamp: new Date().getTime() - 28000,
-          unread: true
-        },
-        {
-          id: 102,
-          type: 'alarm',
-          message: '【设备警告】消毒柜2#压力异常，当前压力值: 2.8MPa，超出正常范围',
-          timestamp: new Date().getTime() - 23000,
-          unread: true
-        },
-        {
-          id: 103,
-          type: 'alarm',
-          message: '【系统警告】缓冲1区托盘堆积，当前数量超过预警值（8/6），请及时处理',
-          timestamp: new Date().getTime() - 18000,
-          unread: true
-        },
-        {
-          id: 104,
-          type: 'alarm',
-          message: '【网络警告】与PLC通信延迟超过500ms，请检查网络连接状态',
-          timestamp: new Date().getTime() - 13000,
-          unread: true
-        },
-        {
-          id: 105,
-          type: 'alarm',
-          message: '【维护提醒】消毒柜1#已运行超过1000小时，请按计划进行维护保养',
-          timestamp: new Date().getTime() - 8000,
-          unread: true
-        }
-      ],
-      currentTime: '',
-      positions: {
-        cart1: {
-          A1: { x: 1220, y: 1740 },  // 最下面
-          A2: { x: 1085, y: 1740 },
-          A3: { x: 905, y: 1740 },  // 扫码位
-          A4: { x: 775, y: 1740 },   // 中间
-          A5: { x: 608, y: 1740 },
-          A6: { x: 478, y: 1740 },   // 最上面
-          A7: { x: 318, y: 1740 }     // 左边
-        },
-        cart2: {
-          A1: { x: 1210, y: 795 },
-          A2: { x: 1080, y: 795 },
-          A3: { x: 905, y: 795 },
-          A4: { x: 775, y: 795 },
-          A5: { x: 610, y: 795 },
-          A6: { x: 480, y: 795 },
-          A7: { x: 330, y: 795 }
-        },
-        cart3: {
-          A1: { x: 1210, y: 230 },
-          A2: { x: 1080, y: 230 },
-          A3: { x: 905, y: 230 },
-          A4: { x: 778, y: 230 },
-          A5: { x: 613, y: 230 },
-          A6: { x: 485, y: 230 },
-          A7: { x: 335, y: 230 }
-        }
-      },
-      carts: [
-        {
-          id: 1,
-          name: '小车1',
-          cartKey: 'cart1',  // 添加cartKey用于关联positions
-          currentPosition: 'A1',
-          x: 1220,
-          y: 1740,
-          width: 150,
-          image: require('@/assets/cart.png')
-        },
-        {
-          id: 2,
-          name: '小车2',
-          cartKey: 'cart2',
-          currentPosition: 'A1',
-          x: 1210,
-          y: 795,
-          width: 150,
-          image: require('@/assets/cart.png')
-        },
-        {
-          id: 3,
-          name: '小车3',
-          cartKey: 'cart3',
-          currentPosition: 'A1',
-          x: 1210,
-          y: 226,
-          width: 145,
-          image: require('@/assets/cart.png')
-        }
-      ],
-      queues: [
-        { 
-          id: 1, 
-          name: '上货区', 
-          type: 'loading', 
-          trays: [
-            { id: 1, name: '托盘A-01', status: 'idle' },
-            { id: 2, name: '托盘A-02', status: 'idle' },
-            { id: 3, name: '托盘A-03', status: 'idle' },
-            { id: 4, name: '托盘A-04', status: 'idle' },
-            { id: 5, name: '托盘A-05', status: 'idle' }
-          ]
-        },
-        { 
-          id: 2, 
-          name: '缓冲1区', 
-          type: 'buffer', 
-          trays: [
-            { id: 6, name: '托盘B-01', status: 'waiting' },
-            { id: 7, name: '托盘B-02', status: 'waiting' },
-            { id: 8, name: '托盘B-03', status: 'waiting' }
-          ] 
-        },
-        // 预热区 A1-G2
-        ...Array.from({ length: 14 }, (_, i) => {
-          const row = String.fromCharCode(65 + (i % 7)); // A-G
-          const col = Math.floor(i / 7) + 1; // 1-2
-          return {
-            id: i + 3,
-            name: `${row}${col}`,
-            type: 'preheat',
-            trays: i % 3 === 0 ? [ // 每隔三个区域添加一些托盘
-              { id: 20 + i * 2, name: `托盘P-${row}${col}-01`, status: 'heating' },
-              { id: 21 + i * 2, name: `托盘P-${row}${col}-02`, status: 'heating' }
-            ] : []
-          };
-        }),
-        { 
-          id: 17, 
-          name: '缓冲2区', 
-          type: 'buffer', 
-          trays: [
-            { id: 50, name: '托盘C-01', status: 'waiting' },
-            { id: 51, name: '托盘C-02', status: 'waiting' },
-            { id: 52, name: '托盘C-03', status: 'waiting' },
-            { id: 53, name: '托盘C-04', status: 'waiting' }
-          ] 
-        },
-        // 消毒区 1#-7#
-        ...Array.from({ length: 7 }, (_, i) => ({
-          id: i + 18,
-          name: `${i + 1}#`,
-          type: 'sterilize',
-          trays: i % 2 === 0 ? [ // 偶数消毒添加托盘
-            { id: 60 + i * 3, name: `托盘S-${i + 1}-01`, status: 'sterilizing' },
-            { id: 61 + i * 3, name: `托盘S-${i + 1}-02`, status: 'sterilizing' },
-            { id: 62 + i * 3, name: `托盘S-${i + 1}-03`, status: 'sterilizing' }
-          ] : []
-        })),
-        { 
-          id: 25, 
-          name: '缓冲3区', 
-          type: 'buffer', 
-          trays: [
-            { id: 90, name: '托盘D-01', status: 'waiting' },
-            { id: 91, name: '托盘D-02', status: 'waiting' }
-          ] 
-        },
-        { 
-          id: 26, 
-          name: '下货区', 
-          type: 'unloading', 
-          trays: [
-            { id: 95, name: '托盘E-01', status: 'completed' },
-            { id: 96, name: '托盘E-02', status: 'completed' },
-            { id: 97, name: '托盘E-03', status: 'completed' }
-          ] 
-        }
-      ],
-      nowTrays: [],
-      draggedTray: null,
-      dragSourceQueue: null,
-      isQueueExpanded: false,
-      selectedQueueIndex: 0,
-      isDragging: false
-    };
-  },
-  computed: {
-    currentLogs() {
-      return this.activeLogType === 'running' ? this.runningLogs : this.alarmLogs;
-    },
-    unreadAlarms() {
-      return this.alarmLogs.filter(log => log.unread).length;
-    },
-    displayOrders() {
-      if (this.activeOrderTab === 'current') {
-        return this.orders.filter(order => order.status !== 'completed');
-      }
-      return this.orders.filter(order => order.status === 'completed');
-    },
-    selectedQueue() {
-      return this.queues[this.selectedQueueIndex];
-    }
-  },
-  mounted() {
-    this.updateTime();
-    setInterval(this.updateTime, 1000);
-    this.initializeMarkers();
-  },
-  methods: {
-    toggleButtonState(button) {
-      this.buttonStates = {
-        start: false,
-        stop: false,
-        reset: false,
-        fault_reset: false,
-        clear: false
-      };
-      this.buttonStates[button] = !this.buttonStates[button];
-    },
-    formatTime(timestamp) {
-      const date = new Date(timestamp);
-      return date.toLocaleTimeString('zh-CN', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      });
-    },
-    markAsRead(log) {
-      if (log.type === 'alarm') {
-        log.unread = false;
-      }
-    },
-    getStatusText(status) {
-      const statusMap = {
-        pending: '待执行',
-        running: '正在执行',
-        completed: '已执行'
-      };
-      return statusMap[status] || status;
-    },
-    formatDateTime(date) {
-      return new Date(date).toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    },
-    updateTime() {
-      this.currentTime = new Date().toLocaleString('zh-CN', {
-        hour12: false,
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      });
-    },
-    initializeMarkers() {
-      this.$nextTick(() => {
-        this.updateMarkerPositions();
-        window.addEventListener('resize', this.updateMarkerPositions);
-      });
-    },
-    updateMarkerPositions() {
-      const images = document.querySelectorAll('.floor-image');
-      images.forEach(image => {
-        const imageWrapper = image.parentElement;
-        if (!imageWrapper) return;
-
-        const markers = imageWrapper.querySelectorAll('.marker, .marker-with-panel');
-        const carts = imageWrapper.querySelectorAll('.cart-container');
-        const imageRect = image.getBoundingClientRect();
-        const wrapperRect = imageWrapper.getBoundingClientRect();
-        
-        // 计算图片的实际显示区域
-        const displayedWidth = image.width;
-        const displayedHeight = image.height;
-        const scaleX = displayedWidth / image.naturalWidth;
-        const scaleY = displayedHeight / image.naturalHeight;
-        
-        // 计算图片在容器中的偏移量
-        const imageOffsetX = (wrapperRect.width - displayedWidth) / 2;
-        const imageOffsetY = (wrapperRect.height - displayedHeight) / 2;
-        
-        markers.forEach(marker => {
-          const x = parseFloat(marker.dataset.x);
-          const y = parseFloat(marker.dataset.y);
-          if (!isNaN(x) && !isNaN(y)) {
-            marker.style.left = `${imageOffsetX + (x * scaleX)}px`;
-            marker.style.top = `${imageOffsetY + (y * scaleY)}px`;
-          }
-        });
-
-        // 更新小车位置和大小
-        carts.forEach(cart => {
-          const x = parseFloat(cart.dataset.x);
-          const y = parseFloat(cart.dataset.y);
-          const width = parseFloat(cart.dataset.width);
-          if (!isNaN(x) && !isNaN(y)) {
-            cart.style.left = `${imageOffsetX + (x * scaleX)}px`;
-            cart.style.top = `${imageOffsetY + (y * scaleY)}px`;
-            // 设置小车宽度，使其适应导轨
-            if (!isNaN(width)) {
-              cart.style.width = `${width * scaleX}px`;
-            }
-          }
-        });
-      });
-    },
-    beforeDestroy() {
-      window.removeEventListener('resize', this.updateMarkerPositions);
-    },
-    updateCartPosition(cartId, position) {
-      const cart = this.carts.find(c => c.id === cartId);
-      if (cart && this.positions[cart.cartKey] && this.positions[cart.cartKey][position]) {
-        cart.currentPosition = position;
-        const newPos = this.positions[cart.cartKey][position];
-        cart.x = newPos.x;
-        cart.y = newPos.y;
-        this.$nextTick(() => {
-          this.updateMarkerPositions();
-        });
-      }
-    },
-    getCartPosition(cartId) {
-      const cart = this.carts.find(c => c.id === cartId);
-      return cart ? cart.currentPosition : null;
-    },
-    showTrays(index) {
-      this.selectedQueueIndex = index;
-      this.nowTrays = this.queues[index].trays;
-    },
-    handleDragStart(event, tray, queueIndex, trayIndex) {
-      this.isDragging = true;
-      this.draggedTray = tray;
-      this.dragSourceQueue = queueIndex;
-      
-      event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setData('text/plain', tray.id);
-      
-      setTimeout(() => {
-        event.target.classList.add('dragging');
-      }, 0);
-    },
-    handleDragEnd(event) {
-      this.isDragging = false;
-      event.target.classList.remove('dragging');
-    },
-    handleDrop(targetQueueIndex) {
-      if (!this.draggedTray || this.dragSourceQueue === null) return;
-      if (this.dragSourceQueue === targetQueueIndex) return;
-
-      const sourceQueue = this.queues[this.dragSourceQueue];
-      const targetQueue = this.queues[targetQueueIndex];
-
-      const trayIndex = sourceQueue.trays.findIndex(t => t.id === this.draggedTray.id);
-      if (trayIndex > -1) {
-        sourceQueue.trays.splice(trayIndex, 1);
-      }
-
-      targetQueue.trays.push(this.draggedTray);
-
-      if (this.selectedQueueIndex === targetQueueIndex) {
-        this.nowTrays = targetQueue.trays;
-      }
-
-      this.draggedTray = null;
-      this.dragSourceQueue = null;
-      this.isDragging = false;
-    },
-    async switchOrder(order) {
-      // 设置加载状态
-      order.isLoading = true;
-      
-      try {
-        // 模拟API调用
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // 更新订单状态
-        if (order.status === 'pending') {
-          order.status = 'running';
-          this.$message.success(`订单 ${order.id} 已开始执行`);
-        } else if (order.status === 'running') {
-          order.status = 'completed';
-          this.$message.success(`订单 ${order.id} 已完成`);
-        }
-      } catch (error) {
-        this.$message.error('切换订单失败，请重试');
-      } finally {
-        // 清除加载状态
-        order.isLoading = false;
-      }
-    }
-  }
-};
-</script>
