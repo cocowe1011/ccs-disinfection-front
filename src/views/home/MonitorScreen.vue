@@ -144,7 +144,7 @@
                   <span>执行订单</span>
                 </button>
                 <button 
-                  v-if="order.orderStatus === '1'"
+                  v-if="order.orderStatus === '1' && isLastQrCodeMatch"
                   class="switch-order-btn complete-btn" 
                   :class="{ 'loading': order.isLoading }"
                   @click="finishOrder(order)"
@@ -266,13 +266,13 @@
                     <div class="data-panel-content">
                       <div class="data-panel-row">
                         <span class="data-panel-label">当前批次：</span>
-                        <span>20240315001</span>
+                        <span>{{ currentOrder ? currentOrder.orderId : '--' }}</span>
                       </div>
                       <div class="data-panel-row">
                         <span class="data-panel-label">当前上货扫码信息：</span>
-                        <span>20240315001</span>
+                        <span>{{ currentUploadQrCode || '--' }}</span>
                       </div>
-                      <div class="data-panel-row">
+                      <div class="data-panel-row" v-if="currentOrder && currentOrder.qrCode && currentUploadQrCode && isLastQrCodeMatch">
                         <span>
                           <i class="el-icon-success" style="color: #67c23a;"></i>
                           <span class="data-panel-label" style="color: #67c23a; font-weight: bold;">当前批次上货完成，允许执行下一订单</span>
@@ -296,8 +296,8 @@
                       <div class="data-panel-row">
                         <span class="data-panel-label">扫码信息：</span>
                         <div style="display: flex; flex-direction: column; gap: 4px;">
-                          <span>20240315001</span>
-                          <span>
+                          <span>{{ currentQrCodeUpload || '--' }}</span>
+                          <span v-if="currentOrder && currentOrder.qrCode && currentQrCodeUpload && currentOrder.qrCode.includes(currentQrCodeUpload)">
                             <i class="el-icon-success" style="color: #67c23a;"></i>
                             <span style="color: #67c23a;font-weight: bold;">运行订单包含</span>
                           </span>
@@ -346,9 +346,9 @@
                       <div class="data-panel-content">
                         <div class="data-panel-row">
                           <span class="data-panel-label">扫码信息：</span>
-                          <span>20240315001</span>
+                          <span>{{ currentQrCode2A || '--' }}</span>
                         </div>
-                        <div class="data-panel-row">
+                        <div class="data-panel-row" v-if="currentOrder && currentOrder.qrCode && currentQrCode2A && currentOrder.qrCode.includes(currentQrCode2A)">
                           <span>
                             <i class="el-icon-success" style="color: #67c23a;"></i>
                             <span class="data-panel-label" style="color: #67c23a; font-weight: bold;">运行订单信息包含</span>
@@ -364,9 +364,9 @@
                       <div class="data-panel-content">
                         <div class="data-panel-row">
                           <span class="data-panel-label">扫码信息：</span>
-                          <span>20240315001</span>
+                          <span>{{ currentQrCode2B || '--' }}</span>
                         </div>
-                        <div class="data-panel-row">
+                        <div class="data-panel-row" v-if="currentOrder && currentOrder.qrCode && currentQrCode2B && currentOrder.qrCode.includes(currentQrCode2B)">
                           <span>
                             <i class="el-icon-success" style="color: #67c23a;"></i>
                             <span class="data-panel-label" style="color: #67c23a; font-weight: bold;">运行订单信息包含</span>
@@ -407,9 +407,9 @@
                       <div class="data-panel-content">
                         <div class="data-panel-row">
                           <span class="data-panel-label">扫码信息：</span>
-                          <span>20240315001</span>
+                          <span>{{ currentQrCode3A || '--' }}</span>
                         </div>
-                        <div class="data-panel-row">
+                        <div class="data-panel-row" v-if="currentOrder && currentOrder.qrCode && currentQrCode3A && currentOrder.qrCode.includes(currentQrCode3A)">
                           <span>
                             <i class="el-icon-success" style="color: #67c23a;"></i>
                             <span class="data-panel-label" style="color: #67c23a; font-weight: bold;">运行订单信息包含</span>
@@ -425,9 +425,9 @@
                       <div class="data-panel-content">
                         <div class="data-panel-row">
                           <span class="data-panel-label">扫码信息：</span>
-                          <span>20240315001</span>
+                          <span>{{ currentQrCode3B || '--' }}</span>
                         </div>
-                        <div class="data-panel-row">
+                        <div class="data-panel-row" v-if="currentOrder && currentOrder.qrCode && currentQrCode3B && currentOrder.qrCode.includes(currentQrCode3B)">
                           <span>
                             <i class="el-icon-success" style="color: #67c23a;"></i>
                             <span class="data-panel-label" style="color: #67c23a; font-weight: bold;">运行订单信息包含</span>
@@ -564,6 +564,73 @@
               >
                 {{pos}}
               </button>
+            </div>
+          </div>
+          <!-- 添加扫码测试部分 -->
+          <div class="test-section">
+            <span class="test-label">扫码信息测试:</span>
+            <div class="qrcode-test-container">
+              <div class="qrcode-input-group">
+                <div class="qrcode-label">二楼A点位:</div>
+                <el-input 
+                  v-model="currentQrCode2A" 
+                  size="small" 
+                  placeholder="输入扫码信息"
+                  class="qrcode-input"
+                ></el-input>
+              </div>
+              <div class="qrcode-input-group">
+                <div class="qrcode-label">二楼B点位:</div>
+                <el-input 
+                  v-model="currentQrCode2B" 
+                  size="small" 
+                  placeholder="输入扫码信息"
+                  class="qrcode-input"
+                ></el-input>
+              </div>
+              <div class="qrcode-input-group">
+                <div class="qrcode-label">三楼A点位:</div>
+                <el-input 
+                  v-model="currentQrCode3A" 
+                  size="small" 
+                  placeholder="输入扫码信息"
+                  class="qrcode-input"
+                ></el-input>
+              </div>
+              <div class="qrcode-input-group">
+                <div class="qrcode-label">三楼B点位:</div>
+                <el-input 
+                  v-model="currentQrCode3B" 
+                  size="small" 
+                  placeholder="输入扫码信息"
+                  class="qrcode-input"
+                ></el-input>
+              </div>
+              <div class="qrcode-input-group">
+                <div class="qrcode-label">上货点扫码:</div>
+                <el-input 
+                  v-model="currentQrCodeUpload" 
+                  size="small" 
+                  placeholder="输入扫码信息"
+                  class="qrcode-input"
+                ></el-input>
+              </div>
+              <div class="qrcode-input-group">
+                <div class="qrcode-label">上货扫码信息:</div>
+                <el-input 
+                  v-model="currentUploadQrCode" 
+                  size="small" 
+                  placeholder="输入扫码信息"
+                  class="qrcode-input"
+                ></el-input>
+              </div>
+              <div class="qrcode-actions">
+                <el-button 
+                  type="primary" 
+                  size="small" 
+                  @click="clearAllQrCodes"
+                >清空所有</el-button>
+              </div>
             </div>
           </div>
         </div>
@@ -880,7 +947,13 @@ export default {
       historyOrders: [],
       currentPage: 1,
       pageSize: 10,
-      totalHistoryOrders: 0
+      totalHistoryOrders: 0,
+      currentQrCode2A: '',  // 二楼A点位扫码信息
+      currentQrCode2B: '',  // 二楼B点位扫码信息
+      currentQrCode3A: '',  // 三楼A点位扫码信息
+      currentQrCode3B: '',  // 三楼B点位扫码信息
+      currentQrCodeUpload: '',  // 上货扫码区域信息
+      currentUploadQrCode: '',  // 上货点扫码信息
     };
   },
   computed: {
@@ -895,6 +968,13 @@ export default {
     },
     currentOrder() {
       return this.ordersList.find(order => order.orderStatus === '1') || null;
+    },
+    isLastQrCodeMatch() {
+      if (!this.currentOrder || !this.currentOrder.qrCode || !this.currentUploadQrCode) {
+        return false;
+      }
+      const qrCodes = this.currentOrder.qrCode.split(',');
+      return this.currentUploadQrCode === qrCodes[qrCodes.length - 1];
     }
   },
   mounted() {
@@ -1083,9 +1163,15 @@ export default {
     async switchOrder(order) {
       try {
         const runningOrder = this.ordersList.find(order => order.orderStatus === '1');
+        // 如果有正在运行的订单
         if (runningOrder) {
-          this.$message.warning('当前有正在运行的订单，请先完成当前订单再切换下一个订单');
-          return;
+          if (this.isLastQrCodeMatch) {
+            this.$message.warning('当前批次已完成上货，请先点击"上货完成"按钮完成当前订单');
+            return;
+          } else {
+            this.$message.warning('当前批次上货未完成，请完成上货后再切换下一个订单');
+            return;
+          }
         }
 
         await this.$confirm('确认要执行该订单吗？', '提示', {
@@ -1237,7 +1323,15 @@ export default {
         '2': '立体库'
       };
       return outputMap[output] || '--';
-    }
+    },
+    clearAllQrCodes() {
+      this.currentQrCode2A = '';
+      this.currentQrCode2B = '';
+      this.currentQrCode3A = '';
+      this.currentQrCode3B = '';
+      this.currentQrCodeUpload = '';
+      this.currentUploadQrCode = '';
+    },
   }
 };
 </script>
@@ -2973,5 +3067,62 @@ export default {
   font-size: 14px;
   margin-right: 4px;
   color: inherit;
+}
+
+.qrcode-test-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.qrcode-input-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.qrcode-label {
+  width: 80px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: right;
+}
+
+.qrcode-input {
+  flex: 1;
+}
+
+.qrcode-input :deep(.el-input__inner) {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(10, 197, 168, 0.3);
+  color: #fff;
+}
+
+.qrcode-input :deep(.el-input__inner:hover),
+.qrcode-input :deep(.el-input__inner:focus) {
+  border-color: #0ac5a8;
+}
+
+.qrcode-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 8px;
+}
+
+.qrcode-actions .el-button {
+  background: rgba(10, 197, 168, 0.2);
+  border: 1px solid rgba(10, 197, 168, 0.3);
+  color: #0ac5a8;
+}
+
+.qrcode-actions .el-button:hover {
+  background: rgba(10, 197, 168, 0.3);
+  border-color: rgba(10, 197, 168, 0.5);
+  color: #fff;
 }
 </style>
