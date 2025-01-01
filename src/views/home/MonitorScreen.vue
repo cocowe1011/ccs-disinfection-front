@@ -62,31 +62,27 @@
         <!-- 订单信息列表区域 -->
         <div class="order-list-section">
           <div class="section-header">
-            订单信息列表
-            <div class="order-tabs">
-              <div 
-                class="order-tab" 
-                :class="{ active: activeOrderTab === 'current' }"
-                @click="activeOrderTab = 'current'"
-              >
-                当前订单
-              </div>
-              <div 
-                class="order-tab" 
-                :class="{ active: activeOrderTab === 'history' }"
-                @click="activeOrderTab = 'history'"
-              >
-                历史订单
-              </div>
+            <div class="section-title">
+              订单信息列表
               <div class="refresh-btn" @click="refreshOrders" :class="{ 'is-loading': isRefreshing }">
                 <i class="el-icon-refresh"></i>
               </div>
+            </div>
+            <div class="order-actions">
+              <el-button 
+                type="primary" 
+                size="small" 
+                @click="showHistoryOrders"
+                icon="el-icon-time"
+              >
+                历史订单
+              </el-button>
             </div>
           </div>
           <div class="scrollable-content">
             <div class="order-list">
               <div 
-                v-for="order in ordersList" 
+                v-for="order in currentOrders" 
                 :key="order.orderId"
                 class="order-item"
                 :class="order.orderStatus === '0' ? 'pending' : order.orderStatus === '1' ? 'running' : order.orderStatus === '2' ? 'paused' : 'complete'"
@@ -94,7 +90,10 @@
                 <div class="order-main">
                   <div class="order-header">
                     <span class="order-id">{{ order.orderId }}</span>
-                    <span class="order-status">{{ getStatusText(order.orderStatus) }}</span>
+                    <span class="order-status" :class="{ 'running': order.orderStatus === '1' }">
+                      <i v-if="order.orderStatus === '1'" class="el-icon-loading"></i>
+                      {{ getStatusText(order.orderStatus) }}
+                    </span>
                   </div>
                   <div class="order-info">
                     <div class="info-row">
@@ -119,7 +118,7 @@
                   :disabled="order.isLoading"
                 >
                   <i v-if="order.isLoading" class="el-icon-loading"></i>
-                  <span>切换订单</span>
+                  <span>执行订单</span>
                 </button>
                 <button 
                   v-if="order.orderStatus === '1'"
@@ -538,6 +537,63 @@
         </div>
       </div>
     </div>
+    <!-- 历史订单对话框 -->
+    <el-dialog
+      title="历史订单"
+      :visible.sync="historyDialogVisible"
+      width="70%"
+      append-to-body
+      :before-close="handleHistoryDialogClose"
+    >
+      <div class="history-orders">
+        <el-table
+          :data="historyOrders"
+          style="width: 100%"
+          border
+          stripe
+        >
+          <el-table-column
+            prop="orderId"
+            label="订单编号"
+            width="180"
+          />
+          <el-table-column
+            prop="productName"
+            label="产品名称"
+            width="180"
+          />
+          <el-table-column
+            prop="insertTime"
+            label="订单时间"
+            width="180"
+          />
+          <el-table-column
+            prop="orderStatus"
+            label="状态"
+            width="100"
+          >
+            <template v-slot:scope="scope">
+              <div class="order-status" :class="{ 'running': scope.row.orderStatus === '1' }">
+                <i v-if="scope.row.orderStatus === '1'" class="el-icon-loading"></i>
+                {{ getStatusText(scope.row.orderStatus) }}
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+        <div class="pagination-container" style="margin-top: 20px; text-align: right;">
+          <el-pagination
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            :current-page="currentPage"
+            :page-sizes="[10, 20, 50, 100]"
+            :page-size="pageSize"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="totalHistoryOrders"
+          >
+          </el-pagination>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -787,7 +843,12 @@ export default {
       isQueueExpanded: false,
       selectedQueueIndex: 0,
       isDragging: false,
-      isRefreshing: false
+      isRefreshing: false,
+      historyDialogVisible: false,
+      historyOrders: [],
+      currentPage: 1,
+      pageSize: 10,
+      totalHistoryOrders: 0
     };
   },
   computed: {
@@ -799,6 +860,9 @@ export default {
     },
     selectedQueue() {
       return this.queues[this.selectedQueueIndex];
+    },
+    currentOrders() {
+      return this.ordersList.filter(order => order.orderStatus !== '3');
     }
   },
   mounted() {
@@ -970,6 +1034,11 @@ export default {
       this.isDragging = false;
     },
     async switchOrder(order) {
+      const runningOrder = this.ordersList.find(order => order.orderStatus === '1');
+      if (runningOrder) {
+        this.$message.warning('当前有正在运行的订单，请先完成当前订单再切换下一个订单');
+        return;
+      }
       // 设置加载状态
       order.isLoading = true;
       const param = {
@@ -1015,12 +1084,47 @@ export default {
       // 刷新订单 列表
       await HttpUtil.post('/order_info/queryOrderList', {}).then((res)=> {
         this.ordersList = res.data;
-        this.$message.success('订单列表已更新');
       }).catch((err)=> {
         this.$message.error('刷新订单列表失败，请重试');
       }).finally(()=> {
         this.isRefreshing = false;
       });
+    },
+    async showHistoryOrders() {
+      this.historyDialogVisible = true;
+      await this.loadHistoryOrders();
+    },
+    handleHistoryDialogClose(done) {
+      this.historyOrders = [];
+      this.currentPage = 1;
+      done();
+    },
+    async loadHistoryOrders() {
+      const params = {
+        page: this.currentPage,
+        pageSize: this.pageSize,
+        orderStatus: '3' // 已完成的订单
+      };
+      
+      try {
+        const res = await HttpUtil.post('/order_info/queryHistoryOrderList', params);
+        if (res.code === '200') {
+          this.historyOrders = res.data.list;
+          this.totalHistoryOrders = res.data.total;
+        } else {
+          this.$message.error('获取历史订单失败');
+        }
+      } catch (error) {
+        this.$message.error('获取历史订单失败');
+      }
+    },
+    handleSizeChange(val) {
+      this.pageSize = val;
+      this.loadHistoryOrders();
+    },
+    handleCurrentChange(val) {
+      this.currentPage = val;
+      this.loadHistoryOrders();
     }
   }
 };
@@ -1108,11 +1212,15 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  cursor: pointer;
-  transition: color 0.3s ease;
   font-size: 22px;
   color: #0ac5a8;
   font-weight: 900;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .status-overview {
@@ -1521,6 +1629,22 @@ export default {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.order-status i {
+  font-size: 12px;
+}
+
+.order-status.running {
+  background: rgba(64, 158, 255, 0.15);
+  color: #409eff;
+}
+
+.order-status.running i {
+  animation: rotate 1s linear infinite;
 }
 
 .order-info {
@@ -2570,18 +2694,25 @@ export default {
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-left: 8px;
+  margin-left: 0; /* 移除左边距 */
+  margin-right: 0; /* 移除右边距 */
   background: rgba(10, 197, 168, 0.2);
+  border: 1px solid rgba(10, 197, 168, 0.3);
 }
 
 .refresh-btn:hover {
   background: rgba(10, 197, 168, 0.3);
+  border-color: rgba(10, 197, 168, 0.5);
 }
 
 .refresh-btn i {
   font-size: 16px;
   color: #0ac5a8;
   transition: all 0.3s ease;
+}
+
+.refresh-btn:hover i {
+  color: #fff;
 }
 
 .refresh-btn.is-loading i {
@@ -2595,5 +2726,103 @@ export default {
   to {
     transform: rotate(360deg);
   }
+}
+
+.order-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.order-actions .el-button {
+  background: rgba(10, 197, 168, 0.2);
+  border: 1px solid rgba(10, 197, 168, 0.3);
+  color: #0ac5a8;
+  font-size: 12px;
+  height: 28px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.3s ease;
+}
+
+.order-actions .el-button:hover {
+  background: rgba(10, 197, 168, 0.3);
+  border-color: rgba(10, 197, 168, 0.5);
+  color: #fff;
+}
+
+.order-actions .el-button i {
+  font-size: 14px;
+}
+
+.history-orders {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.pagination-container {
+  background: transparent !important;
+  padding: 10px !important;
+  border-radius: 4px !important;
+}
+
+.el-pagination {
+  color: #fff !important;
+}
+
+.el-pagination button {
+  background: rgba(10, 197, 168, 0.2) !important;
+  border: 1px solid rgba(10, 197, 168, 0.3) !important;
+  color: #0ac5a8 !important;
+}
+
+.el-pagination button:hover {
+  background: rgba(10, 197, 168, 0.3) !important;
+  color: #fff !important;
+}
+
+.el-pagination .el-select .el-input .el-input__inner {
+  background: rgba(10, 197, 168, 0.2) !important;
+  border: 1px solid rgba(10, 197, 168, 0.3) !important;
+  color: #0ac5a8 !important;
+}
+
+.el-pagination .el-pager li {
+  background: rgba(10, 197, 168, 0.2) !important;
+  border: 1px solid rgba(10, 197, 168, 0.3) !important;
+  color: #0ac5a8 !important;
+}
+
+.el-pagination .el-pager li:hover {
+  background: rgba(10, 197, 168, 0.3) !important;
+  color: #fff !important;
+}
+
+.el-pagination .el-pager li.active {
+  background: #0ac5a8 !important;
+  color: #fff !important;
+  border-color: #0ac5a8 !important;
+}
+
+.el-select-dropdown {
+  background: rgba(30, 42, 56, 0.95) !important;
+  border: 1px solid rgba(10, 197, 168, 0.3) !important;
+  border-radius: 4px !important;
+}
+
+.el-select-dropdown__item {
+  color: #fff !important;
+}
+
+.el-select-dropdown__item.hover, 
+.el-select-dropdown__item:hover {
+  background: rgba(10, 197, 168, 0.2) !important;
+}
+
+.el-select-dropdown__item.selected {
+  background: rgba(10, 197, 168, 0.3) !important;
+  color: #0ac5a8 !important;
 }
 </style>
