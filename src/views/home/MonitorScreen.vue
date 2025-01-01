@@ -80,9 +80,9 @@
             </div>
           </div>
           <div class="scrollable-content">
-            <div class="order-list" v-if="currentOrders.length > 0">
+            <div class="order-list" v-if="ordersList.length > 0">
               <div 
-                v-for="order in currentOrders" 
+                v-for="order in ordersList" 
                 :key="order.orderId"
                 class="order-item"
                 :class="order.orderStatus === '0' ? 'pending' : order.orderStatus === '1' ? 'running' : order.orderStatus === '2' ? 'paused' : 'complete'"
@@ -94,6 +94,9 @@
                       <i v-if="order.orderStatus === '1'" class="el-icon-loading"></i>
                       {{ getStatusText(order.orderStatus) }}
                     </span>
+                    <el-button v-if="order.orderStatus === '1'" type="text" size="small" @click="cancelOrder(order)" :loading="order.isLoading">
+                      取消
+                    </el-button>
                   </div>
                   <div class="order-info">
                     <div class="info-row">
@@ -111,7 +114,7 @@
                     <div class="info-row">
                       <div class="info-item">
                         <span class="info-label">进货口</span>
-                        <span class="info-value">{{ order.inPut === '1' ? '一楼外部进货' : order.inPut === '2' ? '二楼进货' : '三楼进货' }}</span>
+                        <span class="info-value">{{ order.inPut === '1' ? '一楼进货' : order.inPut === '2' ? '二楼进货' : '三楼进货' }}</span>
                       </div>
                       <div class="info-item">
                         <span class="info-label">出货口</span>
@@ -284,7 +287,7 @@
                   <div class="data-panel" style="width: 90px;" :class="['position-right', { 'always-show': true, 'vertical-layout': true }]">
                     <div class="data-panel-header">上货点信息</div>
                     <div class="data-panel-content">
-                      <div class="data-panel-row">
+                      <div class="data-panel-row" v-if="currentOrder && currentOrder.inPut === '1'">
                         <span>
                           <i class="el-icon-success" style="color: #67c23a;"></i>
                           <span style="color: #67c23a;font-weight: bold;">允许一楼送货</span>
@@ -373,7 +376,7 @@
                     </div>
                   </div>
                   <!-- 二楼区域上货点信息-中间部分-允许2楼A/B上货 -->
-                  <div class="marker-with-panel" data-x="620" data-y="502">
+                  <div class="marker-with-panel" data-x="620" data-y="502" v-if="currentOrder && currentOrder.inPut === '2'">
                     <div class="pulse"></div>
                     <div class="data-panel" style="padding: 4px 12px;width: 140px;" :class="['position-left', { 'always-show': true }]">
                       <div class="data-panel-content">
@@ -434,14 +437,14 @@
                     </div>
                   </div>
                   <!-- 三楼区域上货点信息-中间部分-允许3楼A/B上货 -->
-                  <div class="marker-with-panel" data-x="650" data-y="402">
+                  <div class="marker-with-panel" data-x="650" data-y="402" v-if="currentOrder && currentOrder.inPut === '3'">
                     <div class="pulse"></div>
                     <div class="data-panel" style="padding: 4px 12px;width: 140px;" :class="['position-left', { 'always-show': true }]">
                       <div class="data-panel-content">
                         <div class="data-panel-row" style="margin-bottom: 0px;">
                           <span>
                             <i class="el-icon-success" style="color: #67c23a;"></i>
-                            <span class="data-panel-label" style="color: #67c23a; font-weight: bold;">允许2楼A/B上货</span>
+                            <span class="data-panel-label" style="color: #67c23a; font-weight: bold;">允许3楼A/B上货</span>
                           </span>
                         </div>
                       </div>
@@ -890,9 +893,6 @@ export default {
     selectedQueue() {
       return this.queues[this.selectedQueueIndex];
     },
-    currentOrders() {
-      return this.ordersList.filter(order => order.orderStatus !== '3');
-    },
     currentOrder() {
       return this.ordersList.find(order => order.orderStatus === '1') || null;
     }
@@ -1081,47 +1081,98 @@ export default {
       this.refreshOrders();
     },
     async switchOrder(order) {
-      const runningOrder = this.ordersList.find(order => order.orderStatus === '1');
-      if (runningOrder) {
-        this.$message.warning('当前有正在运行的订单，请先完成当前订单再切换下一个订单');
-        return;
-      }
-      // 设置加载状态
-      order.isLoading = true;
-      const param = {
-        id: order.id,
-        orderStatus: '1'
-      }
-      await HttpUtil.post('/order_info/update', param).then((res)=> {
-        if(res.code === '200') {
-          this.handleOrderStatusChange(order, '1');
-        } else {
-          this.$message.error('启动订单失败，请重试');
+      try {
+        const runningOrder = this.ordersList.find(order => order.orderStatus === '1');
+        if (runningOrder) {
+          this.$message.warning('当前有正在运行的订单，请先完成当前订单再切换下一个订单');
+          return;
         }
-        order.isLoading = false;
-      }).catch((err)=> {
-        this.$message.error('启动订单失败，请重试');
-        order.isLoading = false;
-      })
+
+        await this.$confirm('确认要执行该订单吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        });
+
+        // 设置加载状态
+        order.isLoading = true;
+        const param = {
+          id: order.id,
+          orderStatus: '1'
+        }
+        await HttpUtil.post('/order_info/update', param).then((res)=> {
+          if(res.code === '200') {
+            this.handleOrderStatusChange(order, '1');
+          } else {
+            this.$message.error('启动订单失败，请重试');
+          }
+        }).catch((err)=> {
+          this.$message.error('启动订单失败，请重试');
+        }).finally(() => {
+          order.isLoading = false;
+        });
+      } catch (err) {
+        // 用户取消操作，不做处理
+      }
     },
     async finishOrder(order) {
-      // 设置加载状态
-      order.isLoading = true;
-      const param = {
-        id: order.id,
-        orderStatus: '3'
-      }
-      await HttpUtil.post('/order_info/update', param).then((res)=> {
-        if(res.code === '200') {
-          this.handleOrderStatusChange(order, '3');
-        } else {
-          this.$message.error('完成订单失败，请重试');
+      try {
+        await this.$confirm('确认完成该订单吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        });
+
+        // 设置加载状态
+        order.isLoading = true;
+        const param = {
+          id: order.id,
+          orderStatus: '3'
         }
-        order.isLoading = false;
-      }).catch((err)=> {
-        this.$message.error('完成订单失败，请重试');
-        order.isLoading = false;
-      })
+        await HttpUtil.post('/order_info/update', param).then((res)=> {
+          if(res.code === '200') {
+            this.handleOrderStatusChange(order, '3');
+          } else {
+            this.$message.error('完成订单失败，请重试');
+          }
+        }).catch((err)=> {
+          this.$message.error('完成订单失败，请重试');
+        }).finally(() => {
+          order.isLoading = false;
+        });
+      } catch (err) {
+        // 用户取消操作，不做处理
+      }
+    },
+    async cancelOrder(order) {
+      try {
+        await this.$confirm('确认要取消该订单的完成状态吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        });
+        
+        // 设置加载状态
+        order.isLoading = true;
+        const param = {
+          id: order.id,
+          orderStatus: '0'  // 改为0，表示待执行状态
+        }
+        await HttpUtil.post('/order_info/update', param).then((res)=> {
+          if(res.code === '200') {
+            this.handleOrderStatusChange(order, '0');  // 更新为待执行状态
+            this.$message.success('订单状态已更新为待执行');
+          } else {
+            this.$message.error('取消订单失败，请重试');
+          }
+        }).catch((err)=> {
+          this.$message.error('取消订单失败，请重试');
+        }).finally(() => {
+          order.isLoading = false;
+        });
+      } catch (err) {
+        // 用户取消操作，不做处理
+      }
     },
     async refreshOrders() {
       if (this.isRefreshing) return;
@@ -1173,7 +1224,7 @@ export default {
     },
     getInputText(input) {
       const inputMap = {
-        '1': '一楼外部进货',
+        '1': '一楼进货',
         '2': '二楼进货',
         '3': '三楼进货'
       };
