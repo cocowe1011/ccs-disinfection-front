@@ -254,7 +254,7 @@
                   <div class="pulse"></div>
                   <div class="marker-label">电机101#</div>
                 </div>
-                <div class="marker marker-show-label" data-x="350" data-y="250">
+                <div class="marker marker-show-label" data-x="350" data-y="150">
                   <div class="pulse"></div>
                   <div class="marker-label">光电A</div>
                 </div>
@@ -531,7 +531,7 @@
             <span class="test-label">小车1测试:</span>
             <div class="position-buttons">
               <button 
-                v-for="pos in ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7']" 
+                v-for="pos in ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1']" 
                 :key="pos"
                 @click="updateCartPosition(1, pos)"
                 class="position-btn"
@@ -544,7 +544,7 @@
             <span class="test-label">小车2测试:</span>
             <div class="position-buttons">
               <button 
-                v-for="pos in ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7']" 
+                v-for="pos in ['A3', 'B3', 'C3', 'D3', 'E3', 'F3', 'G3']" 
                 :key="pos"
                 @click="updateCartPosition(2, pos)"
                 class="position-btn"
@@ -557,7 +557,7 @@
             <span class="test-label">小车3测试:</span>
             <div class="position-buttons">
               <button 
-                v-for="pos in ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7']" 
+                v-for="pos in ['A3', 'B3', 'C3', 'D3', 'E3', 'F3', 'G3']" 
                 :key="pos"
                 @click="updateCartPosition(3, pos)"
                 class="position-btn"
@@ -799,30 +799,30 @@ export default {
       positions: {
         cart1: {
           A1: { x: 1220, y: 1740 },  // 最下面
-          A2: { x: 1085, y: 1740 },
-          A3: { x: 905, y: 1740 },  // 扫码位
-          A4: { x: 775, y: 1740 },   // 中间
-          A5: { x: 608, y: 1740 },
-          A6: { x: 478, y: 1740 },   // 最上面
-          A7: { x: 318, y: 1740 }     // 左边
+          B1: { x: 1085, y: 1740 },
+          C1: { x: 905, y: 1740 },  // 扫码位
+          D1: { x: 775, y: 1740 },   // 中间
+          E1: { x: 608, y: 1740 },
+          F1: { x: 478, y: 1740 },   // 最上面
+          G1: { x: 318, y: 1740 }     // 左边
         },
         cart2: {
-          A1: { x: 1210, y: 795 },
-          A2: { x: 1080, y: 795 },
-          A3: { x: 905, y: 795 },
-          A4: { x: 775, y: 795 },
-          A5: { x: 610, y: 795 },
-          A6: { x: 480, y: 795 },
-          A7: { x: 330, y: 795 }
+          A3: { x: 1210, y: 795 },
+          B3: { x: 1080, y: 795 },
+          C3: { x: 905, y: 795 },
+          D3: { x: 775, y: 795 },
+          E3: { x: 610, y: 795 },
+          F3: { x: 480, y: 795 },
+          G3: { x: 330, y: 795 }
         },
         cart3: {
-          A1: { x: 1210, y: 230 },
-          A2: { x: 1080, y: 230 },
-          A3: { x: 905, y: 230 },
-          A4: { x: 778, y: 230 },
-          A5: { x: 613, y: 230 },
-          A6: { x: 485, y: 230 },
-          A7: { x: 335, y: 230 }
+          A3: { x: 1210, y: 230 },
+          B3: { x: 1080, y: 230 },
+          C3: { x: 905, y: 230 },
+          D3: { x: 778, y: 230 },
+          E3: { x: 613, y: 230 },
+          F3: { x: 485, y: 230 },
+          G3: { x: 335, y: 230 }
         }
       },
       carts: [
@@ -1189,6 +1189,8 @@ export default {
         await HttpUtil.post('/order_info/update', param).then((res)=> {
           if(res.code === '200') {
             this.handleOrderStatusChange(order, '1');
+            // 根据订单信息调整小车位置
+            this.adjustCartsPosition(order);
           } else {
             this.$message.error('启动订单失败，请重试');
           }
@@ -1199,6 +1201,19 @@ export default {
         });
       } catch (err) {
         // 用户取消操作，不做处理
+      }
+    },
+    // 根据订单信息调整小车位置
+    adjustCartsPosition(order) {
+      // 小车1对应预热房
+      if (order.isPrint1) {
+        this.updateCartPosition(1, order.isPrint1);
+      }
+
+      // 小车2和小车3对应灭菌区
+      if (order.isPrint2) {
+          this.updateCartPosition(2, order.isPrint2);
+          this.updateCartPosition(3, order.isPrint2);
       }
     },
     async finishOrder(order) {
