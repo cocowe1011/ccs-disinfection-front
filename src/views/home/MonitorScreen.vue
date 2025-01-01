@@ -15,44 +15,44 @@
         <!-- PLC状态与订单信息区域 -->
         <div class="plc-info-section">
           <div class="section-header">
-            订单信息与PLC状态
+            当前执行订单信息
           </div>
           <div class="scrollable-content" style="margin-top: 5px;">
             <div class="status-overview">
               <div class="data-card">
                 <div class="data-card-border">
                   <div class="data-card-border-borderTop granient-text">当前批次id</div>
-                  <div class="data-card-border-borderDown" style="font-size: 1.3vw;">123456678</div>
+                  <div class="data-card-border-borderDown" style="font-size: 1.3vw;">{{ currentOrder ? currentOrder.orderId : '--' }}</div>
                 </div>
               </div>
               <div class="data-card">
                 <div class="data-card-border">
                   <div class="data-card-border-borderTop">产品名称</div>
-                  <div class="data-card-border-borderDown">一次性口罩</div>
+                  <div class="data-card-border-borderDown">{{ currentOrder ? currentOrder.productName : '--' }}</div>
                 </div>
               </div>
               <div class="data-card">
                 <div class="data-card-border">
                   <div class="data-card-border-borderTop">指定预热房</div>
-                  <div class="data-card-border-borderDown">A1</div>
+                  <div class="data-card-border-borderDown">{{ currentOrder ? currentOrder.isPrint1 : '--' }}</div>
                 </div>
               </div>
               <div class="data-card">
                 <div class="data-card-border">
                   <div class="data-card-border-borderTop">指定灭菌柜</div>
-                  <div class="data-card-border-borderDown">1#</div>
+                  <div class="data-card-border-borderDown">{{ currentOrder ? currentOrder.isPrint2 : '--' }}</div>
                 </div>
               </div>
               <div class="data-card">
                 <div class="data-card-border">
                   <div class="data-card-border-borderTop">进货口</div>
-                  <div class="data-card-border-borderDown">一楼</div>
+                  <div class="data-card-border-borderDown">{{ currentOrder ? getInputText(currentOrder.inPut) : '--' }}</div>
                 </div>
               </div>
               <div class="data-card">
                 <div class="data-card-border">
                   <div class="data-card-border-borderTop">出货口</div>
-                  <div class="data-card-border-borderDown">立体库</div>
+                  <div class="data-card-border-borderDown">{{ currentOrder ? getOutputText(currentOrder.isPrint3) : '--' }}</div>
                 </div>
               </div>
             </div>
@@ -80,7 +80,7 @@
             </div>
           </div>
           <div class="scrollable-content">
-            <div class="order-list">
+            <div class="order-list" v-if="currentOrders.length > 0">
               <div 
                 v-for="order in currentOrders" 
                 :key="order.orderId"
@@ -108,6 +108,26 @@
                         <span class="info-value">{{ order.insertTime }}</span>
                       </div>
                     </div>
+                    <div class="info-row">
+                      <div class="info-item">
+                        <span class="info-label">进货口</span>
+                        <span class="info-value">{{ order.inPut === '1' ? '一楼外部进货' : order.inPut === '2' ? '二楼进货' : '三楼进货' }}</span>
+                      </div>
+                      <div class="info-item">
+                        <span class="info-label">出货口</span>
+                        <span class="info-value">{{ order.isPrint3 === '0' ? '不解析' : order.isPrint3 === '1' ? '解析库' : '立体库' }}</span>
+                      </div>
+                    </div>
+                    <div class="info-row">
+                      <div class="info-item">
+                        <span class="info-label">灭菌柜</span>
+                        <span class="info-value">{{ order.isPrint2 }}</span>
+                      </div>
+                      <div class="info-item">
+                        <span class="info-label">预热房</span>
+                        <span class="info-value">{{ order.isPrint1 }}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <button 
@@ -128,9 +148,18 @@
                   :disabled="order.isLoading"
                 >
                   <i v-if="order.isLoading" class="el-icon-loading"></i>
-                  <span>完成订单</span>
+                  <span>上货完成</span>
                 </button>
               </div>
+            </div>
+            <!-- 添加空状态显示 -->
+            <div v-else class="empty-state">
+              <i class="el-icon-document"></i>
+              <p>暂无订单信息</p>
+              <el-button type="text" @click="refreshOrders">
+                <i class="el-icon-refresh"></i>
+                点击刷新
+              </el-button>
             </div>
           </div>
         </div>
@@ -863,6 +892,9 @@ export default {
     },
     currentOrders() {
       return this.ordersList.filter(order => order.orderStatus !== '3');
+    },
+    currentOrder() {
+      return this.ordersList.find(order => order.orderStatus === '1') || null;
     }
   },
   mounted() {
@@ -1033,6 +1065,21 @@ export default {
       this.dragSourceQueue = null;
       this.isDragging = false;
     },
+    handleOrderStatusChange(order, newStatus) {
+      // 更新订单状态
+      const index = this.ordersList.findIndex(o => o.id === order.id);
+      if (index !== -1) {
+        this.$set(this.ordersList[index], 'orderStatus', newStatus);
+      }
+      // 根据状态显示不同的消息
+      if (newStatus === '1') {
+        this.$message.success(`订单 ${order.id} 已开始执行`);
+      } else if (newStatus === '3') {
+        this.$message.success(`订单 ${order.id} 已完成`);
+      }
+      // 刷新订单列表
+      this.refreshOrders();
+    },
     async switchOrder(order) {
       const runningOrder = this.ordersList.find(order => order.orderStatus === '1');
       if (runningOrder) {
@@ -1047,12 +1094,11 @@ export default {
       }
       await HttpUtil.post('/order_info/update', param).then((res)=> {
         if(res.code === '200') {
-          this.$message.success(`订单 ${order.id} 已开始执行`);
-          this.refreshOrders();
+          this.handleOrderStatusChange(order, '1');
         } else {
           this.$message.error('启动订单失败，请重试');
-          order.isLoading = false;
         }
+        order.isLoading = false;
       }).catch((err)=> {
         this.$message.error('启动订单失败，请重试');
         order.isLoading = false;
@@ -1067,12 +1113,11 @@ export default {
       }
       await HttpUtil.post('/order_info/update', param).then((res)=> {
         if(res.code === '200') {
-          this.$message.success(`订单 ${order.id} 已完成`);
-          this.refreshOrders();
+          this.handleOrderStatusChange(order, '3');
         } else {
           this.$message.error('完成订单失败，请重试');
-          order.isLoading = false;
         }
+        order.isLoading = false;
       }).catch((err)=> {
         this.$message.error('完成订单失败，请重试');
         order.isLoading = false;
@@ -1125,6 +1170,22 @@ export default {
     handleCurrentChange(val) {
       this.currentPage = val;
       this.loadHistoryOrders();
+    },
+    getInputText(input) {
+      const inputMap = {
+        '1': '一楼外部进货',
+        '2': '二楼进货',
+        '3': '三楼进货'
+      };
+      return inputMap[input] || '--';
+    },
+    getOutputText(output) {
+      const outputMap = {
+        '0': '不解析',
+        '1': '解析库',
+        '2': '立体库'
+      };
+      return outputMap[output] || '--';
     }
   }
 };
@@ -1549,7 +1610,7 @@ export default {
   padding: 12px 15px;
   transition: all 0.3s ease;
   position: relative;
-  height: 80px;  /* 增加高度 */
+  height: 120px;  /* 增加高度以适应新增的信息 */
   display: flex;
   align-items: center;
   gap: 15px;
@@ -1657,6 +1718,7 @@ export default {
 .info-row {
   display: flex;
   align-items: center;
+  gap: 20px; /* 增加间距 */
 }
 
 .info-item {
@@ -1671,7 +1733,7 @@ export default {
   color: rgba(255, 255, 255, 0.45);
   font-size: 12px;
   white-space: nowrap;
-  width: 60px;  /* 固定标签宽度 */
+  width: 50px;  /* 调整标签宽度 */
   flex-shrink: 0;
 }
 
@@ -2824,5 +2886,41 @@ export default {
 .el-select-dropdown__item.selected {
   background: rgba(10, 197, 168, 0.3) !important;
   color: #0ac5a8 !important;
+}
+
+/* 添加空状态样式 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.empty-state i {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.empty-state p {
+  font-size: 14px;
+  margin: 0 0 16px 0;
+}
+
+.empty-state .el-button {
+  color: #0ac5a8;
+  font-size: 14px;
+}
+
+.empty-state .el-button:hover {
+  color: #0db196;
+}
+
+.empty-state .el-button i {
+  font-size: 14px;
+  margin-right: 4px;
+  color: inherit;
 }
 </style>
