@@ -94,7 +94,7 @@
                       <i v-if="order.orderStatus === '1'" class="el-icon-loading"></i>
                       {{ getStatusText(order.orderStatus) }}
                     </span>
-                    <el-button v-if="order.orderStatus === '1'" type="text" size="small" @click="cancelOrder(order)" :loading="order.isLoading">
+                    <el-button v-if="order.orderStatus === '1'" type="text" size="small" @click="cancelOrder(order)" :loading="order.isLoading" style="padding: 0px;">
                       取消
                     </el-button>
                   </div>
@@ -376,7 +376,7 @@
                     </div>
                   </div>
                   <!-- 二楼区域上货点信息-中间部分-允许2楼A/B上货 -->
-                  <div class="marker-with-panel" data-x="620" data-y="502" v-if="currentOrder && currentOrder.inPut === '2'">
+                  <div class="marker-with-panel" data-x="620" data-y="502" v-show="currentOrder && currentOrder.inPut === '2'">
                     <div class="pulse"></div>
                     <div class="data-panel" style="padding: 4px 12px;width: 140px;" :class="['position-left', { 'always-show': true }]">
                       <div class="data-panel-content">
@@ -437,7 +437,7 @@
                     </div>
                   </div>
                   <!-- 三楼区域上货点信息-中间部分-允许3楼A/B上货 -->
-                  <div class="marker-with-panel" data-x="650" data-y="402" v-if="currentOrder && currentOrder.inPut === '3'">
+                  <div class="marker-with-panel" data-x="650" data-y="402" v-show="currentOrder && currentOrder.inPut === '3'">
                     <div class="pulse"></div>
                     <div class="data-panel" style="padding: 4px 12px;width: 140px;" :class="['position-left', { 'always-show': true }]">
                       <div class="data-panel-content">
