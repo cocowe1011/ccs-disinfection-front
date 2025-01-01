@@ -239,6 +239,20 @@
             <div class="floor-image-container">
               <div class="image-wrapper">
                 <img src="@/assets/floor1.png" alt="一楼平面图" class="floor-image" @load="updateMarkerPositions">
+                <!-- 修改队列标识 -->
+                <div 
+                  v-for="marker in queueMarkers" 
+                  :key="marker.id"
+                  class="queue-marker"
+                  :data-x="marker.x"
+                  :data-y="marker.y"
+                  @click="handleQueueMarkerClick(marker.id)"
+                >
+                  <div class="queue-marker-content">
+                    <span class="queue-marker-count">{{ queues.find(q => q.id === marker.queueId)?.trayInfo?.length || 0 }}</span>
+                    <span class="queue-marker-name">{{ marker.name }}</span>
+                  </div>
+                </div>
                 <!-- 修改小车元素 -->
                 <div 
                   v-for="cart in carts" 
@@ -999,6 +1013,32 @@ export default {
         sourceQueueId: '',
         targetQueueId: ''
       },
+      // 添加队列位置标识数据
+      queueMarkers: [
+        { id: 1, name: '上货区', x: 1365, y: 1520 },
+        { id: 3, name: 'A1', x: 1216, y: 1600 },
+        { id: 4, name: 'B1', x: 1083, y: 1600 },
+        { id: 5, name: 'C1', x: 905, y: 1600 },
+        { id: 6, name: 'D1', x: 778, y: 1600 },
+        { id: 7, name: 'E1', x: 608, y: 1600 },
+        { id: 8, name: 'F1', x: 480, y: 1600 },
+        { id: 9, name: 'G1', x: 321, y: 1600 },
+        { id: 10, name: 'A2', x: 1214, y: 930 },
+        { id: 11, name: 'B2', x: 1082, y: 930 },
+        { id: 12, name: 'C2', x: 905, y: 930 },
+        { id: 13, name: 'D2', x: 778, y: 930 },
+        { id: 14, name: 'E2', x: 612, y: 930 },
+        { id: 15, name: 'F2', x: 485, y: 930 },
+        { id: 16, name: 'G2', x: 328, y: 930 },
+        { id: 17, name: 'A3', x: 1214, y: 680 },
+        { id: 18, name: 'B3', x: 1082, y: 680 },
+        { id: 19, name: 'C3', x: 905, y: 680 },
+        { id: 20, name: 'D3', x: 778, y: 680 },
+        { id: 21, name: 'E3', x: 612, y: 680 },
+        { id: 22, name: 'F3', x: 484, y: 680 },
+        { id: 23, name: 'G3', x: 333, y: 680 },
+        { id: 26, name: '下货区', x: 1235, y: 145 },
+      ],
     };
   },
   computed: {
@@ -1101,7 +1141,7 @@ export default {
         const imageWrapper = image.parentElement;
         if (!imageWrapper) return;
 
-        const markers = imageWrapper.querySelectorAll('.marker, .marker-with-panel');
+        const markers = imageWrapper.querySelectorAll('.marker, .marker-with-panel, .queue-marker');
         const carts = imageWrapper.querySelectorAll('.cart-container');
         const imageRect = image.getBoundingClientRect();
         const wrapperRect = imageWrapper.getBoundingClientRect();
@@ -1133,7 +1173,6 @@ export default {
           if (!isNaN(x) && !isNaN(y)) {
             cart.style.left = `${imageOffsetX + (x * scaleX)}px`;
             cart.style.top = `${imageOffsetY + (y * scaleY)}px`;
-            // 设置小车宽度，使其适应导轨
             if (!isNaN(width)) {
               cart.style.width = `${width * scaleX}px`;
             }
@@ -1664,6 +1703,19 @@ export default {
           console.error('移动托盘失败:', error);
           this.$message.error('移动托盘失败，请重试');
         }
+      }
+    },
+    // 点击队列标识
+    handleQueueMarkerClick(queueId) {
+      // 展开队列面板
+      this.isQueueExpanded = true;
+      
+      // 找到队列在数组中的索引
+      const queueIndex = this.queues.findIndex(q => q.id === queueId);
+      if (queueIndex !== -1) {
+        // 选中并显示对应队列
+        this.selectedQueueIndex = queueIndex;
+        this.showTrays(queueIndex);
       }
     },
   }
@@ -3595,5 +3647,65 @@ export default {
   border-color: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.4);
   cursor: not-allowed;
+}
+
+.queue-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 4px;
+  border-radius: 4px;
+  border: 1px solid rgba(64, 158, 255, 0.3);
+  transition: all 0.3s ease;
+  min-width: 40px;
+  text-align: center;
+}
+
+.queue-marker:hover {
+  background: rgba(64, 158, 255, 0.2);
+  border-color: rgba(64, 158, 255, 0.5);
+}
+
+.queue-marker-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #fff;
+  font-size: 12px;
+}
+
+.queue-marker-name {
+  color: #fff;
+}
+
+.queue-marker-count {
+  font-size: 14px;
+  font-weight: bold;
+  color: #409eff;
+}
+
+@keyframes glow-blue {
+  0% {
+    box-shadow: 0 0 0 0 rgba(64, 158, 255, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(64, 158, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(64, 158, 255, 0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
 }
 </style>
