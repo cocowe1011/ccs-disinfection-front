@@ -737,7 +737,7 @@
       append-to-body
       :before-close="handleHistoryDialogClose"
     >
-      <div class="history-orders">
+      <div>
         <el-table
           :data="historyOrders"
           style="width: 100%"
@@ -750,8 +750,8 @@
             width="180"
           />
           <el-table-column
-            prop="productName"
-            label="产品名称"
+            prop="batchId"
+            label="订单批号"
             width="180"
           />
           <el-table-column
@@ -760,14 +760,47 @@
             width="180"
           />
           <el-table-column
-            prop="orderStatus"
-            label="状态"
+            prop="productName"
+            label="产品名称"
+            width="180"
+          />
+          <el-table-column
+            prop="isPrint1"
+            label="指定预热房"
+            width="100"
+          />
+          <el-table-column
+            prop="isPrint2"
+            label="指定灭菌柜"
+            width="100"
+          />
+          <el-table-column
+            prop="isPrint3"
+            label="指定输出"
             width="100"
           >
-            <template v-slot:scope="scope">
-              <div class="order-status" :class="{ 'running': scope.row.orderStatus === '1' }">
-                <i v-if="scope.row.orderStatus === '1'" class="el-icon-loading"></i>
-                {{ getStatusText(scope.row.orderStatus) }}
+            <template slot-scope="scope">
+              {{ getOutputText(scope.row.isPrint3) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="inPut"
+            label="进货口信息"
+            width="100"
+          >
+            <template slot-scope="scope">
+              {{ getInputText(scope.row.inPut) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="qrCode"
+            label="托盘信息"
+            min-width="200"
+            show-overflow-tooltip
+          >
+            <template slot-scope="scope">
+              <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                {{ scope.row.qrCode }}
               </div>
             </template>
           </el-table-column>
@@ -1066,6 +1099,7 @@ export default {
     this.updateTime();
     setInterval(this.updateTime, 1000);
     this.initializeMarkers();
+    this.refreshOrders()
     this.queryQueueList();
   },
   methods: {
@@ -1468,9 +1502,8 @@ export default {
     },
     async loadHistoryOrders() {
       const params = {
-        page: this.currentPage,
+        pageNum: this.currentPage,
         pageSize: this.pageSize,
-        orderStatus: '3' // 已完成的订单
       };
       
       try {
@@ -1497,7 +1530,8 @@ export default {
       const inputMap = {
         '1': '一楼进货',
         '2': '二楼进货',
-        '3': '三楼进货'
+        '3': '三楼进货',
+        '4': '不解析出口'
       };
       return inputMap[input] || '--';
     },
@@ -3371,56 +3405,6 @@ export default {
 .order-actions .el-button i {
   font-size: 14px;
 }
-
-.history-orders {
-  max-height: 600px;
-  overflow-y: auto;
-}
-
-.pagination-container {
-  background: transparent !important;
-  padding: 10px !important;
-  border-radius: 4px !important;
-}
-
-.el-pagination {
-  color: #fff !important;
-}
-
-.el-pagination button {
-  background: rgba(10, 197, 168, 0.2) !important;
-  border: 1px solid rgba(10, 197, 168, 0.3) !important;
-  color: #0ac5a8 !important;
-}
-
-.el-pagination button:hover {
-  background: rgba(10, 197, 168, 0.3) !important;
-  color: #fff !important;
-}
-
-.el-pagination .el-select .el-input .el-input__inner {
-  background: rgba(10, 197, 168, 0.2) !important;
-  border: 1px solid rgba(10, 197, 168, 0.3) !important;
-  color: #0ac5a8 !important;
-}
-
-.el-pagination .el-pager li {
-  background: rgba(10, 197, 168, 0.2) !important;
-  border: 1px solid rgba(10, 197, 168, 0.3) !important;
-  color: #0ac5a8 !important;
-}
-
-.el-pagination .el-pager li:hover {
-  background: rgba(10, 197, 168, 0.3) !important;
-  color: #fff !important;
-}
-
-.el-pagination .el-pager li.active {
-  background: #0ac5a8 !important;
-  color: #fff !important;
-  border-color: #0ac5a8 !important;
-}
-
 /* 添加空状态样式 */
 .empty-state {
   display: flex;
