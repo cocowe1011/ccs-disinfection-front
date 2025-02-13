@@ -5,8 +5,8 @@
         <div class="maskDiv-top-left">
           <img src="../../../build/icons/64x64.png" style="width:38px;height:38px;" />
           <div style="margin-left:10px;height:100%;">
-            <div class="maskDiv-top-left-top-title">全自动束下输送系统</div>
-            <div class="maskDiv-top-left-top-title2">ccs</div>
+            <div class="maskDiv-top-left-top-title">WCS系统</div>
+            <div class="maskDiv-top-left-top-title2">wcs</div>
           </div>
         </div>
         <div class="maskDiv-top-mid">

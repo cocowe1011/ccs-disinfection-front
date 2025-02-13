@@ -2,7 +2,7 @@
   <div class="welcome">
     <div>
       <p class="main-left-user center"> {{ userName }} 您好 </p>
-      <p class="center main-left-title">欢迎使用全自动束下输送CCS系统</p>
+      <p class="center main-left-title">欢迎使用WCS系统</p>
       <div class="content">
         <p class="center main-left-content">简单易用 高效稳定</p>
         <p class="center main-left-content">我们将竭诚为您服务</p>

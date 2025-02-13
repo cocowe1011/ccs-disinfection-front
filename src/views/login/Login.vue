@@ -10,8 +10,8 @@
         <div class="login-right-top-close" style="z-index: 12;" @click="closewindow"><i class="el-icon-close" style="font-size:18px;font-weight:600;"></i></div>
       </div>
       <div class="login-right-down" v-if="pageMark == 'login'">
-        <p class="title">全自动束下输送CCS系统</p>
-        <p class="intro">欢迎使用全自动束下输送系统。简洁、易用的操作页面，全自动化管理全力帮助您提高效率。</p>
+        <p class="title">WCS系统</p>
+        <p class="intro">欢迎使用WCS系统。简洁、易用的操作页面，全自动化管理全力帮助您提高效率。</p>
         <div class="login-form">
           <el-input placeholder="请输入用户名" class="user-code" v-model="userCode"></el-input>
           <el-input placeholder="请输入密码" class="user-password" type="password" v-model="userPassword" autocomplete="off"></el-input>

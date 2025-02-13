@@ -215,14 +215,20 @@
           </div>
           <div class="scrollable-content">
             <div class="log-list">
-              <div 
-                v-for="log in currentLogs" 
-                :key="log.id"
-                :class="['log-item', { 'alarm': log.type === 'alarm', 'unread': log.unread }]"
-                @click="markAsRead(log)"
-              >
-                <div class="log-time">{{ formatTime(log.timestamp) }}</div>
-                <div class="log-item-content">{{ log.message }}</div>
+              <template v-if="currentLogs.length > 0">
+                <div 
+                  v-for="log in currentLogs" 
+                  :key="log.id"
+                  :class="['log-item', { 'alarm': log.type === 'alarm', 'unread': log.unread }]"
+                  @click="markAsRead(log)"
+                >
+                  <div class="log-time">{{ formatTime(log.timestamp) }}</div>
+                  <div class="log-item-content">{{ log.message }}</div>
+                </div>
+              </template>
+              <div v-else class="empty-state">
+                <i class="el-icon-chat-line-square"></i>
+                <p>{{ activeLogType === 'running' ? '暂无运行日志' : '暂无报警日志' }}</p>
               </div>
             </div>
           </div>
@@ -864,87 +870,8 @@ export default {
       activeLogType: 'running',
       activeOrderTab: 'current',
       ordersList: [],
-      runningLogs: [
-        {
-          id: 1,
-          type: 'running',
-          message: '托盘A-01 从上货区移动到缓冲1区，等待预热处理',
-          timestamp: new Date().getTime() - 30000,
-          unread: false
-        },
-        {
-          id: 2,
-          type: 'running',
-          message: '托盘B-02 完成预热，从预热区A1移动到缓冲2区',
-          timestamp: new Date().getTime() - 25000,
-          unread: false
-        },
-        {
-          id: 3,
-          type: 'running',
-          message: '托盘C-03 开始消毒处理，预计持续时间30分钟',
-          timestamp: new Date().getTime() - 20000,
-          unread: false
-        },
-        {
-          id: 4,
-          type: 'running',
-          message: '系统自动调度：将托盘D-01从缓冲3区转移至下货区',
-          timestamp: new Date().getTime() - 15000,
-          unread: false
-        },
-        {
-          id: 5,
-          type: 'running',
-          message: '批次#12345生产任务开始执行，计划生产数量: 500个',
-          timestamp: new Date().getTime() - 10000,
-          unread: false
-        },
-        {
-          id: 6,
-          type: 'running',
-          message: '预热区A2温度已达标，开始执行预热程序',
-          timestamp: new Date().getTime() - 5000,
-          unread: false
-        }
-      ],
-      alarmLogs: [
-        {
-          id: 101,
-          type: 'alarm',
-          message: '【严重警告】预热区A1温度超出正常范围（当前: 85℃，正常: 60-80℃），请立即检查！',
-          timestamp: new Date().getTime() - 28000,
-          unread: true
-        },
-        {
-          id: 102,
-          type: 'alarm',
-          message: '【设备警告】消毒柜2#压力异常，当前压力值: 2.8MPa，超出正常范围',
-          timestamp: new Date().getTime() - 23000,
-          unread: true
-        },
-        {
-          id: 103,
-          type: 'alarm',
-          message: '【系统警告】缓冲1区托盘堆积，当前数量超过预警值（8/6），请及时处理',
-          timestamp: new Date().getTime() - 18000,
-          unread: true
-        },
-        {
-          id: 104,
-          type: 'alarm',
-          message: '【网络警告】与PLC通信延迟超过500ms，请检查网络连接状态',
-          timestamp: new Date().getTime() - 13000,
-          unread: true
-        },
-        {
-          id: 105,
-          type: 'alarm',
-          message: '【维护提醒】消毒柜1#已运行超过1000小时，请按计划进行维护保养',
-          timestamp: new Date().getTime() - 8000,
-          unread: true
-        }
-      ],
+      runningLogs: [],  // 修改为空数组
+      alarmLogs: [],    // 修改为空数组
       currentTime: '',
       positions: {
         cart1: {
@@ -1072,6 +999,7 @@ export default {
         { id: 23, name: 'G3', x: 333, y: 680 },
         { id: 26, name: '下货区', x: 1235, y: 145 },
       ],
+      logId: 1000,  // 添加一个日志ID计数器
     };
   },
   computed: {
@@ -1287,42 +1215,34 @@ export default {
       const sourceQueue = this.queues[this.dragSourceQueue];
       const targetQueue = this.queues[targetQueueIndex];
 
-      // 检查源队列和目标队列是否存在
       if (!sourceQueue || !targetQueue) {
         this.$message.error('队列不存在，无法移动托盘');
         return;
       }
 
-      // 确保源队列和目标队列的trayInfo都是数组
       sourceQueue.trayInfo = Array.isArray(sourceQueue.trayInfo) ? sourceQueue.trayInfo : [];
       targetQueue.trayInfo = Array.isArray(targetQueue.trayInfo) ? targetQueue.trayInfo : [];
 
       try {
-        // 检查拖动的托盘是否有效
         if (!this.draggedTray.id) {
           throw new Error('托盘信息无效');
         }
 
-        // 从源队列中移除托盘
         const trayIndex = sourceQueue.trayInfo.findIndex(t => t.trayCode === this.draggedTray.id);
         if (trayIndex === -1) {
           throw new Error('找不到要移动的托盘');
         }
 
         const [movedTray] = sourceQueue.trayInfo.splice(trayIndex, 1);
-        // 添加到目标队列
         targetQueue.trayInfo.push(movedTray);
 
-        // 更新后端数据
         await Promise.all([
           this.updateQueueTrays(sourceQueue.id, sourceQueue.trayInfo),
           this.updateQueueTrays(targetQueue.id, targetQueue.trayInfo)
         ]);
 
-        // 刷新队列列表以确保数据同步
         await this.queryQueueList();
 
-        // 更新当前显示的队列
         const currentQueueIndex = this.selectedQueueIndex;
         if (currentQueueIndex === targetQueueIndex || currentQueueIndex === this.dragSourceQueue) {
           this.$nextTick(() => {
@@ -1330,7 +1250,9 @@ export default {
           });
         }
 
-        // 显示成功提示
+        // 添加托盘移动日志
+        this.addLog(`托盘 ${movedTray.trayCode} 从 ${sourceQueue.queueName} 移动到 ${targetQueue.queueName}`);
+
         this.$message({
           type: 'success',
           message: `托盘 ${movedTray.trayCode} 已成功移动到 ${targetQueue.queueName}`,
@@ -1340,8 +1262,6 @@ export default {
       } catch (error) {
         console.error('移动托盘时出错:', error);
         this.$message.error(error.message || '移动托盘失败，请重试');
-        
-        // 发生错误时刷新队列列表以恢复状态
         await this.queryQueueList();
       } finally {
         this.draggedTray = null;
@@ -1395,6 +1315,8 @@ export default {
             this.handleOrderStatusChange(order, '1');
             // 根据订单信息调整小车位置
             this.adjustCartsPosition(order);
+            // 添加开始订单日志
+            this.addLog(`订单 ${order.orderId} 开始执行，产品：${order.productName}，进货口：${this.getInputText(order.inPut)}`);
           } else {
             this.$message.error('启动订单失败，请重试');
           }
@@ -1437,6 +1359,8 @@ export default {
         await HttpUtil.post('/order_info/update', param).then((res)=> {
           if(res.code === '200') {
             this.handleOrderStatusChange(order, '3');
+            // 添加完成订单日志
+            this.addLog(`订单 ${order.orderId} 已完成，产品：${order.productName}`);
           } else {
             this.$message.error('完成订单失败，请重试');
           }
@@ -1585,6 +1509,9 @@ export default {
           // 刷新显示
           this.showTrays(this.selectedQueueIndex);
 
+          // 添加删除托盘日志
+          this.addLog(`托盘 ${tray.id} 已从 ${this.selectedQueue.queueName} 删除`);
+
           this.$message.success('托盘删除成功');
         }
       } catch (error) {
@@ -1629,6 +1556,9 @@ export default {
         // 刷新显示
         this.showTrays(this.selectedQueueIndex);
 
+        // 添加新托盘日志
+        this.addLog(`新托盘 ${newTray.trayCode} 已添加到 ${this.selectedQueue.queueName}，批次号：${newTray.batchId}`);
+
         this.$message.success('托盘添加成功');
         this.addTrayDialogVisible = false;
       } catch (error) {
@@ -1647,11 +1577,9 @@ export default {
       }
       
       try {
-        // 拆分托盘信息
         const trays = this.currentOrder.qrCode.split(',');
         const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
         
-        // 确保上货区队列存在且trayInfo是数组
         if (!this.queues[0]) {
           this.$message.error('上货区队列不存在');
           return;
@@ -1661,7 +1589,7 @@ export default {
           this.queues[0].trayInfo = [];
         }
         
-        // 将托盘添加到上货区队列
+        const addedTrays = [];
         trays.forEach(tray => {
           if (tray && tray.trim()) {
             const newTray = {
@@ -1670,14 +1598,15 @@ export default {
               batchId: this.currentOrder.orderId
             };
             this.queues[0].trayInfo.push(newTray);
+            addedTrays.push(newTray.trayCode);
           }
         });
 
-        // 更新数据库
         await this.updateQueueTrays(this.queues[0].id, this.queues[0].trayInfo);
-        
-        // 刷新队列显示
         await this.queryQueueList();
+        
+        // 添加托盘添加日志
+        this.addLog(`已添加 ${addedTrays.length} 个托盘到上货区队列，托盘编号：${addedTrays.join('、')}`);
         
         this.$message.success(`成功添加 ${trays.length} 个托盘到上货区队列`);
       } catch (error) {
@@ -1688,7 +1617,6 @@ export default {
     // 批量移动托盘的方法
     async moveAllTrays() {
       try {
-        // 找到源队列和目标队列
         const sourceQueue = this.queues.find(q => q.id === this.queueMoveForm.sourceQueueId);
         const targetQueue = this.queues.find(q => q.id === this.queueMoveForm.targetQueueId);
         
@@ -1697,7 +1625,6 @@ export default {
           return;
         }
 
-        // 确保两个队列的trayInfo都是数组
         sourceQueue.trayInfo = Array.isArray(sourceQueue.trayInfo) ? sourceQueue.trayInfo : [];
         targetQueue.trayInfo = Array.isArray(targetQueue.trayInfo) ? targetQueue.trayInfo : [];
 
@@ -1706,30 +1633,30 @@ export default {
           return;
         }
 
-        // 确认是否移动
         await this.$confirm(`确认要将 ${sourceQueue.queueName} 的所有托盘(${sourceQueue.trayInfo.length}个)移动到 ${targetQueue.queueName} 吗？`, '提示', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning'
         });
 
-        // 将源队列的所有托盘添加到目标队列
+        const movedTraysCount = sourceQueue.trayInfo.length;
+        const movedTrayCodes = sourceQueue.trayInfo.map(t => t.trayCode).join('、');
+        
         targetQueue.trayInfo = [...targetQueue.trayInfo, ...sourceQueue.trayInfo];
-        // 清空源队列
         sourceQueue.trayInfo = [];
 
-        // 更新数据库
         await Promise.all([
           this.updateQueueTrays(sourceQueue.id, sourceQueue.trayInfo),
           this.updateQueueTrays(targetQueue.id, targetQueue.trayInfo)
         ]);
 
-        // 刷新队列列表
         await this.queryQueueList();
+
+        // 添加批量移动日志，包含托盘编号信息
+        this.addLog(`已将 ${sourceQueue.queueName} 的 ${movedTraysCount} 个托盘(${movedTrayCodes})移动到 ${targetQueue.queueName}`);
 
         this.$message.success('托盘批量移动成功');
         
-        // 重置表单
         this.queueMoveForm.sourceQueueId = '';
         this.queueMoveForm.targetQueueId = '';
       } catch (error) {
@@ -1750,6 +1677,29 @@ export default {
         // 选中并显示对应队列
         this.selectedQueueIndex = queueIndex;
         this.showTrays(queueIndex);
+      }
+    },
+    // 添加新的日志方法
+    addLog(message, type = 'running') {
+      const log = {
+        id: this.logId++,
+        type,
+        message,
+        timestamp: new Date().getTime(),
+        unread: type === 'alarm'
+      };
+      
+      if (type === 'running') {
+        this.runningLogs.unshift(log);
+        // 保持日志数量在合理范围内
+        if (this.runningLogs.length > 100) {
+          this.runningLogs.pop();
+        }
+      } else {
+        this.alarmLogs.unshift(log);
+        if (this.alarmLogs.length > 100) {
+          this.alarmLogs.pop();
+        }
       }
     },
   }
