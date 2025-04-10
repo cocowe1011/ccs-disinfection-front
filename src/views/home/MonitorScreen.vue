@@ -3588,18 +3588,21 @@ export default {
   transform: translate(-50%, -50%);
   cursor: pointer;
   z-index: 10;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 4px;
+  background: rgba(10, 30, 50, 0.85);
+  padding: 4px 8px;
   border-radius: 4px;
-  border: 1px solid rgba(64, 158, 255, 0.3);
+  border: 1px solid rgba(64, 158, 255, 0.5);
   transition: all 0.3s ease;
   min-width: 40px;
   text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  color: #ffffff;
 }
 
 .queue-marker:hover {
-  background: rgba(64, 158, 255, 0.2);
-  border-color: rgba(64, 158, 255, 0.5);
+  background: rgba(24, 61, 97, 0.9);
+  border-color: rgba(64, 158, 255, 0.6);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .queue-marker-content {
