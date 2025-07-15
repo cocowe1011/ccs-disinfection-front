@@ -30,7 +30,18 @@ const fs = require('fs');
 var appTray = null;
 let closeStatus = false;
 var conn = new nodes7();
-var pollingST = null;
+
+// 记录日志的辅助函数
+function logToFile(message) {
+  const timestamp = new Date().toLocaleString();
+  const logPath =
+    'D://wcs_temp_data/log/' +
+    new Date().toLocaleDateString().replaceAll('/', '-') +
+    'runlog.txt';
+  fs.appendFile(logPath, `[${timestamp}] ${message}\n`, (err) => {
+    if (err) console.error('Error writing to log file:', err);
+  });
+}
 // electron 开启热更新
 try {
   require('electron-reloader')(module, {});
@@ -60,6 +71,7 @@ app.on('ready', () => {
     },
     icon: './build/icons/icon.ico'
   });
+
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
     mainWindow.loadURL(process.env.WEBPACK_DEV_SERVER_URL);
@@ -139,7 +151,7 @@ app.on('ready', () => {
         title: '提醒！',
         message: '确认关闭程序吗？',
         buttons: ['关闭程序', '放入托盘', '取消'], //选择按钮，点击确认则下面的idx为0，取消为1
-        cancelId: 2 //这个的值是如果直接把提示框×掉返回的值，这里设置成和“取消”按钮一样的值，下面的idx也会是1
+        cancelId: 2 //这个的值是如果直接把提示框×掉返回的值，这里设置成和"取消"按钮一样的值，下面的idx也会是1
       })
       .then((idx) => {
         if (idx.response == 2) {
@@ -161,17 +173,37 @@ app.on('ready', () => {
           mainWindow.webContents.send(
             'receivedMsg',
             {
-              DBW60: 0,
-              DBW62: 0,
-              DBW68: 35580,
-              DBW70: 512,
-              DBW72: -1793,
-              DBB100: 'HF800SR-1-H                   ',
-              DBB130: '83048880004868800784          ',
-              DBW76: 195,
-              DBW80: 6000,
-              DBW82: 6000,
-              DBW84: 6000
+              DBW0: 0,
+              DBW6: 0,
+              DBW8: 35580,
+              DBW10: 512,
+              DBW12: -1793,
+              DBW14: 0,
+              DBW16: 0,
+              DBW28: 0,
+              DBW30: 0,
+              DBW34: 0,
+              DBW36: 0,
+              DBW38: 0,
+              DBW40: 0,
+              DBW42: 0,
+              DBW44: 0,
+              DBW46: 0,
+              DBW48: 0,
+              DBW50: 0,
+              DBW64: 0,
+              DBW66: 0,
+              DBW70: 0,
+              DBW74: 0,
+              DBW78: 0,
+              DBW82: 0,
+              DBW84: 0,
+              DBW86: 0,
+              DBB160: 'HF800SR-1-H                   ',
+              DBB190: '83048880004868800784          ',
+              DBB220: 'HF800SR-1-H                   ',
+              DBB250: '83048880004868800784          ',
+              DBB280: 'HF800SR-1-H                   '
             },
             writeStrArr.toString()
           );
@@ -179,17 +211,37 @@ app.on('ready', () => {
           mainWindow.webContents.send(
             'receivedMsg',
             {
-              DBW60: 1,
-              DBW62: 0,
-              DBW68: 35580,
-              DBW70: 512,
-              DBW72: -1793,
-              DBB100: 'HF800SR-1-H                   ',
-              DBB130: '83048880004868800784          ',
-              DBW76: 195,
-              DBW80: 6000,
-              DBW82: 6000,
-              DBW84: 6000
+              DBW0: 1,
+              DBW6: 0,
+              DBW8: 35580,
+              DBW10: 512,
+              DBW12: -1793,
+              DBW14: 0,
+              DBW16: 0,
+              DBW28: 0,
+              DBW30: 0,
+              DBW34: 0,
+              DBW36: 0,
+              DBW38: 0,
+              DBW40: 0,
+              DBW42: 0,
+              DBW44: 0,
+              DBW46: 0,
+              DBW48: 0,
+              DBW50: 0,
+              DBW64: 0,
+              DBW66: 0,
+              DBW70: 0,
+              DBW74: 0,
+              DBW78: 0,
+              DBW82: 0,
+              DBW84: 0,
+              DBW86: 0,
+              DBB160: 'HF800SR-1-H                   ',
+              DBB190: '83048880004868800784          ',
+              DBB220: 'HF800SR-1-H                   ',
+              DBB250: '83048880004868800784          ',
+              DBB280: 'HF800SR-1-H                   '
             },
             writeStrArr.toString()
           );
@@ -200,13 +252,78 @@ app.on('ready', () => {
   }
   setAppTray();
   if (process.env.NODE_ENV === 'production') {
-    // 启动Java进程
-    spawn(path.join(__static, './jre', 'jre1.8.0_251', 'bin', 'java'), [
-      '-Xmx4096m',
-      '-Xms4096m',
-      '-jar',
-      path.join(__static, './jarlib', 'ccs-deliver-middle.jar')
-    ]);
+    try {
+      const javaPath = path.join(
+        __static,
+        './jre',
+        'jre1.8.0_251',
+        'bin',
+        'java'
+      );
+      const jarPath = path.join(
+        __static,
+        './jarlib',
+        'ccs-disinfection-middle.jar'
+      );
+
+      // 优化的Java启动参数
+      const javaOpts = [
+        // 内存设置
+        '-Xmx4096m', // 最大堆内存
+        '-Xms4096m', // 初始堆内存
+        '-XX:MaxMetaspaceSize=512m', // 最大元空间大小
+        '-XX:MetaspaceSize=256m', // 初始元空间大小
+
+        // GC设置
+        '-XX:+UseG1GC', // 使用G1垃圾收集器
+        '-XX:MaxGCPauseMillis=200', // 最大GC停顿时间
+        '-XX:+HeapDumpOnOutOfMemoryError', // 内存溢出时导出堆转储
+        '-XX:HeapDumpPath=D://wcs_temp_data/dump', // 堆转储文件路径
+
+        // 性能优化
+        '-XX:+DisableExplicitGC', // 禁止显式GC调用
+        '-XX:+UseStringDeduplication', // 开启字符串去重
+        '-XX:+OptimizeStringConcat', // 优化字符串连接
+
+        // 监控和调试
+        '-XX:+PrintGCDetails', // 打印GC详细信息
+        '-XX:+PrintGCDateStamps', // 打印GC时间戳
+        '-Xloggc:D://wcs_temp_data/log/gc.log', // GC日志文件
+        '-XX:+HeapDumpBeforeFullGC', // Full GC前生成堆转储
+        '-XX:+PrintGCApplicationStoppedTime', // 打印应用暂停时间
+
+        // 错误处理
+        '-XX:+ExitOnOutOfMemoryError', // 发生OOM时退出
+        '-XX:ErrorFile=D://wcs_temp_data/log/hs_err_%p.log', // JVM错误日志
+        // 编码
+        '-Dfile.encoding=UTF-8',
+        // 应用参数
+        '-jar',
+        jarPath
+      ];
+      // 确保日志目录存在
+      const logDir = 'D://wcs_temp_data/log';
+      const dumpDir = 'D://wcs_temp_data/dump';
+      if (!fs.existsSync(logDir)) {
+        fs.mkdirSync(logDir, { recursive: true });
+      }
+      if (!fs.existsSync(dumpDir)) {
+        fs.mkdirSync(dumpDir, { recursive: true });
+      }
+
+      logToFile(`启动Java进程，使用参数: ${javaOpts.join(' ')}`);
+      const process = spawn(javaPath, javaOpts);
+
+      process.on('error', (err) => {
+        logToFile(`Java程序启动错误: ${err.message}`);
+      });
+
+      process.on('exit', (code, signal) => {
+        logToFile(`Java程序退出，退出码: ${code}, 信号: ${signal}`);
+      });
+    } catch (error) {
+      logToFile(`Java程序启动异常: ${error.message}`);
+    }
   }
 
   // 开发者工具
@@ -224,38 +341,16 @@ app.on('ready', () => {
       ? mainWindow.setFullScreen(false)
       : mainWindow.setFullScreen(true);
   });
-  // 程序启动时判断是否存在报表、日志等本地文件夹，没有就创建
-  createFile('batchReport.grf');
-  createFile('boxreport.grf');
   // 定义自定义事件
   ipcMain.on('writeLogToLocal', (event, arg) => {
     fs.appendFile(
-      'D://css_temp_data/log/' +
+      'D://wcs_temp_data/log/' +
         (new Date().toLocaleDateString() + '.txt').replaceAll('/', '-'),
       arg + '\n',
       function (err) {}
     );
   });
-  // 同步映射加速器数据
-  // synAccData();
 });
-
-function synAccData() {
-  HttpUtil.get('/box/synAccData')
-    .then(() => {
-      pollingST = setTimeout(() => {
-        clearTimeout(pollingST);
-        synAccData();
-      }, 2000);
-    })
-    .catch((err) => {
-      HttpUtil.get('/box/recoverAccData').catch(() => {});
-      pollingST = setTimeout(() => {
-        clearTimeout(pollingST);
-        synAccData();
-      }, 2000);
-    });
-}
 
 function conPLC() {
   logger.info('开始连接PLC');
@@ -289,34 +384,124 @@ function conPLC() {
             return variables[tag];
           }); // This sets the "translation" to allow us to work with object names
           logger.info('连接PLC成功');
-          // PLC看门狗心跳
+          // 输送线看门狗心跳
+          conn.addItems('DBW0');
+          // 输送线当前运行状态
+          conn.addItems('DBW2');
+          // 外部货物接驳口-允许进料
+          conn.addItems('DBW4');
+          // A线电机运行信号
+          conn.addItems('DBW6');
+          // A线光电检测信号
+          conn.addItems('DBW8');
+          // B线电机运行信号
+          conn.addItems('DBW10');
+          // B线光电检测信号
+          conn.addItems('DBW12');
+          // C线电机运行信号
+          conn.addItems('DBW14');
+          // C线光电检测信号
+          conn.addItems('DBW16');
+          // D线电机运行信号
+          conn.addItems('DBW18');
+          // D线光电检测信号
+          conn.addItems('DBW20');
+          // E线电机运行信号
+          conn.addItems('DBW22');
+          // E线光电检测信号
+          conn.addItems('DBW24');
+          // F线电机运行信号
+          conn.addItems('DBW26');
+          // F线光电检测信号
+          conn.addItems('DBW28');
+          // G线电机运行信号
+          conn.addItems('DBW30');
+          // G线光电检测信号
+          conn.addItems('DBW32');
+          // A1数量
+          conn.addItems('DBW34');
+          // A2数量
+          conn.addItems('DBW36');
+          // A3数量
+          conn.addItems('DBW38');
+          // B1数量
+          conn.addItems('DBW40');
+          // B2数量
+          conn.addItems('DBW42');
+          // B3数量
+          conn.addItems('DBW44');
+          // C1数量
+          conn.addItems('DBW46');
+          // C2数量
+          conn.addItems('DBW48');
+          // C3数量
+          conn.addItems('DBW50');
+          // D1数量
+          conn.addItems('DBW52');
+          // D2数量
+          conn.addItems('DBW54');
+          // D3数量
+          conn.addItems('DBW56');
+          // E1数量
+          conn.addItems('DBW58');
+          // E2数量
           conn.addItems('DBW60');
-          // 输送线自动运行 DBW62
+          // E3数量
           conn.addItems('DBW62');
-          // 故障信息
-          conn.addItems('DBW66');
-          // 输送线不允许加速器写
+          // F1数量
           conn.addItems('DBW64');
-          // 束下实时反馈速度
+          // F2数量
+          conn.addItems('DBW66');
+          // F3数量
           conn.addItems('DBW68');
-          // 关键点光电信号
+          // G1数量
           conn.addItems('DBW70');
-          // 电机运行信号
+          // G2数量
           conn.addItems('DBW72');
-          // 束下前输送速度比
+          // G3数量
+          conn.addItems('DBW74');
+          // 上货区电机运行信号（扫码后入队）
           conn.addItems('DBW76');
-          // 上料固定扫码
-          conn.addItems('DBB100');
-          // 迷宫出口固定扫码
-          conn.addItems('DBB130');
-          // J区速度
+          // 上货区输送线光电信号
+          conn.addItems('DBW78');
+          // 预热前小车电机运行信号1#车
           conn.addItems('DBW80');
-          // K区速度
+          // 预热前小车检测信号1#车
           conn.addItems('DBW82');
-          // L区速度
+          // 灭菌前小车电机运行信号2#车
           conn.addItems('DBW84');
-
-          // 读DBW6和DBW62
+          // 灭菌前小车检测信号2#车
+          conn.addItems('DBW86');
+          // 解析前小车电机运行信号3#车
+          conn.addItems('DBW88');
+          // 解析前小车检测信号3#车
+          conn.addItems('DBW90');
+          // 扫码枪处光电信号
+          conn.addItems('DBW92');
+          // 下线扫码枪处，申请扫码
+          conn.addItems('DBW94');
+          // 请求上位机下发任务
+          conn.addItems('DBW96');
+          // 一楼出货口有货需取货处理信号
+          conn.addItems('DBW98');
+          // 一楼下货出口托盘信息（托盘号）
+          conn.addItems('DBB100');
+          // 一楼下线（扫码枪处）（托盘号）
+          conn.addItems('DBB130');
+          // 一楼接货站台扫码数据（托盘号）
+          conn.addItems('DBB160');
+          // 一楼上货区（扫码后入队）（托盘号）
+          conn.addItems('DBB190');
+          // 二楼A接货站台扫码数据（托盘号）
+          conn.addItems('DBB220');
+          // 二楼B接货站台扫码数据（托盘号）
+          conn.addItems('DBB250');
+          // 三楼A接货站台扫码数据（托盘号）
+          conn.addItems('DBB280');
+          // 三楼B接货站台扫码数据（托盘号）
+          conn.addItems('DBB310');
+          // 预热房前缓存线请求目的地
+          conn.addItems('DBW360');
           setInterval(() => {
             conn.readAllItems(valuesReady);
           }, 50);
@@ -342,190 +527,121 @@ function sendHeartToPLC() {
       nowValue = 1 - nowValue;
     }
     times++;
-    writeValuesToPLC('DBW0', nowValue);
+    writeValuesToPLC('DBW500', nowValue);
   }, 200); // 每200毫秒执行一次交替
-}
-
-function createFile(fileNameVal) {
-  const sourcePath = path.join(__static, './report', fileNameVal); // 要复制的文件的路径=
-  const destinationPath = 'D://css_temp_data/report'; // 目标文件夹的路径
-
-  // 检查源文件是否存在
-  if (!fs.existsSync(sourcePath)) {
-    console.error('源文件不存在');
-    return;
-  }
-
-  // 获取源文件的文件名
-  const fileName = path.basename(sourcePath);
-
-  // 构建目标文件的完整路径
-  const destinationFilePath = path.join(destinationPath, fileName);
-
-  // 检查目标文件夹是否存在，如果不存在则创建它
-  if (!fs.existsSync(destinationPath)) {
-    try {
-      fs.mkdirSync(destinationPath, { recursive: true });
-      console.log('目标文件夹已成功创建');
-    } catch (err) {
-      console.error('创建目标文件夹时出现错误：', err);
-      return;
-    }
-  }
-
-  const destinationLogPath = 'D://css_temp_data/log'; // 目标文件夹的路径
-
-  // 创建日志的文件夹
-  if (!fs.existsSync(destinationLogPath)) {
-    try {
-      fs.mkdirSync(destinationLogPath, { recursive: true });
-      console.log('目标文件夹已成功创建');
-    } catch (err) {
-      console.error('创建目标文件夹时出现错误：', err);
-      return;
-    }
-  }
-
-  // 检查目标文件是否已经存在
-  if (fs.existsSync(destinationFilePath)) {
-    console.log('目标文件已存在，跳过复制操作');
-  } else {
-    try {
-      // 使用流的方式复制文件
-      fs.copyFileSync(sourcePath, destinationFilePath);
-      console.log('文件已成功复制到目标文件夹');
-    } catch (err) {
-      console.error('文件复制过程中出现错误：', err);
-    }
-  }
 }
 
 var variables = {
   DBW0: 'DB101,INT0', // 心跳
-  DBW2: 'DB101,INT2', // 加速器设定输送线速度
-  DBW4: 'DB101,INT4', // 加速器允许货物进入辐照区
-  DBW6: 'DB101,INT6', // 暂停按钮
-  DBW8: 'DB101,INT8', // 启动输送线
-  DBW10: 'DB101,INT10', // 停止输送线
-  DBW12: 'DB101,INT12', // 翻转模式
-  DBW14: 'DB101,INT14', // 回流模式
-  DBW16: 'DB101,INT16', // 下货
-  DBW18: 'DB101,INT18', // 剔除指令
-  DBW20: 'DB101,INT20', // 单独启动105
-  DBW22: 'DB101,INT22', // 纸箱宽度
-  DBW24: 'DB101,INT24', // 纸箱长度
-  DBW26: 'DB101,INT26', // 不允许上货
-  DBW34: 'DB101,INT34', // 扫码信息不一致报警
-  DBW36: 'DB101,INT36', // 允许上货
-  DBW38: 'DB101,INT38', // 下货报警
-  DBW40: 'DB101,INT40', // 调节自动居中
-  DBW42: 'DB101,INT42', // 故障复位
-  DBW44: 'DB101,INT44', // 下货完成
-  DBW46: 'DB101,INT46', // 托盘模式
-  DBW60: 'DB101,INT60', // 看门狗心跳
-  DBW62: 'DB101,INT62', // 输送系统自动运行
-  DBW64: 'DB101,INT64',
-  DBW66: 'DB101,INT66', // 故障信息
-  DBW68: 'DB101,INT68',
-  DBW70: 'DB101,INT70',
-  DBW72: 'DB101,INT72',
-  DBW76: 'DB101,INT76', // 束下前输送速度比
-  DBW80: 'DB101,INT80', // J区速度
-  DBW82: 'DB101,INT82', // K区速度
-  DBW84: 'DB101,INT84', // L区速度
-  DBB100: 'DB101,C100.30',
-  DBB130: 'DB101,C130.30'
+  DBW2: 'DB101,INT2', // 输送线当前运行状态
+  DBW4: 'DB101,INT4', // 外部货物接驳口-允许进料
+  DBW6: 'DB101,INT6', // A线电机运行信号
+  DBW8: 'DB101,INT8', // A线光电检测信号
+  DBW10: 'DB101,INT10', // B线电机运行信号
+  DBW12: 'DB101,INT12', // B线光电检测信号
+  DBW14: 'DB101,INT14', // C线电机运行信号
+  DBW16: 'DB101,INT16', // C线光电检测信号
+  DBW18: 'DB101,INT18', // D线电机运行信号
+  DBW20: 'DB101,INT20', // D线光电检测信号
+  DBW22: 'DB101,INT22', // E线电机运行信号
+  DBW24: 'DB101,INT24', // E线光电检测信号
+  DBW26: 'DB101,INT26', // F线电机运行信号
+  DBW28: 'DB101,INT28', // F线光电检测信号
+  DBW30: 'DB101,INT30', // G线电机运行信号
+  DBW32: 'DB101,INT32', // G线光电检测信号
+  DBW34: 'DB101,INT34', // A1数量
+  DBW36: 'DB101,INT36', // A2数量
+  DBW38: 'DB101,INT38', // A3数量
+  DBW40: 'DB101,INT40', // B1数量
+  DBW42: 'DB101,INT42', // B2数量
+  DBW44: 'DB101,INT44', // B3数量
+  DBW46: 'DB101,INT46', // C1数量
+  DBW48: 'DB101,INT48', // C2数量
+  DBW50: 'DB101,INT50', // C3数量
+  DBW52: 'DB101,INT52', // D1数量
+  DBW54: 'DB101,INT54', // D2数量
+  DBW56: 'DB101,INT56', // D3数量
+  DBW58: 'DB101,INT58', // E1数量
+  DBW60: 'DB101,INT60', // E2数量
+  DBW62: 'DB101,INT62', // E3数量
+  DBW64: 'DB101,INT64', // F1数量
+  DBW66: 'DB101,INT66', // F2数量
+  DBW68: 'DB101,INT68', // F3数量
+  DBW70: 'DB101,INT70', // G1数量
+  DBW72: 'DB101,INT72', // G2数量
+  DBW74: 'DB101,INT74', // G3数量
+  DBW76: 'DB101,INT76', // 上货区电机运行信号（扫码后入队）
+  DBW78: 'DB101,INT78', // 上货区输送线光电信号
+  DBW80: 'DB101,INT80', // 预热前小车电机运行信号1#车
+  DBW82: 'DB101,INT82', // 预热前小车检测信号1#车
+  DBW84: 'DB101,INT84', // 灭菌前小车电机运行信号2#车
+  DBW86: 'DB101,INT86', // 灭菌前小车检测信号2#车
+  DBW88: 'DB101,INT88', // 解析前小车电机运行信号3#车
+  DBW90: 'DB101,INT90', // 解析前小车检测信号3#车
+  DBW92: 'DB101,INT92', // 扫码枪处光电信号
+  DBW94: 'DB101,INT94', // 下线扫码枪处，申请扫码
+  DBW96: 'DB101,INT96', // 请求上位机下发任务
+  DBW98: 'DB101,INT98', // 一楼出货口有货需取货处理信号
+  DBB100: 'DB101,C100.30', // 一楼下货出口托盘信息（托盘号）
+  DBB130: 'DB101,C130.30', // 一楼下线（扫码枪处）（托盘号）
+  DBB160: 'DB101,C160.30', // 一楼接货站台扫码数据（托盘号）
+  DBB190: 'DB101,C190.30', // 一楼上货区（扫码后入队）（托盘号）
+  DBB220: 'DB101,C220.30', // 二楼A接货站台扫码数据（托盘号）
+  DBB250: 'DB101,C250.30', // 二楼B接货站台扫码数据（托盘号）
+  DBB280: 'DB101,C280.30', // 三楼A接货站台扫码数据（托盘号）
+  DBB310: 'DB101,C310.30', // 三楼B接货站台扫码数据（托盘号）
+  DBW360: 'DB101,INT360', // 预热房前缓存线请求目的地
+  DBW500: 'DB101,INT500', // WCS看门狗心跳
+  DBW502: 'DB101,INT502', // WCS-全线启动
+  DBW504: 'DB101,INT504', // WCS-全线停止
+  DBW506: 'DB101,INT506', // WCS-全线暂停
+  DBW508: 'DB101,INT508', // WCS-故障复位
+  DBW510: 'DB101,INT510', // WCS-接货口启用/禁用——接货口全部禁用→写1禁用；写0不禁用
+  DBW512: 'DB101,INT512', // WCS-接货口启用/禁用——一楼接货口启用→写1启用；写0不启用
+  DBW514: 'DB101,INT514', // WCS-接货口启用/禁用——二楼1#接货口启用→写1启用；写0不启用
+  DBW516: 'DB101,INT516', // WCS-接货口启用/禁用——二楼2#接货口启用→写1启用；写0不启用
+  DBW518: 'DB101,INT518', // WCS-接货口启用/禁用——三楼1#接货口启用→写1启用；写0不启用
+  DBW520: 'DB101,INT520', // WCS-接货口启用/禁用——三楼2#接货口启用→写1启用；写0不启用
+  DBW522: 'DB101,INT522', // WCS-接货口启用/禁用——备用
+  DBW524: 'DB101,INT524', // WCS执行进货预热房编号
+  DBW526: 'DB101,INT526', // WCS执行出货预热房编号
+  DBW528: 'DB101,INT528', // WCS执行进货灭菌柜编号
+  DBW530: 'DB101,INT530', // WCS执行出货灭菌柜编号
+  DBW540: 'DB101,INT540', // WCS下发任务完成
+  DBW542: 'DB101,INT542', // WCS下发目的地
+  DBB544: 'DB101,C544.30' // WCS下发托盘号
 };
 
-var writeStrArr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+var writeStrArr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ''];
 var writeAddArr = [
-  'DBW0',
-  'DBW2',
-  'DBW4',
-  'DBW6',
-  'DBW8',
-  'DBW10',
-  'DBW12',
-  'DBW14',
-  'DBW16',
-  'DBW18',
-  'DBW22',
-  'DBW24',
-  'DBW26',
-  'DBW34',
-  'DBW36',
-  'DBW38',
-  'DBW40',
-  'DBW42',
-  'DBW44',
-  'DBW46'
+  'DBW500', // WCS看门狗心跳
+  'DBW502', // WCS-全线启动
+  'DBW504', // WCS-全线停止
+  'DBW506', // WCS-全线暂停
+  'DBW508', // WCS-故障复位
+  'DBW510', // WCS-接货口启用/禁用——接货口全部禁用→写1禁用；写0不禁用
+  'DBW512', // WCS-接货口启用/禁用——一楼接货口启用→写1启用；写0不启用
+  'DBW514', // WCS-接货口启用/禁用——二楼1#接货口启用→写1启用；写0不启用
+  'DBW516', // WCS-接货口启用/禁用——二楼2#接货口启用→写1启用；写0不启用
+  'DBW518', // WCS-接货口启用/禁用——三楼1#接货口启用→写1启用；写0不启用
+  'DBW520', // WCS-接货口启用/禁用——三楼2#接货口启用→写1启用；写0不启用
+  'DBW522', // WCS-接货口启用/禁用——备用
+  'DBW524', // WCS执行进货预热房编号
+  'DBW526', // WCS执行出货预热房编号
+  'DBW528', // WCS执行进货灭菌柜编号
+  'DBW530', // WCS执行出货灭菌柜编号
+  'DBW540', // WCS下发任务完成
+  'DBW542', // WCS下发目的地
+  'DBB544' // WCS下发托盘号
 ];
 
 // 给PLC写值
 function writeValuesToPLC(add, values) {
-  switch (add) {
-    case 'DBW0':
-      writeStrArr[0] = values;
-      break;
-    case 'DBW2':
-      writeStrArr[1] = values;
-      break;
-    case 'DBW4':
-      writeStrArr[2] = values;
-      break;
-    case 'DBW6':
-      writeStrArr[3] = values;
-      break;
-    case 'DBW8':
-      writeStrArr[4] = values;
-      break;
-    case 'DBW10':
-      writeStrArr[5] = values;
-      break;
-    case 'DBW12':
-      writeStrArr[6] = values;
-      break;
-    case 'DBW14':
-      writeStrArr[7] = values;
-      break;
-    case 'DBW16':
-      writeStrArr[8] = values;
-      break;
-    case 'DBW18':
-      writeStrArr[9] = values;
-      break;
-    case 'DBW22':
-      writeStrArr[10] = values;
-      break;
-    case 'DBW24':
-      writeStrArr[11] = values;
-      break;
-    case 'DBW26':
-      writeStrArr[12] = values;
-      break;
-    case 'DBW34':
-      writeStrArr[13] = values;
-      break;
-    case 'DBW36':
-      writeStrArr[14] = values;
-      break;
-    case 'DBW38':
-      writeStrArr[15] = values;
-      break;
-    case 'DBW40':
-      writeStrArr[16] = values;
-      break;
-    case 'DBW42':
-      writeStrArr[17] = values;
-      break;
-    case 'DBW44':
-      writeStrArr[18] = values;
-      break;
-    case 'DBW46':
-      writeStrArr[19] = values;
-      break;
-    default:
-      break;
+  const index = writeAddArr.indexOf(add);
+  if (index !== -1) {
+    writeStrArr[index] = values;
+  } else {
+    console.warn(`Address ${add} not found in writeAddArr.`);
   }
 }
 
@@ -554,7 +670,6 @@ const setAppTray = () => {
     }
   ];
 
-  console.log();
   // 系统托盘图标目录
   appTray = new Tray(path.join(__static, './icon.ico'));
 
@@ -562,7 +677,7 @@ const setAppTray = () => {
   const contextMenu = Menu.buildFromTemplate(trayMenuTemplate);
 
   // 设置此托盘图标的悬停提示内容
-  appTray.setToolTip('全自动束下输送系统(ccs)');
+  appTray.setToolTip('WCS系统');
 
   // 设置此图标的上下文菜单
   appTray.setContextMenu(contextMenu);

@@ -1132,6 +1132,7 @@
 <script>
 import HttpUtil from '@/utils/HttpUtil';
 import moment from 'moment';
+import { ipcRenderer } from 'electron';
 export default {
   name: 'MonitorScreen',
   data() {
@@ -1312,6 +1313,7 @@ export default {
     this.initializeMarkers();
     this.refreshOrders();
     this.queryQueueList();
+    ipcRenderer.on('receivedMsg', (event, values, values2) => {});
   },
   methods: {
     changeQueueExpanded() {
@@ -2072,6 +2074,13 @@ export default {
         if (this.alarmLogs.length > 100) {
           this.alarmLogs.pop();
         }
+      }
+    },
+    convertToWord(value) {
+      if (value < 0) {
+        return (value & 0xffff) >>> 0; // 负数转换为无符号的16位整数
+      } else {
+        return value; // 非负数保持不变
       }
     }
   }
