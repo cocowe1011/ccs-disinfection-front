@@ -4,15 +4,20 @@
     <div class="side-info-panel left-panel">
       <!-- PLC状态与订单信息区域 -->
       <div class="plc-info-section">
-        <div class="section-header">
-          订单信息与PLC状态
-        </div>
-        <div class="scrollable-content" style="margin-top: 5px;">
+        <div class="section-header">订单信息与PLC状态</div>
+        <div class="scrollable-content" style="margin-top: 5px">
           <div class="status-overview">
             <div class="data-card">
               <div class="data-card-border">
-                <div class="data-card-border-borderTop granient-text">当前批次id</div>
-                <div class="data-card-border-borderDown" style="font-size: 1.3vw;">123456678</div>
+                <div class="data-card-border-borderTop granient-text">
+                  当前批次id
+                </div>
+                <div
+                  class="data-card-border-borderDown"
+                  style="font-size: 1.3vw"
+                >
+                  123456678
+                </div>
               </div>
             </div>
             <div class="data-card">
@@ -50,23 +55,36 @@
       </div>
       <!-- 操作区 -->
       <div class="operation-panel">
-        <div class="section-header">
-          操作区
-        </div>
+        <div class="section-header">操作区</div>
         <div class="operation-buttons">
-          <button @click="toggleButtonState('start')" :class="{'pressed': buttonStates.start}">
+          <button
+            @click="toggleButtonState('start')"
+            :class="{ pressed: buttonStates.start }"
+          >
             <i class="el-icon-switch-button"></i><span>全线启动</span>
           </button>
-          <button @click="toggleButtonState('stop')" :class="{'pressed': buttonStates.stop}">
+          <button
+            @click="toggleButtonState('stop')"
+            :class="{ pressed: buttonStates.stop }"
+          >
             <i class="el-icon-error"></i><span>全线停止</span>
           </button>
-          <button @click="toggleButtonState('reset')" :class="{'pressed': buttonStates.reset}">
+          <button
+            @click="toggleButtonState('reset')"
+            :class="{ pressed: buttonStates.reset }"
+          >
             <i class="el-icon-video-pause"></i><span>全线暂停</span>
           </button>
-          <button @click="toggleButtonState('fault_reset')" :class="{'pressed': buttonStates.fault_reset}">
+          <button
+            @click="toggleButtonState('fault_reset')"
+            :class="{ pressed: buttonStates.fault_reset }"
+          >
             <i class="el-icon-refresh"></i><span>故障复位</span>
           </button>
-          <button @click="toggleButtonState('clear')" :class="{'pressed': buttonStates.clear}">
+          <button
+            @click="toggleButtonState('clear')"
+            :class="{ pressed: buttonStates.clear }"
+          >
             <i class="el-icon-delete"></i><span>全线清空</span>
           </button>
         </div>
@@ -77,29 +95,34 @@
         <div class="section-header">
           日志区
           <div class="log-tabs">
-            <div 
-              class="log-tab" 
+            <div
+              class="log-tab"
               :class="{ active: activeLogType === 'running' }"
               @click="activeLogType = 'running'"
             >
               运行日志
             </div>
-            <div 
-              class="log-tab" 
+            <div
+              class="log-tab"
               :class="{ active: activeLogType === 'alarm' }"
               @click="activeLogType = 'alarm'"
             >
               报警日志
-              <div v-if="unreadAlarms > 0" class="alarm-badge">{{ unreadAlarms }}</div>
+              <div v-if="unreadAlarms > 0" class="alarm-badge">
+                {{ unreadAlarms }}
+              </div>
             </div>
           </div>
         </div>
         <div class="scrollable-content">
           <div class="log-list">
-            <div 
-              v-for="log in currentLogs" 
+            <div
+              v-for="log in currentLogs"
               :key="log.id"
-              :class="['log-item', { 'alarm': log.type === 'alarm', 'unread': log.unread }]"
+              :class="[
+                'log-item',
+                { alarm: log.type === 'alarm', unread: log.unread }
+              ]"
               @click="markAsRead(log)"
             >
               <div class="log-time">{{ formatTime(log.timestamp) }}</div>
@@ -119,7 +142,11 @@
   position: relative;
   display: flex;
   align-items: center;
-  background: radial-gradient(circle, rgba(0, 0, 0, 0.85), rgba(15, 32, 39, 0.95));
+  background: radial-gradient(
+    circle,
+    rgba(0, 0, 0, 0.85),
+    rgba(15, 32, 39, 0.95)
+  );
   padding: 0;
   font-family: 'Roboto', sans-serif;
   overflow: hidden;
@@ -241,18 +268,18 @@ h3 {
   &::-webkit-scrollbar {
     width: 5px;
   }
-  
+
   &::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.1);
     border-radius: 10px;
   }
-  
+
   &::-webkit-scrollbar-thumb {
-    background: linear-gradient(45deg, #0ac5a8, #2196F3);
+    background: linear-gradient(45deg, #0ac5a8, #2196f3);
     border-radius: 10px;
-    
+
     &:hover {
-      background: linear-gradient(45deg, #0ac5a8, #4CAF50);
+      background: linear-gradient(45deg, #0ac5a8, #4caf50);
     }
   }
 }
@@ -262,23 +289,23 @@ h3 {
   max-height: 100%;
   overflow-y: auto;
   padding: 0 15px;
-  
+
   // 自定义滚动条
   &::-webkit-scrollbar {
     width: 5px;
   }
-  
+
   &::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.1);
     border-radius: 10px;
   }
-  
+
   &::-webkit-scrollbar-thumb {
-    background: linear-gradient(45deg, #0ac5a8, #2196F3);
+    background: linear-gradient(45deg, #0ac5a8, #2196f3);
     border-radius: 10px;
-    
+
     &:hover {
-      background: linear-gradient(45deg, #0ac5a8, #4CAF50);
+      background: linear-gradient(45deg, #0ac5a8, #4caf50);
     }
   }
 }
@@ -301,7 +328,11 @@ h3 {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1),
+      rgba(255, 255, 255, 0)
+    );
     opacity: 0;
     transition: opacity 0.3s ease;
   }
@@ -310,31 +341,51 @@ h3 {
     transform: translateY(-3px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
     border-color: rgba(10, 197, 168, 0.5);
-    
+
     &::before {
       opacity: 1;
     }
   }
 
-  &.loading { 
-    border-left: 4px solid #4CAF50;
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(48, 65, 85, 0.6));
+  &.loading {
+    border-left: 4px solid #4caf50;
+    background: linear-gradient(
+      135deg,
+      rgba(76, 175, 80, 0.1),
+      rgba(48, 65, 85, 0.6)
+    );
   }
-  &.buffer { 
-    border-left: 4px solid #2196F3;
-    background: linear-gradient(135deg, rgba(33, 150, 243, 0.1), rgba(48, 65, 85, 0.6));
+  &.buffer {
+    border-left: 4px solid #2196f3;
+    background: linear-gradient(
+      135deg,
+      rgba(33, 150, 243, 0.1),
+      rgba(48, 65, 85, 0.6)
+    );
   }
-  &.preheat { 
-    border-left: 4px solid #FF9800;
-    background: linear-gradient(135deg, rgba(255, 152, 0, 0.1), rgba(48, 65, 85, 0.6));
+  &.preheat {
+    border-left: 4px solid #ff9800;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 152, 0, 0.1),
+      rgba(48, 65, 85, 0.6)
+    );
   }
-  &.sterilize { 
-    border-left: 4px solid #9C27B0;
-    background: linear-gradient(135deg, rgba(156, 39, 176, 0.1), rgba(48, 65, 85, 0.6));
+  &.sterilize {
+    border-left: 4px solid #9c27b0;
+    background: linear-gradient(
+      135deg,
+      rgba(156, 39, 176, 0.1),
+      rgba(48, 65, 85, 0.6)
+    );
   }
-  &.unloading { 
-    border-left: 4px solid #F44336;
-    background: linear-gradient(135deg, rgba(244, 67, 54, 0.1), rgba(48, 65, 85, 0.6));
+  &.unloading {
+    border-left: 4px solid #f44336;
+    background: linear-gradient(
+      135deg,
+      rgba(244, 67, 54, 0.1),
+      rgba(48, 65, 85, 0.6)
+    );
   }
 
   // 添加拖拽目标样式
@@ -392,7 +443,11 @@ h3 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, rgba(76, 106, 130, 0.7), rgba(44, 62, 80, 0.7));
+  background: linear-gradient(
+    135deg,
+    rgba(76, 106, 130, 0.7),
+    rgba(44, 62, 80, 0.7)
+  );
   margin: 10px 0;
   padding: 15px;
   border-radius: 10px;
@@ -403,7 +458,11 @@ h3 {
 
   &:hover {
     transform: translateX(5px);
-    background: linear-gradient(135deg, rgba(46, 90, 141, 0.8), rgba(44, 62, 80, 0.8));
+    background: linear-gradient(
+      135deg,
+      rgba(46, 90, 141, 0.8),
+      rgba(44, 62, 80, 0.8)
+    );
     border-color: rgba(10, 197, 168, 0.5);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
   }
@@ -497,13 +556,21 @@ h3 {
         padding-left: 12px;
       }
       .granient-text {
-        background-image: linear-gradient(to right, rgba(72, 146, 254, 1) , rgba(71, 207, 245, 1));
+        background-image: linear-gradient(
+          to right,
+          rgba(72, 146, 254, 1),
+          rgba(71, 207, 245, 1)
+        );
         background-clip: text;
         -webkit-background-clip: text;
         color: transparent;
       }
       .granient-text-order {
-        background-image: linear-gradient(to right, rgba(112, 225, 245, 1) , rgba(255, 209, 148, 1));
+        background-image: linear-gradient(
+          to right,
+          rgba(112, 225, 245, 1),
+          rgba(255, 209, 148, 1)
+        );
         background-clip: text;
         -webkit-background-clip: text;
         color: transparent;
@@ -613,15 +680,15 @@ h3 {
     &::-webkit-scrollbar {
       width: 4px;
     }
-    
+
     &::-webkit-scrollbar-track {
       background: transparent;
     }
-    
+
     &::-webkit-scrollbar-thumb {
       background: rgba(10, 197, 168, 0.2);
       border-radius: 2px;
-      
+
       &:hover {
         background: rgba(10, 197, 168, 0.4);
       }
@@ -649,7 +716,7 @@ h3 {
 
     &.alarm {
       background: rgba(245, 108, 108, 0.05);
-      
+
       &.unread {
         background: rgba(245, 108, 108, 0.1);
         border-left: 2px solid #f56c6c;
@@ -677,12 +744,12 @@ h3 {
   }
 }
 
-.log-fade-enter-active, 
+.log-fade-enter-active,
 .log-fade-leave-active {
   transition: all 0.3s ease;
 }
 
-.log-fade-enter-from, 
+.log-fade-enter-from,
 .log-fade-leave-to {
   opacity: 0;
   transform: translateY(-10px);
@@ -704,13 +771,12 @@ h3 {
   gap: 35px;
   padding: 15px 30px;
   background: linear-gradient(
-    135deg, 
-    rgba(30, 42, 56, 0.85), 
+    135deg,
+    rgba(30, 42, 56, 0.85),
     rgba(30, 42, 56, 0.65)
   );
   border-radius: 20px;
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.2),
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2),
     inset 0 0 0 1px rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -726,18 +792,13 @@ h3 {
   font-weight: 900;
   margin-bottom: 6px;
   letter-spacing: 3px;
-  background: linear-gradient(
-    45deg,
-    #ffffff 10%,
-    #0ac5a8 50%,
-    #4cddff 90%
-  );
+  background: linear-gradient(45deg, #ffffff 10%, #0ac5a8 50%, #4cddff 90%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   text-shadow: 0 2px 15px rgba(10, 197, 168, 0.3);
   position: relative;
-  
+
   &::after {
     content: '';
     position: absolute;
@@ -802,28 +863,28 @@ h3 {
 
 @media screen and (max-width: 1600px) {
   .smart-workshop {
-    grid-template-columns: 380px 1fr 20%;  // 从 400px 改为 380px
+    grid-template-columns: 380px 1fr 20%; // 从 400px 改为 380px
   }
-  
+
   .side-info-panel.left-panel {
-    width: 380px;  // 从 400px 改为 380px
+    width: 380px; // 从 400px 改为 380px
   }
 }
 
 @media screen and (max-width: 1366px) {
   .smart-workshop {
-    grid-template-columns: 320px 1fr 20%;  // 从 350px 改为 320px
+    grid-template-columns: 320px 1fr 20%; // 从 350px 改为 320px
   }
-  
+
   .side-info-panel.left-panel {
-    width: 320px;  // 从 350px 改为 320px
+    width: 320px; // 从 350px 改为 320px
   }
 }
 </style>
 
 <script>
 export default {
-  name: "MainPage",
+  name: 'MainPage',
   data() {
     return {
       buttonStates: {
@@ -839,15 +900,17 @@ export default {
       ],
       alarmLogs: [
         // ... [保留原有的报警日志数据]
-      ],
+      ]
     };
   },
   computed: {
     currentLogs() {
-      return this.activeLogType === 'running' ? this.runningLogs : this.alarmLogs;
+      return this.activeLogType === 'running'
+        ? this.runningLogs
+        : this.alarmLogs;
     },
     unreadAlarms() {
-      return this.alarmLogs.filter(log => log.unread).length;
+      return this.alarmLogs.filter((log) => log.unread).length;
     }
   },
   methods: {
@@ -858,7 +921,7 @@ export default {
         reset: false,
         fault_reset: false,
         clear: false
-      }
+      };
       this.buttonStates[button] = !this.buttonStates[button];
     },
     formatTime(timestamp) {
