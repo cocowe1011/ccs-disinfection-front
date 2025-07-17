@@ -477,23 +477,151 @@
                 </div>
                 <!-- 上货区电机运行信号 -->
                 <div
-                  class="motor-marker label-top"
+                  class="motor-marker label-left"
                   :class="{ running: upLoadMotorRunning.bit0 === '1' }"
-                  data-x="1190"
-                  data-y="1450"
+                  data-x="1365"
+                  data-y="1265"
                   @click="toggleBitValue(upLoadMotorRunning, 'bit0')"
                 >
                   <div class="marker-label">S-1#</div>
                 </div>
                 <div
-                  class="motor-marker label-top"
+                  class="motor-marker label-left"
                   :class="{ running: upLoadMotorRunning.bit1 === '1' }"
-                  data-x="1190"
-                  data-y="1450"
+                  data-x="1365"
+                  data-y="1323"
                   @click="toggleBitValue(upLoadMotorRunning, 'bit1')"
                 >
                   <div class="marker-label">S-2#</div>
                 </div>
+                <div
+                  class="motor-marker label-left"
+                  :class="{ running: upLoadMotorRunning.bit2 === '1' }"
+                  data-x="1365"
+                  data-y="1380"
+                  @click="toggleBitValue(upLoadMotorRunning, 'bit2')"
+                >
+                  <div class="marker-label">S-3#</div>
+                </div>
+                <div
+                  class="motor-marker label-left"
+                  :class="{ running: upLoadMotorRunning.bit3 === '1' }"
+                  data-x="1368"
+                  data-y="1442"
+                  @click="toggleBitValue(upLoadMotorRunning, 'bit3')"
+                >
+                  <div class="marker-label">S-4#</div>
+                </div>
+                <div
+                  class="motor-marker label-left"
+                  :class="{ running: upLoadMotorRunning.bit4 === '1' }"
+                  data-x="1368"
+                  data-y="1502"
+                  @click="toggleBitValue(upLoadMotorRunning, 'bit4')"
+                >
+                  <div class="marker-label">S-5#</div>
+                </div>
+                <div
+                  class="motor-marker label-left"
+                  :class="{ running: upLoadMotorRunning.bit5 === '1' }"
+                  data-x="1368"
+                  data-y="1562"
+                  @click="toggleBitValue(upLoadMotorRunning, 'bit5')"
+                >
+                  <div class="marker-label">S-6#</div>
+                </div>
+                <div
+                  class="motor-marker label-left"
+                  :class="{ running: upLoadMotorRunning.bit6 === '1' }"
+                  data-x="1368"
+                  data-y="1620"
+                  @click="toggleBitValue(upLoadMotorRunning, 'bit6')"
+                >
+                  <div class="marker-label">S-7#</div>
+                </div>
+                <div
+                  class="motor-marker label-left"
+                  :class="{ running: upLoadMotorRunning.bit7 === '1' }"
+                  data-x="1368"
+                  data-y="1670"
+                  @click="toggleBitValue(upLoadMotorRunning, 'bit7')"
+                >
+                  <div class="marker-label">S-8#</div>
+                </div>
+                <!-- 上货区输送线光电信号 -->
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: upLoadPhotoelectricSignal.bit0 === '1' }"
+                  data-x="1335"
+                  data-y="1293"
+                  @click="toggleBitValue(upLoadPhotoelectricSignal, 'bit0')"
+                >
+                  <div class="marker-label">S-1#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: upLoadPhotoelectricSignal.bit1 === '1' }"
+                  data-x="1335"
+                  data-y="1353"
+                  @click="toggleBitValue(upLoadPhotoelectricSignal, 'bit1')"
+                >
+                  <div class="marker-label">S-2#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: upLoadPhotoelectricSignal.bit2 === '1' }"
+                  data-x="1335"
+                  data-y="1413"
+                  @click="toggleBitValue(upLoadPhotoelectricSignal, 'bit2')"
+                >
+                  <div class="marker-label">S-3#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: upLoadPhotoelectricSignal.bit3 === '1' }"
+                  data-x="1335"
+                  data-y="1473"
+                  @click="toggleBitValue(upLoadPhotoelectricSignal, 'bit3')"
+                >
+                  <div class="marker-label">S-4#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: upLoadPhotoelectricSignal.bit4 === '1' }"
+                  data-x="1335"
+                  data-y="1533"
+                  @click="toggleBitValue(upLoadPhotoelectricSignal, 'bit4')"
+                >
+                  <div class="marker-label">S-5#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: upLoadPhotoelectricSignal.bit5 === '1' }"
+                  data-x="1335"
+                  data-y="1593"
+                  @click="toggleBitValue(upLoadPhotoelectricSignal, 'bit5')"
+                >
+                  <div class="marker-label">S-6#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: upLoadPhotoelectricSignal.bit6 === '1' }"
+                  data-x="1335"
+                  data-y="1648"
+                  @click="toggleBitValue(upLoadPhotoelectricSignal, 'bit6')"
+                >
+                  <div class="marker-label">S-7#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: upLoadPhotoelectricSignal.bit7 === '1' }"
+                  data-x="1335"
+                  data-y="1695"
+                  @click="toggleBitValue(upLoadPhotoelectricSignal, 'bit7')"
+                >
+                  <div class="marker-label">S-8#</div>
+                </div>
+
                 <!-- A线电机运行信号 -->
                 <div
                   class="motor-marker label-top"
@@ -2374,7 +2502,7 @@ export default {
       },
       // 添加队列位置标识数据
       queueMarkers: [
-        { id: 1, name: '上货区', queueId: 1, x: 1365, y: 1520 },
+        { id: 1, name: '上货区', queueId: 1, x: 1485, y: 1620 },
         { id: 2, name: 'A1', queueId: 2, x: 1216, y: 1550 },
         { id: 3, name: 'B1', queueId: 3, x: 1083, y: 1550 },
         { id: 4, name: 'C1', queueId: 4, x: 905, y: 1550 },
