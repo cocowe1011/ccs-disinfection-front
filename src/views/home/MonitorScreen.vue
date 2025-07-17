@@ -339,8 +339,7 @@
                 >
                   <div class="queue-marker-content">
                     <span class="queue-marker-count">{{
-                      queues.find((q) => q.id === marker.queueId)?.trayInfo
-                        ?.length || 0
+                      getQueueCountFromPLC(marker.name)
                     }}</span>
                     <span class="queue-marker-name">{{ marker.name }}</span>
                   </div>
@@ -357,22 +356,23 @@
                   <img :src="cart.image" :alt="cart.name" class="cart-image" />
                 </div>
                 <!-- 上货扫码区域提示 -->
-                <div class="marker-with-panel" data-x="1365" data-y="1120">
+                <div class="marker-with-panel" data-x="1400" data-y="1420">
                   <div class="pulse"></div>
                   <div
                     class="data-panel"
-                    :class="['position-left', { 'always-show': true }]"
+                    :class="['position-right', { 'always-show': true }]"
+                    style="width: 140px"
                   >
                     <div class="data-panel-header">上货扫码信息</div>
                     <div class="data-panel-content">
                       <div class="data-panel-row">
-                        <span class="data-panel-label">当前批次：</span>
+                        <span class="data-panel-label">批次：</span>
                         <span>{{
                           currentOrder ? currentOrder.orderId : '--'
                         }}</span>
                       </div>
                       <div class="data-panel-row">
-                        <span class="data-panel-label">当前上货扫码信息：</span>
+                        <span class="data-panel-label">扫码：</span>
                         <span>{{ currentUploadQrCode || '--' }}</span>
                       </div>
                       <div
@@ -475,21 +475,1172 @@
                     </div>
                   </div>
                 </div>
-                <!-- 光电A -->
+                <!-- 上货区电机运行信号 -->
                 <div
-                  class="marker marker-show-label scanning"
-                  data-x="200"
-                  data-y="150"
+                  class="motor-marker label-top"
+                  :class="{ running: upLoadMotorRunning.bit0 === '1' }"
+                  data-x="1190"
+                  data-y="1450"
+                  @click="toggleBitValue(upLoadMotorRunning, 'bit0')"
                 >
                   <div class="marker-label">S-1#</div>
                 </div>
-                <!-- 电机A -->
                 <div
-                  class="motor-marker marker-show-label running"
-                  data-x="100"
-                  data-y="150"
+                  class="motor-marker label-top"
+                  :class="{ running: upLoadMotorRunning.bit1 === '1' }"
+                  data-x="1190"
+                  data-y="1450"
+                  @click="toggleBitValue(upLoadMotorRunning, 'bit1')"
                 >
-                  <div class="marker-label">S1#</div>
+                  <div class="marker-label">S-2#</div>
+                </div>
+                <!-- A线电机运行信号 -->
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: aLineMotorRunning.bit0 === '1' }"
+                  data-x="1190"
+                  data-y="1450"
+                  @click="toggleBitValue(aLineMotorRunning, 'bit0')"
+                >
+                  <div class="marker-label">A1-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: aLineMotorRunning.bit1 === '1' }"
+                  data-x="1240"
+                  data-y="1450"
+                  @click="toggleBitValue(aLineMotorRunning, 'bit1')"
+                >
+                  <div class="marker-label">A1-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: aLineMotorRunning.bit2 === '1' }"
+                  data-x="1190"
+                  data-y="1085"
+                  @click="toggleBitValue(aLineMotorRunning, 'bit2')"
+                >
+                  <div class="marker-label">A2-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: aLineMotorRunning.bit3 === '1' }"
+                  data-x="1240"
+                  data-y="1085"
+                  @click="toggleBitValue(aLineMotorRunning, 'bit3')"
+                >
+                  <div class="marker-label">A2-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-left"
+                  :class="{ running: aLineMotorRunning.bit4 === '1' }"
+                  data-x="1187"
+                  data-y="360"
+                  @click="toggleBitValue(aLineMotorRunning, 'bit4')"
+                >
+                  <div class="marker-label">A3-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: aLineMotorRunning.bit5 === '1' }"
+                  data-x="1237"
+                  data-y="360"
+                  @click="toggleBitValue(aLineMotorRunning, 'bit5')"
+                >
+                  <div class="marker-label">A3-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-left"
+                  :class="{ running: aLineMotorRunning.bit6 === '1' }"
+                  data-x="1190"
+                  data-y="290"
+                  @click="toggleBitValue(aLineMotorRunning, 'bit6')"
+                >
+                  <div class="marker-label">A4-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: aLineMotorRunning.bit7 === '1' }"
+                  data-x="1233"
+                  data-y="290"
+                  @click="toggleBitValue(aLineMotorRunning, 'bit7')"
+                >
+                  <div class="marker-label">A4-2#</div>
+                </div>
+                <!-- A线光电检测信号 -->
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: aLinePhotoelectricSignal.bit0 === '1' }"
+                  data-x="1190"
+                  data-y="1680"
+                  @click="toggleBitValue(aLinePhotoelectricSignal, 'bit0')"
+                >
+                  <div class="marker-label">A-1#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: aLinePhotoelectricSignal.bit1 === '1' }"
+                  data-x="1245"
+                  data-y="1680"
+                  @click="toggleBitValue(aLinePhotoelectricSignal, 'bit1')"
+                >
+                  <div class="marker-label">A-2#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: aLinePhotoelectricSignal.bit2 === '1' }"
+                  data-x="1190"
+                  data-y="1280"
+                  @click="toggleBitValue(aLinePhotoelectricSignal, 'bit2')"
+                >
+                  <div class="marker-label">A-3#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: aLinePhotoelectricSignal.bit3 === '1' }"
+                  data-x="1240"
+                  data-y="1280"
+                  @click="toggleBitValue(aLinePhotoelectricSignal, 'bit3')"
+                >
+                  <div class="marker-label">A-4#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: aLinePhotoelectricSignal.bit4 === '1' }"
+                  data-x="1190"
+                  data-y="850"
+                  @click="toggleBitValue(aLinePhotoelectricSignal, 'bit4')"
+                >
+                  <div class="marker-label">A-5#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: aLinePhotoelectricSignal.bit5 === '1' }"
+                  data-x="1240"
+                  data-y="850"
+                  @click="toggleBitValue(aLinePhotoelectricSignal, 'bit5')"
+                >
+                  <div class="marker-label">A-6#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: aLinePhotoelectricSignal.bit6 === '1' }"
+                  data-x="1165"
+                  data-y="320"
+                  @click="toggleBitValue(aLinePhotoelectricSignal, 'bit6')"
+                >
+                  <div class="marker-label">A-7#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: aLinePhotoelectricSignal.bit7 === '1' }"
+                  data-x="1163"
+                  data-y="270"
+                  @click="toggleBitValue(aLinePhotoelectricSignal, 'bit7')"
+                >
+                  <div class="marker-label">A-8#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: aLinePhotoelectricSignal.bit8 === '1' }"
+                  data-x="1260"
+                  data-y="320"
+                  @click="toggleBitValue(aLinePhotoelectricSignal, 'bit8')"
+                >
+                  <div class="marker-label">A-9#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: aLinePhotoelectricSignal.bit9 === '1' }"
+                  data-x="1263"
+                  data-y="270"
+                  @click="toggleBitValue(aLinePhotoelectricSignal, 'bit9')"
+                >
+                  <div class="marker-label">A-10#</div>
+                </div>
+                <!-- B线电机运行信号 -->
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: bLineMotorRunning.bit0 === '1' }"
+                  data-x="1058"
+                  data-y="1450"
+                  @click="toggleBitValue(bLineMotorRunning, 'bit0')"
+                >
+                  <div class="marker-label">B1-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: bLineMotorRunning.bit1 === '1' }"
+                  data-x="1108"
+                  data-y="1450"
+                  @click="toggleBitValue(bLineMotorRunning, 'bit1')"
+                >
+                  <div class="marker-label">B1-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: bLineMotorRunning.bit2 === '1' }"
+                  data-x="1058"
+                  data-y="1085"
+                  @click="toggleBitValue(bLineMotorRunning, 'bit2')"
+                >
+                  <div class="marker-label">B2-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: bLineMotorRunning.bit3 === '1' }"
+                  data-x="1108"
+                  data-y="1085"
+                  @click="toggleBitValue(bLineMotorRunning, 'bit3')"
+                >
+                  <div class="marker-label">B2-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-left"
+                  :class="{ running: bLineMotorRunning.bit4 === '1' }"
+                  data-x="1055"
+                  data-y="360"
+                  @click="toggleBitValue(bLineMotorRunning, 'bit4')"
+                >
+                  <div class="marker-label">B3-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: bLineMotorRunning.bit5 === '1' }"
+                  data-x="1105"
+                  data-y="360"
+                  @click="toggleBitValue(bLineMotorRunning, 'bit5')"
+                >
+                  <div class="marker-label">B3-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-left"
+                  :class="{ running: bLineMotorRunning.bit6 === '1' }"
+                  data-x="1058"
+                  data-y="290"
+                  @click="toggleBitValue(bLineMotorRunning, 'bit6')"
+                >
+                  <div class="marker-label">B4-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: bLineMotorRunning.bit7 === '1' }"
+                  data-x="1101"
+                  data-y="290"
+                  @click="toggleBitValue(bLineMotorRunning, 'bit7')"
+                >
+                  <div class="marker-label">B4-2#</div>
+                </div>
+                <!-- B线光电检测信号 -->
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: bLinePhotoelectricSignal.bit0 === '1' }"
+                  data-x="1058"
+                  data-y="1680"
+                  @click="toggleBitValue(bLinePhotoelectricSignal, 'bit0')"
+                >
+                  <div class="marker-label">B-1#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: bLinePhotoelectricSignal.bit1 === '1' }"
+                  data-x="1113"
+                  data-y="1680"
+                  @click="toggleBitValue(bLinePhotoelectricSignal, 'bit1')"
+                >
+                  <div class="marker-label">B-2#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: bLinePhotoelectricSignal.bit2 === '1' }"
+                  data-x="1058"
+                  data-y="1280"
+                  @click="toggleBitValue(bLinePhotoelectricSignal, 'bit2')"
+                >
+                  <div class="marker-label">B-3#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: bLinePhotoelectricSignal.bit3 === '1' }"
+                  data-x="1108"
+                  data-y="1280"
+                  @click="toggleBitValue(bLinePhotoelectricSignal, 'bit3')"
+                >
+                  <div class="marker-label">B-4#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: bLinePhotoelectricSignal.bit4 === '1' }"
+                  data-x="1058"
+                  data-y="850"
+                  @click="toggleBitValue(bLinePhotoelectricSignal, 'bit4')"
+                >
+                  <div class="marker-label">B-5#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: bLinePhotoelectricSignal.bit5 === '1' }"
+                  data-x="1108"
+                  data-y="850"
+                  @click="toggleBitValue(bLinePhotoelectricSignal, 'bit5')"
+                >
+                  <div class="marker-label">B-6#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: bLinePhotoelectricSignal.bit6 === '1' }"
+                  data-x="1033"
+                  data-y="320"
+                  @click="toggleBitValue(bLinePhotoelectricSignal, 'bit6')"
+                >
+                  <div class="marker-label">B-7#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: bLinePhotoelectricSignal.bit7 === '1' }"
+                  data-x="1031"
+                  data-y="270"
+                  @click="toggleBitValue(bLinePhotoelectricSignal, 'bit7')"
+                >
+                  <div class="marker-label">B-8#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: bLinePhotoelectricSignal.bit8 === '1' }"
+                  data-x="1128"
+                  data-y="320"
+                  @click="toggleBitValue(bLinePhotoelectricSignal, 'bit8')"
+                >
+                  <div class="marker-label">B-9#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: bLinePhotoelectricSignal.bit9 === '1' }"
+                  data-x="1131"
+                  data-y="270"
+                  @click="toggleBitValue(bLinePhotoelectricSignal, 'bit9')"
+                >
+                  <div class="marker-label">B-10#</div>
+                </div>
+                <!-- C线电机运行信号 -->
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: cLineMotorRunning.bit0 === '1' }"
+                  data-x="880"
+                  data-y="1450"
+                  @click="toggleBitValue(cLineMotorRunning, 'bit0')"
+                >
+                  <div class="marker-label">C1-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: cLineMotorRunning.bit1 === '1' }"
+                  data-x="930"
+                  data-y="1450"
+                  @click="toggleBitValue(cLineMotorRunning, 'bit1')"
+                >
+                  <div class="marker-label">C1-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: cLineMotorRunning.bit2 === '1' }"
+                  data-x="880"
+                  data-y="1085"
+                  @click="toggleBitValue(cLineMotorRunning, 'bit2')"
+                >
+                  <div class="marker-label">C2-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: cLineMotorRunning.bit3 === '1' }"
+                  data-x="930"
+                  data-y="1085"
+                  @click="toggleBitValue(cLineMotorRunning, 'bit3')"
+                >
+                  <div class="marker-label">C2-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-left"
+                  :class="{ running: cLineMotorRunning.bit4 === '1' }"
+                  data-x="882"
+                  data-y="360"
+                  @click="toggleBitValue(cLineMotorRunning, 'bit4')"
+                >
+                  <div class="marker-label">C3-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: cLineMotorRunning.bit5 === '1' }"
+                  data-x="927"
+                  data-y="360"
+                  @click="toggleBitValue(cLineMotorRunning, 'bit5')"
+                >
+                  <div class="marker-label">C3-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-left"
+                  :class="{ running: cLineMotorRunning.bit6 === '1' }"
+                  data-x="883"
+                  data-y="290"
+                  @click="toggleBitValue(cLineMotorRunning, 'bit6')"
+                >
+                  <div class="marker-label">C4-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: cLineMotorRunning.bit7 === '1' }"
+                  data-x="923"
+                  data-y="290"
+                  @click="toggleBitValue(cLineMotorRunning, 'bit7')"
+                >
+                  <div class="marker-label">C4-2#</div>
+                </div>
+                <!-- C线光电检测信号 -->
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: cLinePhotoelectricSignal.bit0 === '1' }"
+                  data-x="880"
+                  data-y="1680"
+                  @click="toggleBitValue(cLinePhotoelectricSignal, 'bit0')"
+                >
+                  <div class="marker-label">C-1#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: cLinePhotoelectricSignal.bit1 === '1' }"
+                  data-x="935"
+                  data-y="1680"
+                  @click="toggleBitValue(cLinePhotoelectricSignal, 'bit1')"
+                >
+                  <div class="marker-label">C-2#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: cLinePhotoelectricSignal.bit2 === '1' }"
+                  data-x="880"
+                  data-y="1280"
+                  @click="toggleBitValue(cLinePhotoelectricSignal, 'bit2')"
+                >
+                  <div class="marker-label">C-3#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: cLinePhotoelectricSignal.bit3 === '1' }"
+                  data-x="930"
+                  data-y="1280"
+                  @click="toggleBitValue(cLinePhotoelectricSignal, 'bit3')"
+                >
+                  <div class="marker-label">C-4#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: cLinePhotoelectricSignal.bit4 === '1' }"
+                  data-x="880"
+                  data-y="850"
+                  @click="toggleBitValue(cLinePhotoelectricSignal, 'bit4')"
+                >
+                  <div class="marker-label">C-5#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: cLinePhotoelectricSignal.bit5 === '1' }"
+                  data-x="930"
+                  data-y="850"
+                  @click="toggleBitValue(cLinePhotoelectricSignal, 'bit5')"
+                >
+                  <div class="marker-label">C-6#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: cLinePhotoelectricSignal.bit6 === '1' }"
+                  data-x="855"
+                  data-y="320"
+                  @click="toggleBitValue(cLinePhotoelectricSignal, 'bit6')"
+                >
+                  <div class="marker-label">C-7#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: cLinePhotoelectricSignal.bit7 === '1' }"
+                  data-x="853"
+                  data-y="270"
+                  @click="toggleBitValue(cLinePhotoelectricSignal, 'bit7')"
+                >
+                  <div class="marker-label">C-8#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: cLinePhotoelectricSignal.bit8 === '1' }"
+                  data-x="950"
+                  data-y="320"
+                  @click="toggleBitValue(cLinePhotoelectricSignal, 'bit8')"
+                >
+                  <div class="marker-label">C-9#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: cLinePhotoelectricSignal.bit9 === '1' }"
+                  data-x="953"
+                  data-y="270"
+                  @click="toggleBitValue(cLinePhotoelectricSignal, 'bit9')"
+                >
+                  <div class="marker-label">C-10#</div>
+                </div>
+                <!-- D线电机运行信号 -->
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: dLineMotorRunning.bit0 === '1' }"
+                  data-x="752"
+                  data-y="1450"
+                  @click="toggleBitValue(dLineMotorRunning, 'bit0')"
+                >
+                  <div class="marker-label">D1-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: dLineMotorRunning.bit1 === '1' }"
+                  data-x="802"
+                  data-y="1450"
+                  @click="toggleBitValue(dLineMotorRunning, 'bit1')"
+                >
+                  <div class="marker-label">D1-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: dLineMotorRunning.bit2 === '1' }"
+                  data-x="752"
+                  data-y="1085"
+                  @click="toggleBitValue(dLineMotorRunning, 'bit2')"
+                >
+                  <div class="marker-label">D2-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: dLineMotorRunning.bit3 === '1' }"
+                  data-x="802"
+                  data-y="1085"
+                  @click="toggleBitValue(dLineMotorRunning, 'bit3')"
+                >
+                  <div class="marker-label">D2-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-left"
+                  :class="{ running: dLineMotorRunning.bit4 === '1' }"
+                  data-x="755"
+                  data-y="360"
+                  @click="toggleBitValue(dLineMotorRunning, 'bit4')"
+                >
+                  <div class="marker-label">D3-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: dLineMotorRunning.bit5 === '1' }"
+                  data-x="799"
+                  data-y="360"
+                  @click="toggleBitValue(dLineMotorRunning, 'bit5')"
+                >
+                  <div class="marker-label">D3-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-left"
+                  :class="{ running: dLineMotorRunning.bit6 === '1' }"
+                  data-x="755"
+                  data-y="290"
+                  @click="toggleBitValue(dLineMotorRunning, 'bit6')"
+                >
+                  <div class="marker-label">D4-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: dLineMotorRunning.bit7 === '1' }"
+                  data-x="795"
+                  data-y="290"
+                  @click="toggleBitValue(dLineMotorRunning, 'bit7')"
+                >
+                  <div class="marker-label">D4-2#</div>
+                </div>
+                <!-- D线光电检测信号 -->
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: dLinePhotoelectricSignal.bit0 === '1' }"
+                  data-x="752"
+                  data-y="1680"
+                  @click="toggleBitValue(dLinePhotoelectricSignal, 'bit0')"
+                >
+                  <div class="marker-label">D-1#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: dLinePhotoelectricSignal.bit1 === '1' }"
+                  data-x="807"
+                  data-y="1680"
+                  @click="toggleBitValue(dLinePhotoelectricSignal, 'bit1')"
+                >
+                  <div class="marker-label">D-2#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: dLinePhotoelectricSignal.bit2 === '1' }"
+                  data-x="752"
+                  data-y="1280"
+                  @click="toggleBitValue(dLinePhotoelectricSignal, 'bit2')"
+                >
+                  <div class="marker-label">D-3#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: dLinePhotoelectricSignal.bit3 === '1' }"
+                  data-x="802"
+                  data-y="1280"
+                  @click="toggleBitValue(dLinePhotoelectricSignal, 'bit3')"
+                >
+                  <div class="marker-label">D-4#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: dLinePhotoelectricSignal.bit4 === '1' }"
+                  data-x="752"
+                  data-y="850"
+                  @click="toggleBitValue(dLinePhotoelectricSignal, 'bit4')"
+                >
+                  <div class="marker-label">D-5#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: dLinePhotoelectricSignal.bit5 === '1' }"
+                  data-x="802"
+                  data-y="850"
+                  @click="toggleBitValue(dLinePhotoelectricSignal, 'bit5')"
+                >
+                  <div class="marker-label">D-6#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: dLinePhotoelectricSignal.bit6 === '1' }"
+                  data-x="727"
+                  data-y="320"
+                  @click="toggleBitValue(dLinePhotoelectricSignal, 'bit6')"
+                >
+                  <div class="marker-label">D-7#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: dLinePhotoelectricSignal.bit7 === '1' }"
+                  data-x="725"
+                  data-y="270"
+                  @click="toggleBitValue(dLinePhotoelectricSignal, 'bit7')"
+                >
+                  <div class="marker-label">D-8#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: dLinePhotoelectricSignal.bit8 === '1' }"
+                  data-x="822"
+                  data-y="320"
+                  @click="toggleBitValue(dLinePhotoelectricSignal, 'bit8')"
+                >
+                  <div class="marker-label">D-9#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: dLinePhotoelectricSignal.bit9 === '1' }"
+                  data-x="825"
+                  data-y="270"
+                  @click="toggleBitValue(dLinePhotoelectricSignal, 'bit9')"
+                >
+                  <div class="marker-label">D-10#</div>
+                </div>
+                <!-- E线电机运行信号 -->
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: eLineMotorRunning.bit0 === '1' }"
+                  data-x="584"
+                  data-y="1450"
+                  @click="toggleBitValue(eLineMotorRunning, 'bit0')"
+                >
+                  <div class="marker-label">E1-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: eLineMotorRunning.bit1 === '1' }"
+                  data-x="634"
+                  data-y="1450"
+                  @click="toggleBitValue(eLineMotorRunning, 'bit1')"
+                >
+                  <div class="marker-label">E1-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: eLineMotorRunning.bit2 === '1' }"
+                  data-x="584"
+                  data-y="1085"
+                  @click="toggleBitValue(eLineMotorRunning, 'bit2')"
+                >
+                  <div class="marker-label">E2-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: eLineMotorRunning.bit3 === '1' }"
+                  data-x="634"
+                  data-y="1085"
+                  @click="toggleBitValue(eLineMotorRunning, 'bit3')"
+                >
+                  <div class="marker-label">E2-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-left"
+                  :class="{ running: eLineMotorRunning.bit4 === '1' }"
+                  data-x="588"
+                  data-y="360"
+                  @click="toggleBitValue(eLineMotorRunning, 'bit4')"
+                >
+                  <div class="marker-label">E3-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: eLineMotorRunning.bit5 === '1' }"
+                  data-x="638"
+                  data-y="360"
+                  @click="toggleBitValue(eLineMotorRunning, 'bit5')"
+                >
+                  <div class="marker-label">E3-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-left"
+                  :class="{ running: eLineMotorRunning.bit6 === '1' }"
+                  data-x="588"
+                  data-y="290"
+                  @click="toggleBitValue(eLineMotorRunning, 'bit6')"
+                >
+                  <div class="marker-label">E4-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: eLineMotorRunning.bit7 === '1' }"
+                  data-x="634"
+                  data-y="290"
+                  @click="toggleBitValue(eLineMotorRunning, 'bit7')"
+                >
+                  <div class="marker-label">E4-2#</div>
+                </div>
+                <!-- E线光电检测信号 -->
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: eLinePhotoelectricSignal.bit0 === '1' }"
+                  data-x="584"
+                  data-y="1680"
+                  @click="toggleBitValue(eLinePhotoelectricSignal, 'bit0')"
+                >
+                  <div class="marker-label">E-1#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: eLinePhotoelectricSignal.bit1 === '1' }"
+                  data-x="639"
+                  data-y="1680"
+                  @click="toggleBitValue(eLinePhotoelectricSignal, 'bit1')"
+                >
+                  <div class="marker-label">E-2#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: eLinePhotoelectricSignal.bit2 === '1' }"
+                  data-x="584"
+                  data-y="1280"
+                  @click="toggleBitValue(eLinePhotoelectricSignal, 'bit2')"
+                >
+                  <div class="marker-label">E-3#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: eLinePhotoelectricSignal.bit3 === '1' }"
+                  data-x="634"
+                  data-y="1280"
+                  @click="toggleBitValue(eLinePhotoelectricSignal, 'bit3')"
+                >
+                  <div class="marker-label">E-4#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: eLinePhotoelectricSignal.bit4 === '1' }"
+                  data-x="584"
+                  data-y="850"
+                  @click="toggleBitValue(eLinePhotoelectricSignal, 'bit4')"
+                >
+                  <div class="marker-label">E-5#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: eLinePhotoelectricSignal.bit5 === '1' }"
+                  data-x="634"
+                  data-y="850"
+                  @click="toggleBitValue(eLinePhotoelectricSignal, 'bit5')"
+                >
+                  <div class="marker-label">E-6#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: eLinePhotoelectricSignal.bit6 === '1' }"
+                  data-x="559"
+                  data-y="320"
+                  @click="toggleBitValue(eLinePhotoelectricSignal, 'bit6')"
+                >
+                  <div class="marker-label">E-7#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: eLinePhotoelectricSignal.bit7 === '1' }"
+                  data-x="557"
+                  data-y="270"
+                  @click="toggleBitValue(eLinePhotoelectricSignal, 'bit7')"
+                >
+                  <div class="marker-label">E-8#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: eLinePhotoelectricSignal.bit8 === '1' }"
+                  data-x="654"
+                  data-y="320"
+                  @click="toggleBitValue(eLinePhotoelectricSignal, 'bit8')"
+                >
+                  <div class="marker-label">E-9#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: eLinePhotoelectricSignal.bit9 === '1' }"
+                  data-x="657"
+                  data-y="270"
+                  @click="toggleBitValue(eLinePhotoelectricSignal, 'bit9')"
+                >
+                  <div class="marker-label">E-10#</div>
+                </div>
+                <!-- F线电机运行信号 -->
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: fLineMotorRunning.bit0 === '1' }"
+                  data-x="456"
+                  data-y="1450"
+                  @click="toggleBitValue(fLineMotorRunning, 'bit0')"
+                >
+                  <div class="marker-label">F1-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: fLineMotorRunning.bit1 === '1' }"
+                  data-x="506"
+                  data-y="1450"
+                  @click="toggleBitValue(fLineMotorRunning, 'bit1')"
+                >
+                  <div class="marker-label">F1-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: fLineMotorRunning.bit2 === '1' }"
+                  data-x="459"
+                  data-y="1085"
+                  @click="toggleBitValue(fLineMotorRunning, 'bit2')"
+                >
+                  <div class="marker-label">F2-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: fLineMotorRunning.bit3 === '1' }"
+                  data-x="509"
+                  data-y="1085"
+                  @click="toggleBitValue(fLineMotorRunning, 'bit3')"
+                >
+                  <div class="marker-label">F2-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-left"
+                  :class="{ running: fLineMotorRunning.bit4 === '1' }"
+                  data-x="462"
+                  data-y="360"
+                  @click="toggleBitValue(fLineMotorRunning, 'bit4')"
+                >
+                  <div class="marker-label">F3-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: fLineMotorRunning.bit5 === '1' }"
+                  data-x="512"
+                  data-y="360"
+                  @click="toggleBitValue(fLineMotorRunning, 'bit5')"
+                >
+                  <div class="marker-label">F3-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-left"
+                  :class="{ running: fLineMotorRunning.bit6 === '1' }"
+                  data-x="462"
+                  data-y="290"
+                  @click="toggleBitValue(fLineMotorRunning, 'bit6')"
+                >
+                  <div class="marker-label">F4-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: fLineMotorRunning.bit7 === '1' }"
+                  data-x="502"
+                  data-y="290"
+                  @click="toggleBitValue(fLineMotorRunning, 'bit7')"
+                >
+                  <div class="marker-label">F4-2#</div>
+                </div>
+                <!-- F线光电检测信号 -->
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: fLinePhotoelectricSignal.bit0 === '1' }"
+                  data-x="456"
+                  data-y="1680"
+                  @click="toggleBitValue(fLinePhotoelectricSignal, 'bit0')"
+                >
+                  <div class="marker-label">F-1#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: fLinePhotoelectricSignal.bit1 === '1' }"
+                  data-x="511"
+                  data-y="1680"
+                  @click="toggleBitValue(fLinePhotoelectricSignal, 'bit1')"
+                >
+                  <div class="marker-label">F-2#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: fLinePhotoelectricSignal.bit2 === '1' }"
+                  data-x="456"
+                  data-y="1280"
+                  @click="toggleBitValue(fLinePhotoelectricSignal, 'bit2')"
+                >
+                  <div class="marker-label">F-3#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: fLinePhotoelectricSignal.bit3 === '1' }"
+                  data-x="506"
+                  data-y="1280"
+                  @click="toggleBitValue(fLinePhotoelectricSignal, 'bit3')"
+                >
+                  <div class="marker-label">F-4#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: fLinePhotoelectricSignal.bit4 === '1' }"
+                  data-x="456"
+                  data-y="850"
+                  @click="toggleBitValue(fLinePhotoelectricSignal, 'bit4')"
+                >
+                  <div class="marker-label">F-5#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: fLinePhotoelectricSignal.bit5 === '1' }"
+                  data-x="506"
+                  data-y="850"
+                  @click="toggleBitValue(fLinePhotoelectricSignal, 'bit5')"
+                >
+                  <div class="marker-label">F-6#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: fLinePhotoelectricSignal.bit6 === '1' }"
+                  data-x="431"
+                  data-y="320"
+                  @click="toggleBitValue(fLinePhotoelectricSignal, 'bit6')"
+                >
+                  <div class="marker-label">F-7#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: fLinePhotoelectricSignal.bit7 === '1' }"
+                  data-x="429"
+                  data-y="270"
+                  @click="toggleBitValue(fLinePhotoelectricSignal, 'bit7')"
+                >
+                  <div class="marker-label">F-8#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: fLinePhotoelectricSignal.bit8 === '1' }"
+                  data-x="526"
+                  data-y="320"
+                  @click="toggleBitValue(fLinePhotoelectricSignal, 'bit8')"
+                >
+                  <div class="marker-label">F-9#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: fLinePhotoelectricSignal.bit9 === '1' }"
+                  data-x="529"
+                  data-y="270"
+                  @click="toggleBitValue(fLinePhotoelectricSignal, 'bit9')"
+                >
+                  <div class="marker-label">F-10#</div>
+                </div>
+                <!-- G线电机运行信号 -->
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: gLineMotorRunning.bit0 === '1' }"
+                  data-x="297"
+                  data-y="1450"
+                  @click="toggleBitValue(gLineMotorRunning, 'bit0')"
+                >
+                  <div class="marker-label">G1-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: gLineMotorRunning.bit1 === '1' }"
+                  data-x="347"
+                  data-y="1450"
+                  @click="toggleBitValue(gLineMotorRunning, 'bit1')"
+                >
+                  <div class="marker-label">G1-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: gLineMotorRunning.bit2 === '1' }"
+                  data-x="300"
+                  data-y="1085"
+                  @click="toggleBitValue(gLineMotorRunning, 'bit2')"
+                >
+                  <div class="marker-label">G2-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: gLineMotorRunning.bit3 === '1' }"
+                  data-x="350"
+                  data-y="1085"
+                  @click="toggleBitValue(gLineMotorRunning, 'bit3')"
+                >
+                  <div class="marker-label">G2-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-left"
+                  :class="{ running: gLineMotorRunning.bit4 === '1' }"
+                  data-x="313"
+                  data-y="360"
+                  @click="toggleBitValue(gLineMotorRunning, 'bit4')"
+                >
+                  <div class="marker-label">G3-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: gLineMotorRunning.bit5 === '1' }"
+                  data-x="360"
+                  data-y="360"
+                  @click="toggleBitValue(gLineMotorRunning, 'bit5')"
+                >
+                  <div class="marker-label">G3-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-left"
+                  :class="{ running: gLineMotorRunning.bit6 === '1' }"
+                  data-x="313"
+                  data-y="290"
+                  @click="toggleBitValue(gLineMotorRunning, 'bit6')"
+                >
+                  <div class="marker-label">G4-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: gLineMotorRunning.bit7 === '1' }"
+                  data-x="360"
+                  data-y="290"
+                  @click="toggleBitValue(gLineMotorRunning, 'bit7')"
+                >
+                  <div class="marker-label">G4-2#</div>
+                </div>
+                <!-- G线光电检测信号 -->
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: gLinePhotoelectricSignal.bit0 === '1' }"
+                  data-x="297"
+                  data-y="1680"
+                  @click="toggleBitValue(gLinePhotoelectricSignal, 'bit0')"
+                >
+                  <div class="marker-label">G-1#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: gLinePhotoelectricSignal.bit1 === '1' }"
+                  data-x="352"
+                  data-y="1680"
+                  @click="toggleBitValue(gLinePhotoelectricSignal, 'bit1')"
+                >
+                  <div class="marker-label">G-2#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: gLinePhotoelectricSignal.bit2 === '1' }"
+                  data-x="300"
+                  data-y="1280"
+                  @click="toggleBitValue(gLinePhotoelectricSignal, 'bit2')"
+                >
+                  <div class="marker-label">G-3#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: gLinePhotoelectricSignal.bit3 === '1' }"
+                  data-x="350"
+                  data-y="1280"
+                  @click="toggleBitValue(gLinePhotoelectricSignal, 'bit3')"
+                >
+                  <div class="marker-label">G-4#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: gLinePhotoelectricSignal.bit4 === '1' }"
+                  data-x="300"
+                  data-y="850"
+                  @click="toggleBitValue(gLinePhotoelectricSignal, 'bit4')"
+                >
+                  <div class="marker-label">G-5#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: gLinePhotoelectricSignal.bit5 === '1' }"
+                  data-x="350"
+                  data-y="850"
+                  @click="toggleBitValue(gLinePhotoelectricSignal, 'bit5')"
+                >
+                  <div class="marker-label">G-6#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: gLinePhotoelectricSignal.bit6 === '1' }"
+                  data-x="278"
+                  data-y="320"
+                  @click="toggleBitValue(gLinePhotoelectricSignal, 'bit6')"
+                >
+                  <div class="marker-label">G-7#</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: gLinePhotoelectricSignal.bit7 === '1' }"
+                  data-x="278"
+                  data-y="270"
+                  @click="toggleBitValue(gLinePhotoelectricSignal, 'bit7')"
+                >
+                  <div class="marker-label">G-8#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: gLinePhotoelectricSignal.bit8 === '1' }"
+                  data-x="385"
+                  data-y="320"
+                  @click="toggleBitValue(gLinePhotoelectricSignal, 'bit8')"
+                >
+                  <div class="marker-label">G-9#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: gLinePhotoelectricSignal.bit9 === '1' }"
+                  data-x="385"
+                  data-y="270"
+                  @click="toggleBitValue(gLinePhotoelectricSignal, 'bit9')"
+                >
+                  <div class="marker-label">G-10#</div>
                 </div>
               </div>
             </div>
@@ -1253,31 +2404,310 @@ export default {
       },
       // 添加队列位置标识数据
       queueMarkers: [
-        { id: 1, name: '上货区', x: 1365, y: 1520 },
-        { id: 3, name: 'A1', x: 1216, y: 1600 },
-        { id: 4, name: 'B1', x: 1083, y: 1600 },
-        { id: 5, name: 'C1', x: 905, y: 1600 },
-        { id: 6, name: 'D1', x: 778, y: 1600 },
-        { id: 7, name: 'E1', x: 608, y: 1600 },
-        { id: 8, name: 'F1', x: 480, y: 1600 },
-        { id: 9, name: 'G1', x: 321, y: 1600 },
-        { id: 10, name: 'A2', x: 1214, y: 930 },
-        { id: 11, name: 'B2', x: 1082, y: 930 },
-        { id: 12, name: 'C2', x: 905, y: 930 },
-        { id: 13, name: 'D2', x: 778, y: 930 },
-        { id: 14, name: 'E2', x: 612, y: 930 },
-        { id: 15, name: 'F2', x: 485, y: 930 },
-        { id: 16, name: 'G2', x: 328, y: 930 },
-        { id: 17, name: 'A3', x: 1214, y: 680 },
-        { id: 18, name: 'B3', x: 1082, y: 680 },
-        { id: 19, name: 'C3', x: 905, y: 680 },
-        { id: 20, name: 'D3', x: 778, y: 680 },
-        { id: 21, name: 'E3', x: 612, y: 680 },
-        { id: 22, name: 'F3', x: 484, y: 680 },
-        { id: 23, name: 'G3', x: 333, y: 680 },
-        { id: 26, name: '下货区', x: 1235, y: 145 }
+        { id: 1, name: '上货区', queueId: 1, x: 1365, y: 1520 },
+        { id: 2, name: 'A1', queueId: 2, x: 1216, y: 1600 },
+        { id: 3, name: 'B1', queueId: 3, x: 1083, y: 1600 },
+        { id: 4, name: 'C1', queueId: 4, x: 905, y: 1600 },
+        { id: 5, name: 'D1', queueId: 5, x: 778, y: 1600 },
+        { id: 6, name: 'E1', queueId: 6, x: 608, y: 1600 },
+        { id: 7, name: 'F1', queueId: 7, x: 480, y: 1600 },
+        { id: 8, name: 'G1', queueId: 8, x: 321, y: 1600 },
+        { id: 9, name: 'A2', queueId: 9, x: 1214, y: 930 },
+        { id: 10, name: 'B2', queueId: 10, x: 1082, y: 930 },
+        { id: 11, name: 'C2', queueId: 11, x: 905, y: 930 },
+        { id: 12, name: 'D2', queueId: 12, x: 778, y: 930 },
+        { id: 13, name: 'E2', queueId: 13, x: 612, y: 930 },
+        { id: 14, name: 'F2', queueId: 14, x: 485, y: 930 },
+        { id: 15, name: 'G2', queueId: 15, x: 328, y: 930 },
+        { id: 16, name: 'A3', queueId: 16, x: 1214, y: 680 },
+        { id: 17, name: 'B3', queueId: 17, x: 1082, y: 680 },
+        { id: 18, name: 'C3', queueId: 18, x: 905, y: 680 },
+        { id: 19, name: 'D3', queueId: 19, x: 778, y: 680 },
+        { id: 20, name: 'E3', queueId: 20, x: 612, y: 680 },
+        { id: 21, name: 'F3', queueId: 21, x: 484, y: 680 },
+        { id: 22, name: 'G3', queueId: 22, x: 333, y: 680 },
+        { id: 23, name: '下货区', queueId: 23, x: 1235, y: 145 }
       ],
-      logId: 1000 // 添加一个日志ID计数器
+      logId: 1000, // 添加一个日志ID计数器
+      // 输送线当前运行状态-读取PLC
+      conveyorStatus: '',
+      // 允许进料反馈-读取PLC
+      allowFeedBack: {
+        bit0: '0', // 值为1时，全部接货口不允许进货
+        bit1: '0', // 值为1时，一楼接货口允许进货；值为0时，不允许
+        bit2: '0', // 值为1时，二楼1#接货口允许进货；值为0时，不允许
+        bit3: '0', // 值为1时，二楼2#接货口允许进货；值为0时，不允许
+        bit4: '0', // 值为1时，三楼1#接货口允许进货；值为0时，不允许
+        bit5: '0' // 值为1时，三楼2#接货口允许进货；值为0时，不允许
+      },
+      // A线电机运行信号-读取PLC
+      aLineMotorRunning: {
+        bit0: '0', // A1-1#电机运行信号
+        bit1: '0', // A1-2#电机运行信号
+        bit2: '0', // A2-1#电机运行信号
+        bit3: '0', // A2-2#电机运行信号
+        bit4: '0', // A3-1#电机运行信号
+        bit5: '0', // A3-2#电机运行信号
+        bit6: '0', // A4-1#电机运行信号
+        bit7: '0' // A4-2#电机运行信号
+      },
+      // A线光电检测信号-读取PLC
+      aLinePhotoelectricSignal: {
+        bit0: '0', // A-1#光电
+        bit1: '0', // A-2#光电
+        bit2: '0', // A-3#光电
+        bit3: '0', // A-4#光电
+        bit4: '0', // A-5#光电
+        bit5: '0', // A-6#光电
+        bit6: '0', // A-7#光电
+        bit7: '0', // A-8#光电
+        bit8: '0', // A-9#光电
+        bit9: '0' // A-10#光电
+      },
+      // B线电机运行信号-读取PLC
+      bLineMotorRunning: {
+        bit0: '0', // B1-1#电机运行信号
+        bit1: '0', // B1-2#电机运行信号
+        bit2: '0', // B2-1#电机运行信号
+        bit3: '0', // B2-2#电机运行信号
+        bit4: '0', // B3-1#电机运行信号
+        bit5: '0', // B3-2#电机运行信号
+        bit6: '0', // B4-1#电机运行信号
+        bit7: '0' // B4-2#电机运行信号
+      },
+      // B线光电检测信号-读取PLC
+      bLinePhotoelectricSignal: {
+        bit0: '0', // B-1#光电
+        bit1: '0', // B-2#光电
+        bit2: '0', // B-3#光电
+        bit3: '0', // B-4#光电
+        bit4: '0', // B-5#光电
+        bit5: '0', // B-6#光电
+        bit6: '0', // B-7#光电
+        bit7: '0', // B-8#光电
+        bit8: '0', // B-9#光电
+        bit9: '0' // B-10#光电
+      },
+      // C线电机运行信号-读取PLC
+      cLineMotorRunning: {
+        bit0: '0', // C1-1#电机运行信号
+        bit1: '0', // C1-2#电机运行信号
+        bit2: '0', // C2-1#电机运行信号
+        bit3: '0', // C2-2#电机运行信号
+        bit4: '0', // C3-1#电机运行信号
+        bit5: '0', // C3-2#电机运行信号
+        bit6: '0', // C4-1#电机运行信号
+        bit7: '0' // C4-2#电机运行信号
+      },
+      // C线光电检测信号-读取PLC
+      cLinePhotoelectricSignal: {
+        bit0: '0', // C-1#光电
+        bit1: '0', // C-2#光电
+        bit2: '0', // C-3#光电
+        bit3: '0', // C-4#光电
+        bit4: '0', // C-5#光电
+        bit5: '0', // C-6#光电
+        bit6: '0', // C-7#光电
+        bit7: '0', // C-8#光电
+        bit8: '0', // C-9#光电
+        bit9: '0' // C-10#光电
+      },
+      // D线电机运行信号-读取PLC
+      dLineMotorRunning: {
+        bit0: '0', // D1-1#电机运行信号
+        bit1: '0', // D1-2#电机运行信号
+        bit2: '0', // D2-1#电机运行信号
+        bit3: '0', // D2-2#电机运行信号
+        bit4: '0', // D3-1#电机运行信号
+        bit5: '0', // D3-2#电机运行信号
+        bit6: '0', // D4-1#电机运行信号
+        bit7: '0' // D4-2#电机运行信号
+      },
+      // D线光电检测信号-读取PLC
+      dLinePhotoelectricSignal: {
+        bit0: '0', // D-1#光电
+        bit1: '0', // D-2#光电
+        bit2: '0', // D-3#光电
+        bit3: '0', // D-4#光电
+        bit4: '0', // D-5#光电
+        bit5: '0', // D-6#光电
+        bit6: '0', // D-7#光电
+        bit7: '0', // D-8#光电
+        bit8: '0', // D-9#光电
+        bit9: '0' // D-10#光电
+      },
+      // E线电机运行信号-读取PLC
+      eLineMotorRunning: {
+        bit0: '0', // E-1#电机运行信号
+        bit1: '0', // E-2#电机运行信号
+        bit2: '0', // E-3#电机运行信号
+        bit3: '0', // E-4#电机运行信号
+        bit4: '0', // E-5#电机运行信号
+        bit5: '0', // E-6#电机运行信号
+        bit6: '0', // E-7#电机运行信号
+        bit7: '0' // E-8#电机运行信号
+      },
+      // E线光电检测信号-读取PLC
+      eLinePhotoelectricSignal: {
+        bit0: '0', // E-1#光电
+        bit1: '0', // E-2#光电
+        bit2: '0', // E-3#光电
+        bit3: '0', // E-4#光电
+        bit4: '0', // E-5#光电
+        bit5: '0', // E-6#光电
+        bit6: '0', // E-7#光电
+        bit7: '0', // E-8#光电
+        bit8: '0', // E-9#光电
+        bit9: '0' // E-10#光电
+      },
+      // F线电机运行信号-读取PLC
+      fLineMotorRunning: {
+        bit0: '0', // F-1#电机运行信号
+        bit1: '0', // F-2#电机运行信号
+        bit2: '0', // F-3#电机运行信号
+        bit3: '0', // F-4#电机运行信号
+        bit4: '0', // F-5#电机运行信号
+        bit5: '0', // F-6#电机运行信号
+        bit6: '0', // F-7#电机运行信号
+        bit7: '0' // F-8#电机运行信号
+      },
+      // F线光电检测信号-读取PLC
+      fLinePhotoelectricSignal: {
+        bit0: '0', // F-1#光电
+        bit1: '0', // F-2#光电
+        bit2: '0', // F-3#光电
+        bit3: '0', // F-4#光电
+        bit4: '0', // F-5#光电
+        bit5: '0', // F-6#光电
+        bit6: '0', // F-7#光电
+        bit7: '0', // F-8#光电
+        bit8: '0', // F-9#光电
+        bit9: '0' // F-10#光电
+      },
+      // G线电机运行信号-读取PLC
+      gLineMotorRunning: {
+        bit0: '0', // G-1#电机运行信号
+        bit1: '0', // G-2#电机运行信号
+        bit2: '0', // G-3#电机运行信号
+        bit3: '0', // G-4#电机运行信号
+        bit4: '0', // G-5#电机运行信号
+        bit5: '0', // G-6#电机运行信号
+        bit6: '0', // G-7#电机运行信号
+        bit7: '0' // G-8#电机运行信号
+      },
+      // G线光电检测信号-读取PLC
+      gLinePhotoelectricSignal: {
+        bit0: '0', // G-1#光电
+        bit1: '0', // G-2#光电
+        bit2: '0', // G-3#光电
+        bit3: '0', // G-4#光电
+        bit4: '0', // G-5#光电
+        bit5: '0', // G-6#光电
+        bit6: '0', // G-7#光电
+        bit7: '0', // G-8#光电
+        bit8: '0', // G-9#光电
+        bit9: '0' // G-10#光电
+      },
+      // A线数量-读取PLC
+      aLineQuantity: {
+        a1: 0,
+        a2: 0,
+        a3: 0
+      },
+      // B线数量-读取PLC
+      bLineQuantity: {
+        b1: 0,
+        b2: 0,
+        b3: 0
+      },
+      // C线数量-读取PLC
+      cLineQuantity: {
+        c1: 0,
+        c2: 0,
+        c3: 0
+      },
+      // D线数量-读取PLC
+      dLineQuantity: {
+        d1: 0,
+        d2: 0,
+        d3: 0
+      },
+      // E线数量-读取PLC
+      eLineQuantity: {
+        e1: 0,
+        e2: 0,
+        e3: 0
+      },
+      // F线数量-读取PLC
+      fLineQuantity: {
+        f1: 0,
+        f2: 0,
+        f3: 0
+      },
+      // G线数量-读取PLC
+      gLineQuantity: {
+        g1: 0,
+        g2: 0,
+        g3: 0
+      },
+      //上货区电机运行信号（扫码后入队）-读取PLC
+      upLoadMotorRunning: {
+        bit0: '0', // S-1#电机运行信号
+        bit1: '0', // S-2#电机运行信号
+        bit2: '0', // S-3#电机运行信号
+        bit3: '0', // S-4#电机运行信号
+        bit4: '0', // S-5#电机运行信号
+        bit5: '0', // S-6#电机运行信号
+        bit6: '0', // S7#电机运行信号
+        bit7: '0' // S8#电机运行信号
+      },
+      // 上货区输送线光电信号-读取PLC
+      upLoadPhotoelectricSignal: {
+        bit0: '0', // S-1#光电
+        bit1: '0', // S-2#光电
+        bit2: '0', // S-3#光电
+        bit3: '0', // S-4#光电
+        bit4: '0', // S-5#光电
+        bit5: '0', // S-6#光电
+        bit6: '0', // S-7#光电
+        bit7: '0', // S-8#光电
+        bit8: '0' // S-9#光电
+      },
+      // 扫码枪处光电信号-读取PLC
+      scanPhotoelectricSignal: {
+        bit0: '0', // 一楼接货站台“有载信号”/光电占位
+        bit1: '0', // 一楼上货区（扫码后入队）处“有载信号”/光电占位
+        bit2: '0', // 二楼A接货占位“有载信号”/光电占位
+        bit3: '0', // 二楼B接货占位“有载信号”/光电占位
+        bit4: '0', // 三楼A接货占位“有载信号”/光电占位
+        bit5: '0', // 三楼B接货占位“有载信号”/光电占位
+        bit6: '0', // 下线处“扫码枪处“有载信号”/光电占位
+        bit7: '0' // 一楼出货站台“有载信号”/光电占位
+      },
+      // 下线扫码枪处，申请扫码-读取PLC
+      upLineScanPhotoelectricSignal: '',
+      // 请求上位机下发任务-读取PLC
+      requestWCSTask: '',
+      // 一楼出货口有货需取货处理信号-读取PLC
+      floor1OutLoadGoodsSignal: '',
+      // 一楼下货出口托盘信息（托盘号）-读取PLC
+      floor1OutLoadTrayInfo: '',
+      // 一楼下线（扫码枪处）（托盘号）-读取PLC
+      floor1OutLineTrayInfo: '',
+      // 一楼接货站台扫码数据（托盘号）-读取PLC
+      floor1InLineTrayInfo: '',
+      // 一楼上货区（扫码后入队）（托盘号）-读取PLC
+      floor1UpLineTrayInfo: '',
+      // 二楼A接货站台扫码数据（托盘号）-读取PLC
+      floor2ALineTrayInfo: '',
+      // 二楼B接货站台扫码数据（托盘号）-读取PLC
+      floor2BLineTrayInfo: '',
+      // 三楼A接货站台扫码数据（托盘号）-读取PLC
+      floor3ALineTrayInfo: '',
+      // 三楼B接货站台扫码数据（托盘号）-读取PLC
+      floor3BLineTrayInfo: '',
+      // 预热房前缓存线请求目的地
+      requestDestination: ''
     };
   },
   computed: {
@@ -1313,7 +2743,291 @@ export default {
     this.initializeMarkers();
     this.refreshOrders();
     this.queryQueueList();
-    ipcRenderer.on('receivedMsg', (event, values, values2) => {});
+    // ipcRenderer.on('receivedMsg', (event, values, values2) => {
+    //   // 使用位运算优化赋值
+    //   const getBit = (word, bitIndex) => ((word >> bitIndex) & 1).toString();
+
+    //   // 外部货物接驳口-允许进料-读取PLC
+    //   let word4 = this.convertToWord(values.DBW4);
+    //   this.allowFeedBack.bit0 = getBit(word4, 8);
+    //   this.allowFeedBack.bit1 = getBit(word4, 9);
+    //   this.allowFeedBack.bit2 = getBit(word4, 10);
+    //   this.allowFeedBack.bit3 = getBit(word4, 11);
+    //   this.allowFeedBack.bit4 = getBit(word4, 12);
+    //   this.allowFeedBack.bit5 = getBit(word4, 13);
+
+    //   // A线电机运行信号
+    //   let word6 = this.convertToWord(values.DBW6);
+    //   this.aLineMotorRunning.bit0 = getBit(word6, 8);
+    //   this.aLineMotorRunning.bit1 = getBit(word6, 9);
+    //   this.aLineMotorRunning.bit2 = getBit(word6, 10);
+    //   this.aLineMotorRunning.bit3 = getBit(word6, 11);
+    //   this.aLineMotorRunning.bit4 = getBit(word6, 12);
+    //   this.aLineMotorRunning.bit5 = getBit(word6, 13);
+    //   this.aLineMotorRunning.bit6 = getBit(word6, 14);
+    //   this.aLineMotorRunning.bit7 = getBit(word6, 15);
+
+    //   // A线光电检测信号-读取PLC
+    //   let word8 = this.convertToWord(values.DBW8);
+    //   this.aLinePhotoelectricSignal.bit0 = getBit(word8, 8);
+    //   this.aLinePhotoelectricSignal.bit1 = getBit(word8, 9);
+    //   this.aLinePhotoelectricSignal.bit2 = getBit(word8, 10);
+    //   this.aLinePhotoelectricSignal.bit3 = getBit(word8, 11);
+    //   this.aLinePhotoelectricSignal.bit4 = getBit(word8, 12);
+    //   this.aLinePhotoelectricSignal.bit5 = getBit(word8, 13);
+    //   this.aLinePhotoelectricSignal.bit6 = getBit(word8, 14);
+    //   this.aLinePhotoelectricSignal.bit7 = getBit(word8, 15);
+    //   this.aLinePhotoelectricSignal.bit8 = getBit(word8, 0);
+    //   this.aLinePhotoelectricSignal.bit9 = getBit(word8, 1);
+
+    //   // B线电机运行信号-读取PLC
+    //   let word10 = this.convertToWord(values.DBW10);
+    //   this.bLineMotorRunning.bit0 = getBit(word10, 8);
+    //   this.bLineMotorRunning.bit1 = getBit(word10, 9);
+    //   this.bLineMotorRunning.bit2 = getBit(word10, 10);
+    //   this.bLineMotorRunning.bit3 = getBit(word10, 11);
+    //   this.bLineMotorRunning.bit4 = getBit(word10, 12);
+    //   this.bLineMotorRunning.bit5 = getBit(word10, 13);
+    //   this.bLineMotorRunning.bit6 = getBit(word10, 14);
+    //   this.bLineMotorRunning.bit7 = getBit(word10, 15);
+
+    //   // B线光电检测信号
+    //   let word12 = this.convertToWord(values.DBW12);
+    //   this.bLinePhotoelectricSignal.bit0 = getBit(word12, 8);
+    //   this.bLinePhotoelectricSignal.bit1 = getBit(word12, 9);
+    //   this.bLinePhotoelectricSignal.bit2 = getBit(word12, 10);
+    //   this.bLinePhotoelectricSignal.bit3 = getBit(word12, 11);
+    //   this.bLinePhotoelectricSignal.bit4 = getBit(word12, 12);
+    //   this.bLinePhotoelectricSignal.bit5 = getBit(word12, 13);
+    //   this.bLinePhotoelectricSignal.bit6 = getBit(word12, 14);
+    //   this.bLinePhotoelectricSignal.bit7 = getBit(word12, 15);
+    //   this.bLinePhotoelectricSignal.bit8 = getBit(word12, 0);
+    //   this.bLinePhotoelectricSignal.bit9 = getBit(word12, 1);
+
+    //   // C线电机运行信号-读取PLC
+    //   let word14 = this.convertToWord(values.DBW14);
+    //   this.cLineMotorRunning.bit0 = getBit(word14, 8);
+    //   this.cLineMotorRunning.bit1 = getBit(word14, 9);
+    //   this.cLineMotorRunning.bit2 = getBit(word14, 10);
+    //   this.cLineMotorRunning.bit3 = getBit(word14, 11);
+    //   this.cLineMotorRunning.bit4 = getBit(word14, 12);
+    //   this.cLineMotorRunning.bit5 = getBit(word14, 13);
+    //   this.cLineMotorRunning.bit6 = getBit(word14, 14);
+    //   this.cLineMotorRunning.bit7 = getBit(word14, 15);
+
+    //   // C线光电检测信号-读取PLC
+    //   let word16 = this.convertToWord(values.DBW16);
+    //   this.cLinePhotoelectricSignal.bit0 = getBit(word16, 8);
+    //   this.cLinePhotoelectricSignal.bit1 = getBit(word16, 9);
+    //   this.cLinePhotoelectricSignal.bit2 = getBit(word16, 10);
+    //   this.cLinePhotoelectricSignal.bit3 = getBit(word16, 11);
+    //   this.cLinePhotoelectricSignal.bit4 = getBit(word16, 12);
+    //   this.cLinePhotoelectricSignal.bit5 = getBit(word16, 13);
+    //   this.cLinePhotoelectricSignal.bit6 = getBit(word16, 14);
+    //   this.cLinePhotoelectricSignal.bit7 = getBit(word16, 15);
+    //   this.cLinePhotoelectricSignal.bit8 = getBit(word16, 0);
+    //   this.cLinePhotoelectricSignal.bit9 = getBit(word16, 1);
+
+    //   // D线电机运行信号-读取PLC
+    //   let word18 = this.convertToWord(values.DBW18);
+    //   this.dLineMotorRunning.bit0 = getBit(word18, 8);
+    //   this.dLineMotorRunning.bit1 = getBit(word18, 9);
+    //   this.dLineMotorRunning.bit2 = getBit(word18, 10);
+    //   this.dLineMotorRunning.bit3 = getBit(word18, 11);
+    //   this.dLineMotorRunning.bit4 = getBit(word18, 12);
+    //   this.dLineMotorRunning.bit5 = getBit(word18, 13);
+    //   this.dLineMotorRunning.bit6 = getBit(word18, 14);
+    //   this.dLineMotorRunning.bit7 = getBit(word18, 15);
+
+    //   // D线光电检测信号-读取PLC
+    //   let word20 = this.convertToWord(values.DBW20);
+    //   this.dLinePhotoelectricSignal.bit0 = getBit(word20, 8);
+    //   this.dLinePhotoelectricSignal.bit1 = getBit(word20, 9);
+    //   this.dLinePhotoelectricSignal.bit2 = getBit(word20, 10);
+    //   this.dLinePhotoelectricSignal.bit3 = getBit(word20, 11);
+    //   this.dLinePhotoelectricSignal.bit4 = getBit(word20, 12);
+    //   this.dLinePhotoelectricSignal.bit5 = getBit(word20, 13);
+    //   this.dLinePhotoelectricSignal.bit6 = getBit(word20, 14);
+    //   this.dLinePhotoelectricSignal.bit7 = getBit(word20, 15);
+    //   this.dLinePhotoelectricSignal.bit8 = getBit(word20, 0);
+    //   this.dLinePhotoelectricSignal.bit9 = getBit(word20, 1);
+
+    //   // E线电机运行信号-读取PLC
+    //   let word22 = this.convertToWord(values.DBW22);
+    //   this.eLineMotorRunning.bit0 = getBit(word22, 8);
+    //   this.eLineMotorRunning.bit1 = getBit(word22, 9);
+    //   this.eLineMotorRunning.bit2 = getBit(word22, 10);
+    //   this.eLineMotorRunning.bit3 = getBit(word22, 11);
+    //   this.eLineMotorRunning.bit4 = getBit(word22, 12);
+    //   this.eLineMotorRunning.bit5 = getBit(word22, 13);
+    //   this.eLineMotorRunning.bit6 = getBit(word22, 14);
+    //   this.eLineMotorRunning.bit7 = getBit(word22, 15);
+
+    //   // E线光电检测信号-读取PLC
+    //   let word24 = this.convertToWord(values.DBW24);
+    //   this.eLinePhotoelectricSignal.bit0 = getBit(word24, 8);
+    //   this.eLinePhotoelectricSignal.bit1 = getBit(word24, 9);
+    //   this.eLinePhotoelectricSignal.bit2 = getBit(word24, 10);
+    //   this.eLinePhotoelectricSignal.bit3 = getBit(word24, 11);
+    //   this.eLinePhotoelectricSignal.bit4 = getBit(word24, 12);
+    //   this.eLinePhotoelectricSignal.bit5 = getBit(word24, 13);
+    //   this.eLinePhotoelectricSignal.bit6 = getBit(word24, 14);
+    //   this.eLinePhotoelectricSignal.bit7 = getBit(word24, 15);
+    //   this.eLinePhotoelectricSignal.bit8 = getBit(word24, 0);
+    //   this.eLinePhotoelectricSignal.bit9 = getBit(word24, 1);
+
+    //   // F线电机运行信号-读取PLC
+    //   let word26 = this.convertToWord(values.DBW26);
+    //   this.fLineMotorRunning.bit0 = getBit(word26, 8);
+    //   this.fLineMotorRunning.bit1 = getBit(word26, 9);
+    //   this.fLineMotorRunning.bit2 = getBit(word26, 10);
+    //   this.fLineMotorRunning.bit3 = getBit(word26, 11);
+    //   this.fLineMotorRunning.bit4 = getBit(word26, 12);
+    //   this.fLineMotorRunning.bit5 = getBit(word26, 13);
+    //   this.fLineMotorRunning.bit6 = getBit(word26, 14);
+    //   this.fLineMotorRunning.bit7 = getBit(word26, 15);
+
+    //   // F线光电检测信号-读取PLC
+    //   let word28 = this.convertToWord(values.DBW28);
+    //   this.fLinePhotoelectricSignal.bit0 = getBit(word28, 8);
+    //   this.fLinePhotoelectricSignal.bit1 = getBit(word28, 9);
+    //   this.fLinePhotoelectricSignal.bit2 = getBit(word28, 10);
+    //   this.fLinePhotoelectricSignal.bit3 = getBit(word28, 11);
+    //   this.fLinePhotoelectricSignal.bit4 = getBit(word28, 12);
+    //   this.fLinePhotoelectricSignal.bit5 = getBit(word28, 13);
+    //   this.fLinePhotoelectricSignal.bit6 = getBit(word28, 14);
+    //   this.fLinePhotoelectricSignal.bit7 = getBit(word28, 15);
+    //   this.fLinePhotoelectricSignal.bit8 = getBit(word28, 0);
+    //   this.fLinePhotoelectricSignal.bit9 = getBit(word28, 1);
+
+    //   // G线电机运行信号-读取PLC
+    //   let word30 = this.convertToWord(values.DBW30);
+    //   this.gLineMotorRunning.bit0 = getBit(word30, 8);
+    //   this.gLineMotorRunning.bit1 = getBit(word30, 9);
+    //   this.gLineMotorRunning.bit2 = getBit(word30, 10);
+    //   this.gLineMotorRunning.bit3 = getBit(word30, 11);
+    //   this.gLineMotorRunning.bit4 = getBit(word30, 12);
+    //   this.gLineMotorRunning.bit5 = getBit(word30, 13);
+    //   this.gLineMotorRunning.bit6 = getBit(word30, 14);
+    //   this.gLineMotorRunning.bit7 = getBit(word30, 15);
+
+    //   // G线光电检测信号-读取PLC
+    //   let word32 = this.convertToWord(values.DBW32);
+    //   this.gLinePhotoelectricSignal.bit0 = getBit(word32, 8);
+    //   this.gLinePhotoelectricSignal.bit1 = getBit(word32, 9);
+    //   this.gLinePhotoelectricSignal.bit2 = getBit(word32, 10);
+    //   this.gLinePhotoelectricSignal.bit3 = getBit(word28, 11);
+    //   this.gLinePhotoelectricSignal.bit4 = getBit(word32, 12);
+    //   this.gLinePhotoelectricSignal.bit5 = getBit(word32, 13);
+    //   this.gLinePhotoelectricSignal.bit6 = getBit(word32, 14);
+    //   this.gLinePhotoelectricSignal.bit7 = getBit(word32, 15);
+    //   this.gLinePhotoelectricSignal.bit8 = getBit(word32, 0);
+    //   this.gLinePhotoelectricSignal.bit9 = getBit(word32, 1);
+
+    //   // A线数量-读取PLC
+    //   this.aLineQuantity.a1 = Number(values.DBW34);
+    //   this.aLineQuantity.a2 = Number(values.DBW36);
+    //   this.aLineQuantity.a3 = Number(values.DBW38);
+
+    //   // B线数量-读取PLC
+    //   this.bLineQuantity.b1 = Number(values.DBW40);
+    //   this.bLineQuantity.b2 = Number(values.DBW42);
+    //   this.bLineQuantity.b3 = Number(values.DBW44);
+
+    //   // C线数量-读取PLC
+    //   this.cLineQuantity.c1 = Number(values.DBW46);
+    //   this.cLineQuantity.c2 = Number(values.DBW48);
+    //   this.cLineQuantity.c3 = Number(values.DBW50);
+
+    //   // D线数量-读取PLC
+    //   this.dLineQuantity.d1 = Number(values.DBW52);
+    //   this.dLineQuantity.d2 = Number(values.DBW54);
+    //   this.dLineQuantity.d3 = Number(values.DBW56);
+
+    //   // E线数量-读取PLC
+    //   this.eLineQuantity.e1 = Number(values.DBW58);
+    //   this.eLineQuantity.e2 = Number(values.DBW60);
+    //   this.eLineQuantity.e3 = Number(values.DBW62);
+
+    //   // F线数量-读取PLC
+    //   this.fLineQuantity.f1 = Number(values.DBW64);
+    //   this.fLineQuantity.f2 = Number(values.DBW66);
+    //   this.fLineQuantity.f3 = Number(values.DBW68);
+
+    //   // G线数量-读取PLC
+    //   this.gLineQuantity.g1 = Number(values.DBW70);
+    //   this.gLineQuantity.g2 = Number(values.DBW72);
+    //   this.gLineQuantity.g3 = Number(values.DBW74);
+
+    //   // 上货区电机运行信号（扫码后入队）-读取PLC
+    //   let word76 = this.convertToWord(values.DBW76);
+    //   this.upLoadMotorRunning.bit0 = getBit(word76, 8);
+    //   this.upLoadMotorRunning.bit1 = getBit(word76, 9);
+    //   this.upLoadMotorRunning.bit2 = getBit(word76, 10);
+    //   this.upLoadMotorRunning.bit3 = getBit(word76, 11);
+    //   this.upLoadMotorRunning.bit4 = getBit(word76, 12);
+    //   this.upLoadMotorRunning.bit5 = getBit(word76, 13);
+    //   this.upLoadMotorRunning.bit6 = getBit(word76, 14);
+    //   this.upLoadMotorRunning.bit7 = getBit(word76, 15);
+
+    //   // 上货区输送线光电信号
+    //   let word78 = this.convertToWord(values.DBW78);
+    //   this.upLoadPhotoelectricSignal.bit0 = getBit(word78, 8);
+    //   this.upLoadPhotoelectricSignal.bit1 = getBit(word78, 9);
+    //   this.upLoadPhotoelectricSignal.bit2 = getBit(word78, 10);
+    //   this.upLoadPhotoelectricSignal.bit3 = getBit(word78, 11);
+    //   this.upLoadPhotoelectricSignal.bit4 = getBit(word78, 12);
+    //   this.upLoadPhotoelectricSignal.bit5 = getBit(word78, 13);
+    //   this.upLoadPhotoelectricSignal.bit6 = getBit(word78, 14);
+    //   this.upLoadPhotoelectricSignal.bit7 = getBit(word78, 15);
+    //   this.upLoadPhotoelectricSignal.bit8 = getBit(word78, 0);
+
+    //   // 扫码枪处光电信号
+    //   let word92 = this.convertToWord(values.DBW92);
+    //   this.scanPhotoelectricSignal.bit0 = getBit(word92, 8);
+    //   this.scanPhotoelectricSignal.bit1 = getBit(word92, 9);
+    //   this.scanPhotoelectricSignal.bit2 = getBit(word92, 10);
+    //   this.scanPhotoelectricSignal.bit3 = getBit(word92, 11);
+    //   this.scanPhotoelectricSignal.bit4 = getBit(word92, 12);
+    //   this.scanPhotoelectricSignal.bit5 = getBit(word92, 13);
+    //   this.scanPhotoelectricSignal.bit6 = getBit(word92, 14);
+    //   this.scanPhotoelectricSignal.bit7 = getBit(word92, 15);
+
+    //   // 下线扫码枪处，申请扫码
+    //   this.upLineScanPhotoelectricSignal = Number(values.DBW94);
+
+    //   // 请求上位机下发任务
+    //   this.requestWCSTask = Number(values.DBW96);
+
+    //   // 一楼出货口有货需取货处理信号
+    //   this.floor1OutLoadGoodsSignal = Number(values.DBW98);
+
+    //   // 一楼下货出口托盘信息（托盘号）
+    //   this.floor1OutLoadTrayInfo = values.DBB100 ?? '';
+
+    //   // 一楼下线（扫码枪处）（托盘号）
+    //   this.floor1OutLineTrayInfo = values.DBB130 ?? '';
+
+    //   // 一楼接货站台扫码数据（托盘号）
+    //   this.floor1InLineTrayInfo = values.DBB160 ?? '';
+    //   // 一楼上货区（扫码后入队）（托盘号）
+    //   this.floor1UpLineTrayInfo = values.DBB190 ?? '';
+
+    //   // 二楼A接货站台扫码数据（托盘号）
+    //   this.floor2ALineTrayInfo = values.DBB220 ?? '';
+
+    //   // 二楼B接货站台扫码数据（托盘号）
+    //   this.floor2BLineTrayInfo = values.DBB250 ?? '';
+
+    //   // 三楼A接货站台扫码数据（托盘号）
+    //   this.floor3ALineTrayInfo = values.DBB280 ?? '';
+
+    //   // 三楼B接货站台扫码数据（托盘号）
+    //   this.floor3BLineTrayInfo = values.DBB310 ?? '';
+
+    //   // 预热房前缓存线请求目的地
+    //   this.requestDestination = Number(values.DBW360);
+    // });
   },
   methods: {
     changeQueueExpanded() {
@@ -1339,14 +3053,112 @@ export default {
         });
     },
     toggleButtonState(button) {
-      this.buttonStates = {
-        start: false,
-        stop: false,
-        reset: false,
-        fault_reset: false,
-        clear: false
-      };
-      this.buttonStates[button] = !this.buttonStates[button];
+      if (button === 'start') {
+        this.$confirm('确定要全线启动吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+          .then(() => {
+            this.buttonStates = {
+              start: false,
+              stop: false,
+              reset: false,
+              fault_reset: false,
+              clear: false
+            };
+            ipcRenderer.send('writeValuesToPLC', 'DBW502', 1);
+            setTimeout(() => {
+              ipcRenderer.send('writeValuesToPLC', 'DBW502', 0);
+            }, 500);
+            this.buttonStates[button] = !this.buttonStates[button];
+            this.$message.success('全线启动成功');
+            this.addLog('全线启动成功');
+          })
+          .catch(() => {
+            // 用户取消操作，不做任何处理
+          });
+      } else if (button === 'stop') {
+        this.$confirm('确定要全线停止吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+          .then(() => {
+            this.buttonStates = {
+              start: false,
+              stop: false,
+              reset: false,
+              fault_reset: false,
+              clear: false
+            };
+            ipcRenderer.send('writeValuesToPLC', 'DBW504', 1);
+            setTimeout(() => {
+              ipcRenderer.send('writeValuesToPLC', 'DBW504', 0);
+            }, 500);
+            this.buttonStates[button] = !this.buttonStates[button];
+            this.$message.success('全线停止成功');
+            this.addLog('全线停止成功');
+          })
+          .catch(() => {
+            // 用户取消操作，不做任何处理
+          });
+      } else if (button === 'reset') {
+        this.$confirm('确定要全线暂停吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+          .then(() => {
+            this.buttonStates = {
+              start: false,
+              stop: false,
+              reset: false,
+              fault_reset: false,
+              clear: false
+            };
+            this.buttonStates[button] = !this.buttonStates[button];
+            ipcRenderer.send('writeValuesToPLC', 'DBW506', 1);
+            setTimeout(() => {
+              ipcRenderer.send('writeValuesToPLC', 'DBW506', 0);
+            }, 500);
+            this.$message.success('全线暂停成功');
+            this.addLog('全线暂停成功');
+          })
+          .catch(() => {
+            // 用户取消操作，不做任何处理
+          });
+      } else if (button === 'fault_reset') {
+        this.$confirm('确定要故障复位吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+          .then(() => {
+            ipcRenderer.send('writeValuesToPLC', 'DBW508', 1);
+            setTimeout(() => {
+              ipcRenderer.send('writeValuesToPLC', 'DBW508', 0);
+            }, 500);
+            this.$message.success('故障复位成功');
+            this.addLog('故障复位成功');
+          })
+          .catch(() => {
+            // 用户取消操作，不做任何处理
+          });
+      } else if (button === 'clear') {
+        this.$confirm('确定要全线清空吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
+          .then(() => {
+            this.$message.success('全线清空成功');
+            this.addLog('全线清空成功');
+          })
+          .catch(() => {
+            // 用户取消操作，不做任何处理
+          });
+      }
     },
     formatTime(timestamp) {
       const date = new Date(timestamp);
@@ -1360,6 +3172,64 @@ export default {
       if (log.type === 'alarm') {
         log.unread = false;
       }
+    },
+    // 根据队列名称获取PLC数量
+    getQueueCountFromPLC(queueName) {
+      switch (queueName) {
+        case 'A1':
+          return this.aLineQuantity.a1;
+        case 'A2':
+          return this.aLineQuantity.a2;
+        case 'A3':
+          return this.aLineQuantity.a3;
+        case 'B1':
+          return this.bLineQuantity.b1;
+        case 'B2':
+          return this.bLineQuantity.b2;
+        case 'B3':
+          return this.bLineQuantity.b3;
+        case 'C1':
+          return this.cLineQuantity.c1;
+        case 'C2':
+          return this.cLineQuantity.c2;
+        case 'C3':
+          return this.cLineQuantity.c3;
+        case 'D1':
+          return this.dLineQuantity.d1;
+        case 'D2':
+          return this.dLineQuantity.d2;
+        case 'D3':
+          return this.dLineQuantity.d3;
+        case 'E1':
+          return this.eLineQuantity.e1;
+        case 'E2':
+          return this.eLineQuantity.e2;
+        case 'E3':
+          return this.eLineQuantity.e3;
+        case 'F1':
+          return this.fLineQuantity.f1;
+        case 'F2':
+          return this.fLineQuantity.f2;
+        case 'F3':
+          return this.fLineQuantity.f3;
+        case 'G1':
+          return this.gLineQuantity.g1;
+        case 'G2':
+          return this.gLineQuantity.g2;
+        case 'G3':
+          return this.gLineQuantity.g3;
+        default:
+          // 对于非A1-G3的队列，仍然使用数据库数据
+          return this.getQueueCountFromDatabase(queueName);
+      }
+    },
+    // 根据队列名称获取数据库中的队列数量
+    getQueueCountFromDatabase(queueName) {
+      const marker = this.queueMarkers.find((m) => m.name === queueName);
+      if (!marker) return 0;
+
+      const queue = this.queues.find((q) => q.id === marker.queueId);
+      return queue?.trayInfo?.length || 0;
     },
     getStatusText(status) {
       const statusMap = {
@@ -2082,6 +3952,9 @@ export default {
       } else {
         return value; // 非负数保持不变
       }
+    },
+    toggleBitValue(obj, bit) {
+      obj[bit] = obj[bit] === '1' ? '0' : '1';
     }
   }
 };
@@ -2864,6 +4737,7 @@ export default {
                   transform: translateX(-50%);
                   opacity: 0; /* 默认隐藏 */
                   transition: opacity 0.3s;
+                  pointer-events: none; /* 添加此行 */
                 }
               }
 
@@ -2880,12 +4754,12 @@ export default {
                 background: #00ff3f; /* 运行状态绿色方块 */
               }
 
-              /* 始终显示电机标签 */
-              .motor-marker.marker-show-label .marker-label {
+              /* 默认隐藏标签，hover时显示 */
+              .motor-marker:hover .marker-label {
                 opacity: 1;
               }
-              /* 悬停显示电机标签 */
-              .motor-marker:hover .marker-label {
+              /* 始终显示标签的点位 */
+              .motor-marker.marker-show-label .marker-label {
                 opacity: 1;
               }
 
