@@ -3571,7 +3571,7 @@ export default {
         }
       }
     },
-    // 一楼上货区（扫码后入队）处“有载信号”/光电占位
+    // 一楼上货区（扫码后入队）处"有载信号"/光电占位
     'scanPhotoelectricSignal.bit1'(newVal) {
       // 当值变为1时执行逻辑
       if (newVal === '1') {
@@ -4200,7 +4200,6 @@ export default {
           '.marker, .marker-with-panel, .queue-marker, .motor-marker'
         );
         const carts = imageWrapper.querySelectorAll('.cart-container');
-        const imageRect = image.getBoundingClientRect();
         const wrapperRect = imageWrapper.getBoundingClientRect();
 
         // 计算图片的实际显示区域
@@ -4213,27 +4212,30 @@ export default {
         const imageOffsetX = (wrapperRect.width - displayedWidth) / 2;
         const imageOffsetY = (wrapperRect.height - displayedHeight) / 2;
 
-        markers.forEach((marker) => {
-          const x = parseFloat(marker.dataset.x);
-          const y = parseFloat(marker.dataset.y);
-          if (!isNaN(x) && !isNaN(y)) {
-            marker.style.left = `${imageOffsetX + x * scaleX}px`;
-            marker.style.top = `${imageOffsetY + y * scaleY}px`;
-          }
-        });
-
-        // 更新小车位置和大小
-        carts.forEach((cart) => {
-          const x = parseFloat(cart.dataset.x);
-          const y = parseFloat(cart.dataset.y);
-          const width = parseFloat(cart.dataset.width);
-          if (!isNaN(x) && !isNaN(y)) {
-            cart.style.left = `${imageOffsetX + x * scaleX}px`;
-            cart.style.top = `${imageOffsetY + y * scaleY}px`;
-            if (!isNaN(width)) {
-              cart.style.width = `${width * scaleX}px`;
+        // 使用requestAnimationFrame批量更新，减少重排重绘
+        requestAnimationFrame(() => {
+          markers.forEach((marker) => {
+            const x = parseFloat(marker.dataset.x);
+            const y = parseFloat(marker.dataset.y);
+            if (!isNaN(x) && !isNaN(y)) {
+              marker.style.left = `${imageOffsetX + x * scaleX}px`;
+              marker.style.top = `${imageOffsetY + y * scaleY}px`;
             }
-          }
+          });
+
+          // 更新小车位置和大小
+          carts.forEach((cart) => {
+            const x = parseFloat(cart.dataset.x);
+            const y = parseFloat(cart.dataset.y);
+            const width = parseFloat(cart.dataset.width);
+            if (!isNaN(x) && !isNaN(y)) {
+              cart.style.left = `${imageOffsetX + x * scaleX}px`;
+              cart.style.top = `${imageOffsetY + y * scaleY}px`;
+              if (!isNaN(width)) {
+                cart.style.width = `${width * scaleX}px`;
+              }
+            }
+          });
         });
       });
     },
@@ -5566,10 +5568,13 @@ export default {
                 position: absolute;
                 width: 12px;
                 height: 12px;
-                transform: translate(-50%, -50%);
+                transform: translate(-50%, -50%) translateZ(0);
                 cursor: pointer;
                 z-index: 2;
                 pointer-events: auto;
+                // GPU加速优化
+                will-change: transform;
+                backface-visibility: hidden;
                 .marker-label {
                   position: absolute;
                   white-space: nowrap;
@@ -5635,10 +5640,13 @@ export default {
                 position: absolute;
                 width: 12px;
                 height: 12px;
-                transform: translate(-50%, -50%);
+                transform: translate(-50%, -50%) translateZ(0);
                 cursor: pointer;
                 z-index: 2;
                 pointer-events: auto;
+                // GPU加速优化
+                will-change: transform;
+                backface-visibility: hidden;
                 .marker-label {
                   position: absolute;
                   white-space: nowrap;
@@ -5705,9 +5713,12 @@ export default {
                 position: absolute;
                 width: 12px;
                 height: 12px;
-                transform: translate(-50%, -50%);
+                transform: translate(-50%, -50%) translateZ(0);
                 cursor: pointer;
                 z-index: 2;
+                // GPU加速优化
+                will-change: transform;
+                backface-visibility: hidden;
                 .data-panel {
                   position: absolute;
                   background: rgba(30, 42, 56, 0.95);
@@ -5814,7 +5825,7 @@ export default {
             .image-wrapper {
               .queue-marker {
                 position: absolute;
-                transform: translate(-50%, -50%);
+                transform: translate(-50%, -50%) translateZ(0);
                 cursor: pointer;
                 z-index: 10;
                 background: rgba(10, 30, 50, 0.85);
@@ -5826,6 +5837,9 @@ export default {
                 text-align: center;
                 box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
                 color: #ffffff;
+                // GPU加速优化
+                will-change: transform;
+                backface-visibility: hidden;
                 .queue-marker-content {
                   display: flex;
                   flex-direction: column;
@@ -5851,17 +5865,24 @@ export default {
               /* 添加小车样式 */
               .cart-container {
                 position: absolute;
-                transform: translate(-50%, -50%);
+                transform: translate(-50%, -50%) translateZ(0);
                 z-index: 3;
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                // GPU加速优化
+                will-change: transform;
+                backface-visibility: hidden;
               }
 
               .cart-image {
                 width: 100%;
                 height: auto;
                 object-fit: contain;
+                // 图片GPU加速
+                image-rendering: optimizeSpeed;
+                image-rendering: -webkit-optimize-contrast;
+                image-rendering: crisp-edges;
               }
             }
           }
