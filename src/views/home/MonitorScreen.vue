@@ -315,10 +315,12 @@
             <div class="floor-image-container">
               <div class="image-wrapper">
                 <img
-                  src="@/assets/floor1.png"
+                  src="@/assets/floor1.webp"
                   alt="一楼平面图"
                   class="floor-image"
                   @load="updateMarkerPositions"
+                  loading="eager"
+                  decoding="async"
                 />
                 <!-- 修改队列标识 -->
                 <div
@@ -1779,9 +1781,11 @@
               <div class="floor-image-container">
                 <div class="image-wrapper">
                   <img
-                    src="@/assets/floor2.png"
+                    src="@/assets/floor2.webp"
                     alt="二楼平面图"
                     class="floor-image"
+                    loading="eager"
+                    decoding="async"
                     @load="updateMarkerPositions"
                   />
                   <!-- 二楼区域上货点信息-上部分 -->
@@ -1899,9 +1903,11 @@
               <div class="floor-image-container">
                 <div class="image-wrapper">
                   <img
-                    src="@/assets/floor3.png"
+                    src="@/assets/floor3.webp"
                     alt="三楼平面图"
                     class="floor-image"
+                    loading="eager"
+                    decoding="async"
                     @load="updateMarkerPositions"
                   />
                   <!-- 三楼区域上货点信息-上部分 -->
