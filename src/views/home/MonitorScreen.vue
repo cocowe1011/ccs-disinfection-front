@@ -349,13 +349,12 @@
                 </div>
                 <!-- 上货扫码区域提示 -->
                 <div class="marker-with-panel" data-x="1400" data-y="1420">
-                  <div class="pulse"></div>
                   <div
                     class="data-panel"
                     :class="['position-right', { 'always-show': true }]"
-                    style="width: 140px"
+                    style="width: 120px"
                   >
-                    <div class="data-panel-header">上货扫码信息</div>
+                    <div class="data-panel-header">缓存区扫码信息</div>
                     <div class="data-panel-content">
                       <div class="data-panel-row">
                         <span class="data-panel-label">批次：</span>
@@ -397,7 +396,6 @@
                 </div>
                 <!-- 上货点信息 -->
                 <div class="marker-with-panel" data-x="1490" data-y="900">
-                  <div class="pulse"></div>
                   <div
                     class="data-panel"
                     style="width: 90px"
@@ -406,7 +404,7 @@
                       { 'always-show': true, 'vertical-layout': true }
                     ]"
                   >
-                    <div class="data-panel-header">上货点信息</div>
+                    <div class="data-panel-header">一楼上货扫码</div>
                     <div class="data-panel-content">
                       <div
                         class="data-panel-row"
@@ -452,7 +450,6 @@
                 </div>
                 <!-- 下货点信息 -->
                 <div class="marker-with-panel" data-x="1230" data-y="62">
-                  <div class="pulse"></div>
                   <div
                     class="data-panel"
                     style="padding: 4px 12px"
@@ -2676,7 +2673,7 @@ export default {
       queues: [
         {
           id: 1,
-          queueName: '上货区',
+          queueName: '缓存区',
           trayInfo: []
         },
         {
@@ -2822,7 +2819,7 @@ export default {
 
       // 添加队列位置标识数据
       queueMarkers: [
-        { id: 1, name: '上货区', queueId: 1, x: 1485, y: 1620 },
+        { id: 1, name: '缓存区', queueId: 1, x: 1485, y: 1620 },
         { id: 2, name: 'A1', queueId: 2, x: 1216, y: 1550 },
         { id: 3, name: 'B1', queueId: 3, x: 1083, y: 1550 },
         { id: 4, name: 'C1', queueId: 4, x: 905, y: 1550 },
@@ -5707,9 +5704,6 @@ export default {
                 transform: translate(-50%, -50%);
                 cursor: pointer;
                 z-index: 2;
-                .pulse {
-                  background: rgba(64, 158, 255, 0.4);
-                }
                 .data-panel {
                   position: absolute;
                   background: rgba(30, 42, 56, 0.95);
@@ -5785,29 +5779,9 @@ export default {
                 }
               }
 
-              .marker-with-panel::before {
-                content: '';
-                position: absolute;
-                width: 100%;
-                height: 100%;
-                background: rgba(64, 158, 255, 0.8);
-                border-radius: 50%;
-                animation: glow-blue 2s infinite;
-              }
               /* 悬停时显示面板 */
               .marker-with-panel:hover .data-panel:not(.always-show) {
                 opacity: 1;
-              }
-              @keyframes glow-blue {
-                0% {
-                  box-shadow: 0 0 0 0 rgba(64, 158, 255, 0.4);
-                }
-                70% {
-                  box-shadow: 0 0 0 8px rgba(64, 158, 255, 0);
-                }
-                100% {
-                  box-shadow: 0 0 0 0 rgba(64, 158, 255, 0);
-                }
               }
             }
           }
