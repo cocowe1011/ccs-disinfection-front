@@ -4883,6 +4883,10 @@ export default {
   overflow: hidden;
   box-sizing: border-box;
   user-select: none;
+  // GPU加速优化
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
   .header {
     position: relative;
     width: 100%;

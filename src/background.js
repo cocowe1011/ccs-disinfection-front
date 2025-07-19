@@ -56,6 +56,19 @@ app.on('window-all-closed', () => {
 global.sharedObject = {
   userInfo: {}
 };
+
+// GPU硬件加速配置
+app.commandLine.appendSwitch('--enable-gpu-rasterization');
+app.commandLine.appendSwitch('--enable-zero-copy');
+app.commandLine.appendSwitch('--ignore-gpu-blocklist');
+app.commandLine.appendSwitch('--enable-hardware-overlays');
+app.commandLine.appendSwitch('--enable-accelerated-video-decode');
+app.commandLine.appendSwitch('--enable-accelerated-video-encode');
+app.commandLine.appendSwitch('--enable-gpu-memory-buffer-video-frames');
+app.commandLine.appendSwitch('--enable-native-gpu-memory-buffers');
+app.commandLine.appendSwitch('--enable-oop-rasterization');
+app.commandLine.appendSwitch('--enable-unsafe-webgpu');
+
 let mainWindow = null;
 app.on('ready', () => {
   // Create the browser window.
@@ -67,7 +80,13 @@ app.on('ready', () => {
       nodeIntegration: true,
       contextIsolation: false,
       enableRemoteModule: true,
-      webSecurity: false
+      webSecurity: false,
+      // 启用硬件加速
+      enableWebGL: true,
+      // 启用GPU加速
+      accelerator: 'gpu',
+      // 启用实验性功能
+      experimentalFeatures: true
     },
     icon: './build/icons/icon.ico'
   });
