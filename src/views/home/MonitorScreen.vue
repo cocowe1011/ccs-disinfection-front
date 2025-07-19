@@ -343,6 +343,7 @@
                   v-for="cart in carts"
                   :key="cart.name"
                   class="cart-container"
+                  :data-cart-id="cart.id"
                   :data-x="cart.x"
                   :data-y="cart.y"
                   :data-width="cart.width"
@@ -4799,7 +4800,48 @@ export default {
       // 修正方向：PLC数值增大时小车从A线移动到G线
       cart.x = Math.round(xRange.max - (xRange.max - xRange.min) * ratio);
       this.$nextTick(() => {
-        this.updateMarkerPositions();
+        this.updateCartPositionOnly(cartId);
+      });
+    },
+    // 只更新小车位置，不更新其他元素
+    updateCartPositionOnly(cartId) {
+      const images = document.querySelectorAll('.floor-image');
+      images.forEach((image) => {
+        const imageWrapper = image.parentElement;
+        if (!imageWrapper) return;
+
+        const cart = imageWrapper.querySelector(
+          `.cart-container[data-cart-id="${cartId}"]`
+        );
+        if (!cart) return;
+
+        // 获取最新的小车数据
+        const cartData = this.carts.find((c) => c.id === cartId);
+        if (!cartData) return;
+
+        const wrapperRect = imageWrapper.getBoundingClientRect();
+
+        // 计算图片的实际显示区域
+        const displayedWidth = image.width;
+        const displayedHeight = image.height;
+        const scaleX = displayedWidth / image.naturalWidth;
+        const scaleY = displayedHeight / image.naturalHeight;
+
+        // 计算图片在容器中的偏移量
+        const imageOffsetX = (wrapperRect.width - displayedWidth) / 2;
+        const imageOffsetY = (wrapperRect.height - displayedHeight) / 2;
+
+        // 使用最新的小车数据更新位置
+        const x = cartData.x;
+        const y = cartData.y;
+        const width = cartData.width;
+        if (!isNaN(x) && !isNaN(y)) {
+          cart.style.left = `${imageOffsetX + x * scaleX}px`;
+          cart.style.top = `${imageOffsetY + y * scaleY}px`;
+          if (!isNaN(width)) {
+            cart.style.width = `${width * scaleX}px`;
+          }
+        }
       });
     },
     // 根据楼层控制PLC接货口启用/禁用

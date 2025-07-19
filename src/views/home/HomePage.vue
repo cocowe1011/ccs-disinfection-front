@@ -335,14 +335,18 @@ export default {
   width: 100%;
   height: 100%;
   background: url(./img/background.png) no-repeat;
-  background-size: 100% 100%;
+  background-size: cover; /* 改为cover减少GPU计算 */
+  background-position: center; /* 添加居中定位 */
   .maskDiv {
     width: 100%;
     height: 100%;
     opacity: 1;
     background: rgba(246, 247, 251, 0.6);
     box-shadow: 0px 60px 90px 0px rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(60px);
+    /* 移除或减少backdrop-filter的模糊值 */
+    backdrop-filter: blur(10px); /* 从60px减少到10px */
+    /* 添加will-change优化GPU渲染 */
+    will-change: auto;
     &-top {
       height: 55px;
       width: 100%;
@@ -350,6 +354,8 @@ export default {
       align-items: center;
       border-radius: 0px 0px 10px 10px;
       background: rgba(255, 255, 255, 1);
+      /* 添加GPU优化 */
+      transform: translateZ(0);
       &-left {
         flex: 1;
         height: 100%;
@@ -390,6 +396,8 @@ export default {
         justify-content: center;
         align-items: center;
         -webkit-app-region: no-drag;
+        /* 添加GPU优化 */
+        transform: translateZ(0);
       }
       &-min:hover,
       &-max:hover {
@@ -446,6 +454,8 @@ export default {
     &-down {
       width: 100%;
       height: calc(100% - 55px);
+      /* 添加GPU优化 */
+      transform: translateZ(0);
     }
   }
   ::v-deep {

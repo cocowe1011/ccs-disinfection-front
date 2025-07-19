@@ -157,6 +157,8 @@ export default {
   color: #fff;
   user-select: none;
   opacity: 0.85;
+  /* 添加GPU优化 */
+  transform: translateZ(0);
   .inner {
     width: 100%;
     height: 100%;
@@ -179,17 +181,21 @@ export default {
   background-color: #f56c6c !important;
 }
 .icon {
-  animation: icon-animation 2s infinite;
+  /* 优化动画性能，减少GPU占用 */
+  animation: icon-animation 3s infinite ease-in-out; /* 增加动画时间，减少频率 */
+  /* 添加GPU优化 */
+  transform: translateZ(0);
+  will-change: transform;
 }
 @keyframes icon-animation {
   0% {
-    transform: scale(1);
+    transform: scale(1) translateZ(0);
   }
   50% {
-    transform: scale(1.3);
+    transform: scale(1.2) translateZ(0); /* 减少缩放幅度 */
   }
   100% {
-    transform: scale(1);
+    transform: scale(1) translateZ(0);
   }
 }
 </style>

@@ -44,8 +44,11 @@ export default {
     background: rgb(255, 255, 255);
     box-shadow: 0px 60px 90px 0px rgba(0, 0, 0, 0.2);
     background-image: url(./img/welcome.jpg);
-    background-size: 100% 100%;
+    background-size: cover; /* 改为cover减少GPU计算 */
+    background-position: center; /* 添加居中定位 */
     background-repeat: no-repeat;
+    /* 添加GPU优化 */
+    transform: translateZ(0);
     .center {
       letter-spacing: 3px;
       width: 37%;

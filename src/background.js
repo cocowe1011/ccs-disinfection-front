@@ -57,17 +57,9 @@ global.sharedObject = {
   userInfo: {}
 };
 
-// GPU硬件加速配置
+// GPU硬件加速配置 - 优化版本
 app.commandLine.appendSwitch('--enable-gpu-rasterization');
 app.commandLine.appendSwitch('--enable-zero-copy');
-app.commandLine.appendSwitch('--ignore-gpu-blocklist');
-app.commandLine.appendSwitch('--enable-hardware-overlays');
-app.commandLine.appendSwitch('--enable-accelerated-video-decode');
-app.commandLine.appendSwitch('--enable-accelerated-video-encode');
-app.commandLine.appendSwitch('--enable-gpu-memory-buffer-video-frames');
-app.commandLine.appendSwitch('--enable-native-gpu-memory-buffers');
-app.commandLine.appendSwitch('--enable-oop-rasterization');
-app.commandLine.appendSwitch('--enable-unsafe-webgpu');
 
 let mainWindow = null;
 app.on('ready', () => {
