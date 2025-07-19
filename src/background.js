@@ -169,21 +169,21 @@ app.on('ready', () => {
     let revert = false;
     // 初始化小车位置数据，在合理范围内
     let cart1Position = 5670; // 初始位置在A线附近
-    let cart2Position = 5820; // 初始位置在A线附近  
+    let cart2Position = 5820; // 初始位置在A线附近
     let cart3Position = 5830; // 初始位置在A线附近
-    
+
     setInterval(() => {
       if (mainWindow) {
         // 小车位置动态变化，模拟真实运行
         cart1Position += Math.random() > 0.5 ? 10 : -10;
         cart2Position += Math.random() > 0.5 ? 10 : -10;
         cart3Position += Math.random() > 0.5 ? 10 : -10;
-        
+
         // 确保小车位置在合理范围内
         cart1Position = Math.max(5670, Math.min(19190, cart1Position));
         cart2Position = Math.max(5820, Math.min(16990, cart2Position));
         cart3Position = Math.max(5830, Math.min(17020, cart3Position));
-        
+
         if (revert) {
           mainWindow.webContents.send(
             'receivedMsg',
@@ -437,7 +437,7 @@ app.on('ready', () => {
         }
         revert = !revert;
       }
-    }, 50);
+    }, 100);
   }
   setAppTray();
   if (process.env.NODE_ENV === 'production') {
@@ -693,11 +693,11 @@ function conPLC() {
           conn.addItems('DBW360');
           setInterval(() => {
             conn.readAllItems(valuesReady);
-          }, 50);
+          }, 200);
           setInterval(() => {
             // nodes7 代码
             conn.writeItems(writeAddArr, writeStrArr, valuesWritten);
-          }, 100);
+          }, 200);
           // 发送心跳
           sendHeartToPLC();
         }
@@ -798,10 +798,44 @@ var variables = {
   DBW530: 'DB101,INT530', // WCS执行出货灭菌柜编号
   DBW540: 'DB101,INT540', // WCS下发任务完成
   DBW542: 'DB101,INT542', // WCS下发目的地
-  DBB544: 'DB101,C544.30' // WCS下发托盘号
+  DBB544: 'DB101,C544.30', // WCS下发托盘号
+  DBW580: 'DB101,INT580', // 1楼上货扫码反馈
+  DBW582: 'DB101,INT582', // 缓存扫码反馈
+  DBW584: 'DB101,INT584', // 2楼A扫码反馈
+  DBW586: 'DB101,INT586', // 2楼B扫码反馈
+  DBW588: 'DB101,INT588', // 3楼A扫码反馈
+  DBW590: 'DB101,INT590', // 3楼B扫码反馈
+  DBW592: 'DB101,INT592' // 出库扫码反馈
 };
 
-var writeStrArr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ''];
+var writeStrArr = [
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  '',
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0
+];
 var writeAddArr = [
   'DBW500', // WCS看门狗心跳
   'DBW502', // WCS-全线启动
@@ -821,7 +855,14 @@ var writeAddArr = [
   'DBW530', // WCS执行出货灭菌柜编号
   'DBW540', // WCS下发任务完成
   'DBW542', // WCS下发目的地
-  'DBB544' // WCS下发托盘号
+  'DBB544', // WCS下发托盘号
+  'DBW580', // 1楼上货扫码反馈
+  'DBW582', // 缓存扫码反馈
+  'DBW584', // 2楼A扫码反馈
+  'DBW586', // 2楼B扫码反馈
+  'DBW588', // 3楼A扫码反馈
+  'DBW590', // 3楼B扫码反馈
+  'DBW592' // 出库扫码反馈
 ];
 
 // 给PLC写值

@@ -1,13 +1,5 @@
 <template>
   <div class="smart-workshop">
-    <!-- 添加标题区域 -->
-    <div class="header" v-show="false">
-      <img src="@/assets/header.png" alt="header" class="header-bg" />
-      <div class="header-content">
-        <div class="title">智慧灭菌大屏监控</div>
-        <div class="current-time">{{ currentTime }}</div>
-      </div>
-    </div>
     <!-- 内容区包装器 -->
     <div class="content-wrapper">
       <!-- 左侧面板 -->
@@ -375,12 +367,19 @@
                         <span class="data-panel-label">扫码：</span>
                         <span>{{ floor1UpLineTrayInfo || '--' }}</span>
                       </div>
+                      <div class="data-panel-row">
+                        <span class="data-panel-label">托盘数：</span>
+                        <span
+                          >{{ currentOrderTrayCount }}/{{
+                            currentOrderScannedCount
+                          }}</span
+                        >
+                      </div>
                       <div
                         class="data-panel-row"
                         v-if="
                           currentOrder &&
                           currentOrder.qrCode &&
-                          floor1UpLineTrayInfo &&
                           isLastQrCodeMatch
                         "
                       >
@@ -2251,67 +2250,275 @@
               </div>
             </div>
           </div>
-          <!-- 添加队列托盘批量移动测试部分 -->
+          <!-- 添加光电信号测试部分 -->
           <div class="test-section">
-            <span class="test-label">队列托盘批量移动:</span>
-            <div class="queue-move-container">
-              <div class="queue-select-group">
-                <div class="queue-move-label">源队列:</div>
-                <el-select
-                  v-model="queueMoveForm.sourceQueueId"
-                  size="small"
-                  placeholder="请选择源队列"
-                >
-                  <el-option
-                    v-for="queue in queues"
-                    :key="queue.id"
-                    :label="queue.queueName"
-                    :value="queue.id"
-                  ></el-option>
-                </el-select>
-              </div>
-              <div class="queue-select-group">
-                <div class="queue-move-label">目标队列:</div>
-                <el-select
-                  v-model="queueMoveForm.targetQueueId"
-                  size="small"
-                  placeholder="请选择目标队列"
-                >
-                  <el-option
-                    v-for="queue in queues"
-                    :key="queue.id"
-                    :label="queue.queueName"
-                    :value="queue.id"
-                  ></el-option>
-                </el-select>
-              </div>
-              <div class="queue-move-actions">
+            <span class="test-label">光电信号测试:</span>
+            <div class="photoelectric-test-container">
+              <div class="photoelectric-buttons">
                 <el-button
                   type="primary"
                   size="small"
-                  @click="moveAllTrays"
-                  :disabled="
-                    !queueMoveForm.sourceQueueId ||
-                    !queueMoveForm.targetQueueId ||
-                    queueMoveForm.sourceQueueId === queueMoveForm.targetQueueId
-                  "
-                  >移动全部托盘</el-button
+                  @click="triggerPhotoelectricSignal('bit0')"
+                  :loading="photoelectricLoading.bit0"
                 >
+                  一楼接货站台光电
+                </el-button>
+                <el-button
+                  type="primary"
+                  size="small"
+                  @click="triggerPhotoelectricSignal('bit1')"
+                  :loading="photoelectricLoading.bit1"
+                >
+                  一楼上货区光电
+                </el-button>
+                <el-button
+                  type="primary"
+                  size="small"
+                  @click="triggerPhotoelectricSignal('bit2')"
+                  :loading="photoelectricLoading.bit2"
+                >
+                  二楼A接货光电
+                </el-button>
+                <el-button
+                  type="primary"
+                  size="small"
+                  @click="triggerPhotoelectricSignal('bit3')"
+                  :loading="photoelectricLoading.bit3"
+                >
+                  二楼B接货光电
+                </el-button>
+                <el-button
+                  type="primary"
+                  size="small"
+                  @click="triggerPhotoelectricSignal('bit4')"
+                  :loading="photoelectricLoading.bit4"
+                >
+                  三楼A接货光电
+                </el-button>
+                <el-button
+                  type="primary"
+                  size="small"
+                  @click="triggerPhotoelectricSignal('bit5')"
+                  :loading="photoelectricLoading.bit5"
+                >
+                  三楼B接货光电
+                </el-button>
+                <el-button
+                  type="primary"
+                  size="small"
+                  @click="triggerPhotoelectricSignal('bit6')"
+                  :loading="photoelectricLoading.bit6"
+                >
+                  下线扫码处光电
+                </el-button>
+                <el-button
+                  type="primary"
+                  size="small"
+                  @click="triggerPhotoelectricSignal('bit7')"
+                  :loading="photoelectricLoading.bit7"
+                >
+                  一楼出货站台光电
+                </el-button>
               </div>
             </div>
           </div>
-
-          <!-- 添加托盘到上货区测试部分 -->
+          <!-- 添加预热房前缓存线请求目的地测试部分 -->
           <div class="test-section">
-            <span class="test-label">托盘上货区操作:</span>
-            <div class="upload-area-actions">
-              <el-button
-                type="primary"
-                size="small"
-                @click="addCurrentTraysToQueue"
-                :disabled="!currentOrder || !currentOrder.qrCode"
-                >添加托盘到上货区</el-button
-              >
+            <span class="test-label">预热房前缓存线请求目的地测试:</span>
+            <div class="request-destination-test-container">
+              <div class="request-destination-buttons">
+                <el-button
+                  type="primary"
+                  size="small"
+                  @click="triggerRequestDestination"
+                  :loading="isRequestDestinationLoading"
+                >
+                  触发预热房前缓存线请求目的地
+                </el-button>
+              </div>
+            </div>
+          </div>
+          <!-- 添加队列数量手动操作测试部分 -->
+          <div class="test-section">
+            <span class="test-label">队列数量手动操作测试:</span>
+            <div class="queue-quantity-test-container">
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">A1队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ aLineQuantity.a1 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="aLineQuantity.a1++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      aLineQuantity.a1 = Math.max(0, aLineQuantity.a1 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">B1队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ bLineQuantity.b1 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="bLineQuantity.b1++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      bLineQuantity.b1 = Math.max(0, bLineQuantity.b1 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">C1队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ cLineQuantity.c1 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="cLineQuantity.c1++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      cLineQuantity.c1 = Math.max(0, cLineQuantity.c1 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">D1队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ dLineQuantity.d1 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="dLineQuantity.d1++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      dLineQuantity.d1 = Math.max(0, dLineQuantity.d1 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">E1队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ eLineQuantity.e1 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="eLineQuantity.e1++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      eLineQuantity.e1 = Math.max(0, eLineQuantity.e1 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">F1队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ fLineQuantity.f1 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="fLineQuantity.f1++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      fLineQuantity.f1 = Math.max(0, fLineQuantity.f1 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">G1队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ gLineQuantity.g1 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="gLineQuantity.g1++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      gLineQuantity.g1 = Math.max(0, gLineQuantity.g1 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-actions">
+                <el-button
+                  type="primary"
+                  size="small"
+                  @click="resetAllQueueQuantities"
+                >
+                  重置所有数量
+                </el-button>
+              </div>
             </div>
           </div>
         </div>
@@ -2440,7 +2647,6 @@ export default {
       ordersList: [],
       runningLogs: [], // 修改为空数组
       alarmLogs: [], // 修改为空数组
-      currentTime: '',
       carts: [
         {
           id: 1,
@@ -2467,7 +2673,123 @@ export default {
           image: require('@/assets/cart.png')
         }
       ],
-      queues: [],
+      queues: [
+        {
+          id: 1,
+          queueName: '上货区',
+          trayInfo: []
+        },
+        {
+          id: 2,
+          queueName: 'A1',
+          trayInfo: []
+        },
+        {
+          id: 3,
+          queueName: 'B1',
+          trayInfo: []
+        },
+        {
+          id: 4,
+          queueName: 'C1',
+          trayInfo: []
+        },
+        {
+          id: 5,
+          queueName: 'D1',
+          trayInfo: []
+        },
+        {
+          id: 6,
+          queueName: 'E1',
+          trayInfo: []
+        },
+        {
+          id: 7,
+          queueName: 'F1',
+          trayInfo: []
+        },
+        {
+          id: 8,
+          queueName: 'G1',
+          trayInfo: []
+        },
+        {
+          id: 9,
+          queueName: 'A2',
+          trayInfo: []
+        },
+        {
+          id: 10,
+          queueName: 'B2',
+          trayInfo: []
+        },
+        {
+          id: 11,
+          queueName: 'C2',
+          trayInfo: []
+        },
+        {
+          id: 12,
+          queueName: 'D2',
+          trayInfo: []
+        },
+        {
+          id: 13,
+          queueName: 'E2',
+          trayInfo: []
+        },
+        {
+          id: 14,
+          queueName: 'F2',
+          trayInfo: []
+        },
+        {
+          id: 15,
+          queueName: 'G2',
+          trayInfo: []
+        },
+        {
+          id: 16,
+          queueName: 'A3',
+          trayInfo: []
+        },
+        {
+          id: 17,
+          queueName: 'B3',
+          trayInfo: []
+        },
+        {
+          id: 18,
+          queueName: 'C3',
+          trayInfo: []
+        },
+        {
+          id: 19,
+          queueName: 'D3',
+          trayInfo: []
+        },
+        {
+          id: 20,
+          queueName: 'E3',
+          trayInfo: []
+        },
+        {
+          id: 21,
+          queueName: 'F3',
+          trayInfo: []
+        },
+        {
+          id: 22,
+          queueName: 'G3',
+          trayInfo: []
+        },
+        {
+          id: 23,
+          queueName: '下货区',
+          trayInfo: []
+        }
+      ],
       nowTrays: [],
       draggedTray: null,
       dragSourceQueue: null,
@@ -2482,6 +2804,7 @@ export default {
       totalHistoryOrders: 0,
       addTrayDialogVisible: false,
       isSubmitting: false,
+      isRequestDestinationLoading: false,
       newTrayForm: {
         trayCode: '',
         batchId: ''
@@ -2496,10 +2819,7 @@ export default {
           { min: 1, max: 50, message: '长度在 1 到 50 个字符', trigger: 'blur' }
         ]
       },
-      queueMoveForm: {
-        sourceQueueId: '',
-        targetQueueId: ''
-      },
+
       // 添加队列位置标识数据
       queueMarkers: [
         { id: 1, name: '上货区', queueId: 1, x: 1485, y: 1620 },
@@ -2825,7 +3145,20 @@ export default {
         cart1: { min: 5670, max: 19190 }, // PLC范围5670-19190
         cart2: { min: 5820, max: 16990 }, // PLC范围5820-16990
         cart3: { min: 5830, max: 17020 } // PLC范围5830-17020
-      }
+      },
+      // 光电信号测试加载状态
+      photoelectricLoading: {
+        bit0: false,
+        bit1: false,
+        bit2: false,
+        bit3: false,
+        bit4: false,
+        bit5: false,
+        bit6: false,
+        bit7: false
+      },
+      // 当前订单已上货托盘计数器
+      currentOrderScannedCount: 0
     };
   },
   computed: {
@@ -2844,313 +3177,315 @@ export default {
       return this.ordersList.find((order) => order.orderStatus === '1') || null;
     },
     isLastQrCodeMatch() {
-      if (
-        !this.currentOrder ||
-        !this.currentOrder.qrCode ||
-        !this.floor1UpLineTrayInfo
-      ) {
+      if (!this.currentOrder || !this.currentOrder.qrCode) {
         return false;
       }
       const qrCodes = this.currentOrder.qrCode.split(',');
-      return this.floor1UpLineTrayInfo === qrCodes[qrCodes.length - 1];
+      // 根据订单信息里面的托盘号的数量和扫码上货后计数做一个匹配
+      return this.currentOrderScannedCount >= qrCodes.length;
+    },
+    // 获取当前订单托盘总数
+    currentOrderTrayCount() {
+      if (!this.currentOrder || !this.currentOrder.qrCode) {
+        return 0;
+      }
+      return this.currentOrder.qrCode.split(',').length;
     }
   },
   mounted() {
-    this.updateTime();
-    setInterval(this.updateTime, 1000);
     this.initializeMarkers();
     this.refreshOrders();
-    this.queryQueueList();
-    ipcRenderer.on('receivedMsg', (event, values, values2) => {
-      // 使用位运算优化赋值
-      const getBit = (word, bitIndex) => ((word >> bitIndex) & 1).toString();
+    this.loadQueueInfoFromDatabase();
+    // ipcRenderer.on('receivedMsg', (event, values, values2) => {
+    //   // 使用位运算优化赋值
+    //   const getBit = (word, bitIndex) => ((word >> bitIndex) & 1).toString();
 
-      // 外部货物接驳口-允许进料-读取PLC
-      let word4 = this.convertToWord(values.DBW4);
-      this.allowFeedBack.bit0 = getBit(word4, 8);
-      this.allowFeedBack.bit1 = getBit(word4, 9);
-      this.allowFeedBack.bit2 = getBit(word4, 10);
-      this.allowFeedBack.bit3 = getBit(word4, 11);
-      this.allowFeedBack.bit4 = getBit(word4, 12);
-      this.allowFeedBack.bit5 = getBit(word4, 13);
+    //   // 外部货物接驳口-允许进料-读取PLC
+    //   let word4 = this.convertToWord(values.DBW4);
+    //   this.allowFeedBack.bit0 = getBit(word4, 8);
+    //   this.allowFeedBack.bit1 = getBit(word4, 9);
+    //   this.allowFeedBack.bit2 = getBit(word4, 10);
+    //   this.allowFeedBack.bit3 = getBit(word4, 11);
+    //   this.allowFeedBack.bit4 = getBit(word4, 12);
+    //   this.allowFeedBack.bit5 = getBit(word4, 13);
 
-      // A线电机运行信号
-      let word6 = this.convertToWord(values.DBW6);
-      this.aLineMotorRunning.bit0 = getBit(word6, 8);
-      this.aLineMotorRunning.bit1 = getBit(word6, 9);
-      this.aLineMotorRunning.bit2 = getBit(word6, 10);
-      this.aLineMotorRunning.bit3 = getBit(word6, 11);
-      this.aLineMotorRunning.bit4 = getBit(word6, 12);
-      this.aLineMotorRunning.bit5 = getBit(word6, 13);
-      this.aLineMotorRunning.bit6 = getBit(word6, 14);
-      this.aLineMotorRunning.bit7 = getBit(word6, 15);
+    //   // A线电机运行信号
+    //   let word6 = this.convertToWord(values.DBW6);
+    //   this.aLineMotorRunning.bit0 = getBit(word6, 8);
+    //   this.aLineMotorRunning.bit1 = getBit(word6, 9);
+    //   this.aLineMotorRunning.bit2 = getBit(word6, 10);
+    //   this.aLineMotorRunning.bit3 = getBit(word6, 11);
+    //   this.aLineMotorRunning.bit4 = getBit(word6, 12);
+    //   this.aLineMotorRunning.bit5 = getBit(word6, 13);
+    //   this.aLineMotorRunning.bit6 = getBit(word6, 14);
+    //   this.aLineMotorRunning.bit7 = getBit(word6, 15);
 
-      // A线光电检测信号-读取PLC
-      let word8 = this.convertToWord(values.DBW8);
-      this.aLinePhotoelectricSignal.bit0 = getBit(word8, 8);
-      this.aLinePhotoelectricSignal.bit1 = getBit(word8, 9);
-      this.aLinePhotoelectricSignal.bit2 = getBit(word8, 10);
-      this.aLinePhotoelectricSignal.bit3 = getBit(word8, 11);
-      this.aLinePhotoelectricSignal.bit4 = getBit(word8, 12);
-      this.aLinePhotoelectricSignal.bit5 = getBit(word8, 13);
-      this.aLinePhotoelectricSignal.bit6 = getBit(word8, 14);
-      this.aLinePhotoelectricSignal.bit7 = getBit(word8, 15);
-      this.aLinePhotoelectricSignal.bit8 = getBit(word8, 0);
-      this.aLinePhotoelectricSignal.bit9 = getBit(word8, 1);
+    //   // A线光电检测信号-读取PLC
+    //   let word8 = this.convertToWord(values.DBW8);
+    //   this.aLinePhotoelectricSignal.bit0 = getBit(word8, 8);
+    //   this.aLinePhotoelectricSignal.bit1 = getBit(word8, 9);
+    //   this.aLinePhotoelectricSignal.bit2 = getBit(word8, 10);
+    //   this.aLinePhotoelectricSignal.bit3 = getBit(word8, 11);
+    //   this.aLinePhotoelectricSignal.bit4 = getBit(word8, 12);
+    //   this.aLinePhotoelectricSignal.bit5 = getBit(word8, 13);
+    //   this.aLinePhotoelectricSignal.bit6 = getBit(word8, 14);
+    //   this.aLinePhotoelectricSignal.bit7 = getBit(word8, 15);
+    //   this.aLinePhotoelectricSignal.bit8 = getBit(word8, 0);
+    //   this.aLinePhotoelectricSignal.bit9 = getBit(word8, 1);
 
-      // B线电机运行信号-读取PLC
-      let word10 = this.convertToWord(values.DBW10);
-      this.bLineMotorRunning.bit0 = getBit(word10, 8);
-      this.bLineMotorRunning.bit1 = getBit(word10, 9);
-      this.bLineMotorRunning.bit2 = getBit(word10, 10);
-      this.bLineMotorRunning.bit3 = getBit(word10, 11);
-      this.bLineMotorRunning.bit4 = getBit(word10, 12);
-      this.bLineMotorRunning.bit5 = getBit(word10, 13);
-      this.bLineMotorRunning.bit6 = getBit(word10, 14);
-      this.bLineMotorRunning.bit7 = getBit(word10, 15);
+    //   // B线电机运行信号-读取PLC
+    //   let word10 = this.convertToWord(values.DBW10);
+    //   this.bLineMotorRunning.bit0 = getBit(word10, 8);
+    //   this.bLineMotorRunning.bit1 = getBit(word10, 9);
+    //   this.bLineMotorRunning.bit2 = getBit(word10, 10);
+    //   this.bLineMotorRunning.bit3 = getBit(word10, 11);
+    //   this.bLineMotorRunning.bit4 = getBit(word10, 12);
+    //   this.bLineMotorRunning.bit5 = getBit(word10, 13);
+    //   this.bLineMotorRunning.bit6 = getBit(word10, 14);
+    //   this.bLineMotorRunning.bit7 = getBit(word10, 15);
 
-      // B线光电检测信号
-      let word12 = this.convertToWord(values.DBW12);
-      this.bLinePhotoelectricSignal.bit0 = getBit(word12, 8);
-      this.bLinePhotoelectricSignal.bit1 = getBit(word12, 9);
-      this.bLinePhotoelectricSignal.bit2 = getBit(word12, 10);
-      this.bLinePhotoelectricSignal.bit3 = getBit(word12, 11);
-      this.bLinePhotoelectricSignal.bit4 = getBit(word12, 12);
-      this.bLinePhotoelectricSignal.bit5 = getBit(word12, 13);
-      this.bLinePhotoelectricSignal.bit6 = getBit(word12, 14);
-      this.bLinePhotoelectricSignal.bit7 = getBit(word12, 15);
-      this.bLinePhotoelectricSignal.bit8 = getBit(word12, 0);
-      this.bLinePhotoelectricSignal.bit9 = getBit(word12, 1);
+    //   // B线光电检测信号
+    //   let word12 = this.convertToWord(values.DBW12);
+    //   this.bLinePhotoelectricSignal.bit0 = getBit(word12, 8);
+    //   this.bLinePhotoelectricSignal.bit1 = getBit(word12, 9);
+    //   this.bLinePhotoelectricSignal.bit2 = getBit(word12, 10);
+    //   this.bLinePhotoelectricSignal.bit3 = getBit(word12, 11);
+    //   this.bLinePhotoelectricSignal.bit4 = getBit(word12, 12);
+    //   this.bLinePhotoelectricSignal.bit5 = getBit(word12, 13);
+    //   this.bLinePhotoelectricSignal.bit6 = getBit(word12, 14);
+    //   this.bLinePhotoelectricSignal.bit7 = getBit(word12, 15);
+    //   this.bLinePhotoelectricSignal.bit8 = getBit(word12, 0);
+    //   this.bLinePhotoelectricSignal.bit9 = getBit(word12, 1);
 
-      // C线电机运行信号-读取PLC
-      let word14 = this.convertToWord(values.DBW14);
-      this.cLineMotorRunning.bit0 = getBit(word14, 8);
-      this.cLineMotorRunning.bit1 = getBit(word14, 9);
-      this.cLineMotorRunning.bit2 = getBit(word14, 10);
-      this.cLineMotorRunning.bit3 = getBit(word14, 11);
-      this.cLineMotorRunning.bit4 = getBit(word14, 12);
-      this.cLineMotorRunning.bit5 = getBit(word14, 13);
-      this.cLineMotorRunning.bit6 = getBit(word14, 14);
-      this.cLineMotorRunning.bit7 = getBit(word14, 15);
+    //   // C线电机运行信号-读取PLC
+    //   let word14 = this.convertToWord(values.DBW14);
+    //   this.cLineMotorRunning.bit0 = getBit(word14, 8);
+    //   this.cLineMotorRunning.bit1 = getBit(word14, 9);
+    //   this.cLineMotorRunning.bit2 = getBit(word14, 10);
+    //   this.cLineMotorRunning.bit3 = getBit(word14, 11);
+    //   this.cLineMotorRunning.bit4 = getBit(word14, 12);
+    //   this.cLineMotorRunning.bit5 = getBit(word14, 13);
+    //   this.cLineMotorRunning.bit6 = getBit(word14, 14);
+    //   this.cLineMotorRunning.bit7 = getBit(word14, 15);
 
-      // C线光电检测信号-读取PLC
-      let word16 = this.convertToWord(values.DBW16);
-      this.cLinePhotoelectricSignal.bit0 = getBit(word16, 8);
-      this.cLinePhotoelectricSignal.bit1 = getBit(word16, 9);
-      this.cLinePhotoelectricSignal.bit2 = getBit(word16, 10);
-      this.cLinePhotoelectricSignal.bit3 = getBit(word16, 11);
-      this.cLinePhotoelectricSignal.bit4 = getBit(word16, 12);
-      this.cLinePhotoelectricSignal.bit5 = getBit(word16, 13);
-      this.cLinePhotoelectricSignal.bit6 = getBit(word16, 14);
-      this.cLinePhotoelectricSignal.bit7 = getBit(word16, 15);
-      this.cLinePhotoelectricSignal.bit8 = getBit(word16, 0);
-      this.cLinePhotoelectricSignal.bit9 = getBit(word16, 1);
+    //   // C线光电检测信号-读取PLC
+    //   let word16 = this.convertToWord(values.DBW16);
+    //   this.cLinePhotoelectricSignal.bit0 = getBit(word16, 8);
+    //   this.cLinePhotoelectricSignal.bit1 = getBit(word16, 9);
+    //   this.cLinePhotoelectricSignal.bit2 = getBit(word16, 10);
+    //   this.cLinePhotoelectricSignal.bit3 = getBit(word16, 11);
+    //   this.cLinePhotoelectricSignal.bit4 = getBit(word16, 12);
+    //   this.cLinePhotoelectricSignal.bit5 = getBit(word16, 13);
+    //   this.cLinePhotoelectricSignal.bit6 = getBit(word16, 14);
+    //   this.cLinePhotoelectricSignal.bit7 = getBit(word16, 15);
+    //   this.cLinePhotoelectricSignal.bit8 = getBit(word16, 0);
+    //   this.cLinePhotoelectricSignal.bit9 = getBit(word16, 1);
 
-      // D线电机运行信号-读取PLC
-      let word18 = this.convertToWord(values.DBW18);
-      this.dLineMotorRunning.bit0 = getBit(word18, 8);
-      this.dLineMotorRunning.bit1 = getBit(word18, 9);
-      this.dLineMotorRunning.bit2 = getBit(word18, 10);
-      this.dLineMotorRunning.bit3 = getBit(word18, 11);
-      this.dLineMotorRunning.bit4 = getBit(word18, 12);
-      this.dLineMotorRunning.bit5 = getBit(word18, 13);
-      this.dLineMotorRunning.bit6 = getBit(word18, 14);
-      this.dLineMotorRunning.bit7 = getBit(word18, 15);
+    //   // D线电机运行信号-读取PLC
+    //   let word18 = this.convertToWord(values.DBW18);
+    //   this.dLineMotorRunning.bit0 = getBit(word18, 8);
+    //   this.dLineMotorRunning.bit1 = getBit(word18, 9);
+    //   this.dLineMotorRunning.bit2 = getBit(word18, 10);
+    //   this.dLineMotorRunning.bit3 = getBit(word18, 11);
+    //   this.dLineMotorRunning.bit4 = getBit(word18, 12);
+    //   this.dLineMotorRunning.bit5 = getBit(word18, 13);
+    //   this.dLineMotorRunning.bit6 = getBit(word18, 14);
+    //   this.dLineMotorRunning.bit7 = getBit(word18, 15);
 
-      // D线光电检测信号-读取PLC
-      let word20 = this.convertToWord(values.DBW20);
-      this.dLinePhotoelectricSignal.bit0 = getBit(word20, 8);
-      this.dLinePhotoelectricSignal.bit1 = getBit(word20, 9);
-      this.dLinePhotoelectricSignal.bit2 = getBit(word20, 10);
-      this.dLinePhotoelectricSignal.bit3 = getBit(word20, 11);
-      this.dLinePhotoelectricSignal.bit4 = getBit(word20, 12);
-      this.dLinePhotoelectricSignal.bit5 = getBit(word20, 13);
-      this.dLinePhotoelectricSignal.bit6 = getBit(word20, 14);
-      this.dLinePhotoelectricSignal.bit7 = getBit(word20, 15);
-      this.dLinePhotoelectricSignal.bit8 = getBit(word20, 0);
-      this.dLinePhotoelectricSignal.bit9 = getBit(word20, 1);
+    //   // D线光电检测信号-读取PLC
+    //   let word20 = this.convertToWord(values.DBW20);
+    //   this.dLinePhotoelectricSignal.bit0 = getBit(word20, 8);
+    //   this.dLinePhotoelectricSignal.bit1 = getBit(word20, 9);
+    //   this.dLinePhotoelectricSignal.bit2 = getBit(word20, 10);
+    //   this.dLinePhotoelectricSignal.bit3 = getBit(word20, 11);
+    //   this.dLinePhotoelectricSignal.bit4 = getBit(word20, 12);
+    //   this.dLinePhotoelectricSignal.bit5 = getBit(word20, 13);
+    //   this.dLinePhotoelectricSignal.bit6 = getBit(word20, 14);
+    //   this.dLinePhotoelectricSignal.bit7 = getBit(word20, 15);
+    //   this.dLinePhotoelectricSignal.bit8 = getBit(word20, 0);
+    //   this.dLinePhotoelectricSignal.bit9 = getBit(word20, 1);
 
-      // E线电机运行信号-读取PLC
-      let word22 = this.convertToWord(values.DBW22);
-      this.eLineMotorRunning.bit0 = getBit(word22, 8);
-      this.eLineMotorRunning.bit1 = getBit(word22, 9);
-      this.eLineMotorRunning.bit2 = getBit(word22, 10);
-      this.eLineMotorRunning.bit3 = getBit(word22, 11);
-      this.eLineMotorRunning.bit4 = getBit(word22, 12);
-      this.eLineMotorRunning.bit5 = getBit(word22, 13);
-      this.eLineMotorRunning.bit6 = getBit(word22, 14);
-      this.eLineMotorRunning.bit7 = getBit(word22, 15);
+    //   // E线电机运行信号-读取PLC
+    //   let word22 = this.convertToWord(values.DBW22);
+    //   this.eLineMotorRunning.bit0 = getBit(word22, 8);
+    //   this.eLineMotorRunning.bit1 = getBit(word22, 9);
+    //   this.eLineMotorRunning.bit2 = getBit(word22, 10);
+    //   this.eLineMotorRunning.bit3 = getBit(word22, 11);
+    //   this.eLineMotorRunning.bit4 = getBit(word22, 12);
+    //   this.eLineMotorRunning.bit5 = getBit(word22, 13);
+    //   this.eLineMotorRunning.bit6 = getBit(word22, 14);
+    //   this.eLineMotorRunning.bit7 = getBit(word22, 15);
 
-      // E线光电检测信号-读取PLC
-      let word24 = this.convertToWord(values.DBW24);
-      this.eLinePhotoelectricSignal.bit0 = getBit(word24, 8);
-      this.eLinePhotoelectricSignal.bit1 = getBit(word24, 9);
-      this.eLinePhotoelectricSignal.bit2 = getBit(word24, 10);
-      this.eLinePhotoelectricSignal.bit3 = getBit(word24, 11);
-      this.eLinePhotoelectricSignal.bit4 = getBit(word24, 12);
-      this.eLinePhotoelectricSignal.bit5 = getBit(word24, 13);
-      this.eLinePhotoelectricSignal.bit6 = getBit(word24, 14);
-      this.eLinePhotoelectricSignal.bit7 = getBit(word24, 15);
-      this.eLinePhotoelectricSignal.bit8 = getBit(word24, 0);
-      this.eLinePhotoelectricSignal.bit9 = getBit(word24, 1);
+    //   // E线光电检测信号-读取PLC
+    //   let word24 = this.convertToWord(values.DBW24);
+    //   this.eLinePhotoelectricSignal.bit0 = getBit(word24, 8);
+    //   this.eLinePhotoelectricSignal.bit1 = getBit(word24, 9);
+    //   this.eLinePhotoelectricSignal.bit2 = getBit(word24, 10);
+    //   this.eLinePhotoelectricSignal.bit3 = getBit(word24, 11);
+    //   this.eLinePhotoelectricSignal.bit4 = getBit(word24, 12);
+    //   this.eLinePhotoelectricSignal.bit5 = getBit(word24, 13);
+    //   this.eLinePhotoelectricSignal.bit6 = getBit(word24, 14);
+    //   this.eLinePhotoelectricSignal.bit7 = getBit(word24, 15);
+    //   this.eLinePhotoelectricSignal.bit8 = getBit(word24, 0);
+    //   this.eLinePhotoelectricSignal.bit9 = getBit(word24, 1);
 
-      // F线电机运行信号-读取PLC
-      let word26 = this.convertToWord(values.DBW26);
-      this.fLineMotorRunning.bit0 = getBit(word26, 8);
-      this.fLineMotorRunning.bit1 = getBit(word26, 9);
-      this.fLineMotorRunning.bit2 = getBit(word26, 10);
-      this.fLineMotorRunning.bit3 = getBit(word26, 11);
-      this.fLineMotorRunning.bit4 = getBit(word26, 12);
-      this.fLineMotorRunning.bit5 = getBit(word26, 13);
-      this.fLineMotorRunning.bit6 = getBit(word26, 14);
-      this.fLineMotorRunning.bit7 = getBit(word26, 15);
+    //   // F线电机运行信号-读取PLC
+    //   let word26 = this.convertToWord(values.DBW26);
+    //   this.fLineMotorRunning.bit0 = getBit(word26, 8);
+    //   this.fLineMotorRunning.bit1 = getBit(word26, 9);
+    //   this.fLineMotorRunning.bit2 = getBit(word26, 10);
+    //   this.fLineMotorRunning.bit3 = getBit(word26, 11);
+    //   this.fLineMotorRunning.bit4 = getBit(word26, 12);
+    //   this.fLineMotorRunning.bit5 = getBit(word26, 13);
+    //   this.fLineMotorRunning.bit6 = getBit(word26, 14);
+    //   this.fLineMotorRunning.bit7 = getBit(word26, 15);
 
-      // F线光电检测信号-读取PLC
-      let word28 = this.convertToWord(values.DBW28);
-      this.fLinePhotoelectricSignal.bit0 = getBit(word28, 8);
-      this.fLinePhotoelectricSignal.bit1 = getBit(word28, 9);
-      this.fLinePhotoelectricSignal.bit2 = getBit(word28, 10);
-      this.fLinePhotoelectricSignal.bit3 = getBit(word28, 11);
-      this.fLinePhotoelectricSignal.bit4 = getBit(word28, 12);
-      this.fLinePhotoelectricSignal.bit5 = getBit(word28, 13);
-      this.fLinePhotoelectricSignal.bit6 = getBit(word28, 14);
-      this.fLinePhotoelectricSignal.bit7 = getBit(word28, 15);
-      this.fLinePhotoelectricSignal.bit8 = getBit(word28, 0);
-      this.fLinePhotoelectricSignal.bit9 = getBit(word28, 1);
+    //   // F线光电检测信号-读取PLC
+    //   let word28 = this.convertToWord(values.DBW28);
+    //   this.fLinePhotoelectricSignal.bit0 = getBit(word28, 8);
+    //   this.fLinePhotoelectricSignal.bit1 = getBit(word28, 9);
+    //   this.fLinePhotoelectricSignal.bit2 = getBit(word28, 10);
+    //   this.fLinePhotoelectricSignal.bit3 = getBit(word28, 11);
+    //   this.fLinePhotoelectricSignal.bit4 = getBit(word28, 12);
+    //   this.fLinePhotoelectricSignal.bit5 = getBit(word28, 13);
+    //   this.fLinePhotoelectricSignal.bit6 = getBit(word28, 14);
+    //   this.fLinePhotoelectricSignal.bit7 = getBit(word28, 15);
+    //   this.fLinePhotoelectricSignal.bit8 = getBit(word28, 0);
+    //   this.fLinePhotoelectricSignal.bit9 = getBit(word28, 1);
 
-      // G线电机运行信号-读取PLC
-      let word30 = this.convertToWord(values.DBW30);
-      this.gLineMotorRunning.bit0 = getBit(word30, 8);
-      this.gLineMotorRunning.bit1 = getBit(word30, 9);
-      this.gLineMotorRunning.bit2 = getBit(word30, 10);
-      this.gLineMotorRunning.bit3 = getBit(word30, 11);
-      this.gLineMotorRunning.bit4 = getBit(word30, 12);
-      this.gLineMotorRunning.bit5 = getBit(word30, 13);
-      this.gLineMotorRunning.bit6 = getBit(word30, 14);
-      this.gLineMotorRunning.bit7 = getBit(word30, 15);
+    //   // G线电机运行信号-读取PLC
+    //   let word30 = this.convertToWord(values.DBW30);
+    //   this.gLineMotorRunning.bit0 = getBit(word30, 8);
+    //   this.gLineMotorRunning.bit1 = getBit(word30, 9);
+    //   this.gLineMotorRunning.bit2 = getBit(word30, 10);
+    //   this.gLineMotorRunning.bit3 = getBit(word30, 11);
+    //   this.gLineMotorRunning.bit4 = getBit(word30, 12);
+    //   this.gLineMotorRunning.bit5 = getBit(word30, 13);
+    //   this.gLineMotorRunning.bit6 = getBit(word30, 14);
+    //   this.gLineMotorRunning.bit7 = getBit(word30, 15);
 
-      // G线光电检测信号-读取PLC
-      let word32 = this.convertToWord(values.DBW32);
-      this.gLinePhotoelectricSignal.bit0 = getBit(word32, 8);
-      this.gLinePhotoelectricSignal.bit1 = getBit(word32, 9);
-      this.gLinePhotoelectricSignal.bit2 = getBit(word32, 10);
-      this.gLinePhotoelectricSignal.bit3 = getBit(word28, 11);
-      this.gLinePhotoelectricSignal.bit4 = getBit(word32, 12);
-      this.gLinePhotoelectricSignal.bit5 = getBit(word32, 13);
-      this.gLinePhotoelectricSignal.bit6 = getBit(word32, 14);
-      this.gLinePhotoelectricSignal.bit7 = getBit(word32, 15);
-      this.gLinePhotoelectricSignal.bit8 = getBit(word32, 0);
-      this.gLinePhotoelectricSignal.bit9 = getBit(word32, 1);
+    //   // G线光电检测信号-读取PLC
+    //   let word32 = this.convertToWord(values.DBW32);
+    //   this.gLinePhotoelectricSignal.bit0 = getBit(word32, 8);
+    //   this.gLinePhotoelectricSignal.bit1 = getBit(word32, 9);
+    //   this.gLinePhotoelectricSignal.bit2 = getBit(word32, 10);
+    //   this.gLinePhotoelectricSignal.bit3 = getBit(word28, 11);
+    //   this.gLinePhotoelectricSignal.bit4 = getBit(word32, 12);
+    //   this.gLinePhotoelectricSignal.bit5 = getBit(word32, 13);
+    //   this.gLinePhotoelectricSignal.bit6 = getBit(word32, 14);
+    //   this.gLinePhotoelectricSignal.bit7 = getBit(word32, 15);
+    //   this.gLinePhotoelectricSignal.bit8 = getBit(word32, 0);
+    //   this.gLinePhotoelectricSignal.bit9 = getBit(word32, 1);
 
-      // A线数量-读取PLC
-      this.aLineQuantity.a1 = Number(values.DBW34);
-      this.aLineQuantity.a2 = Number(values.DBW36);
-      this.aLineQuantity.a3 = Number(values.DBW38);
+    //   // A线数量-读取PLC
+    //   this.aLineQuantity.a1 = Number(values.DBW34);
+    //   this.aLineQuantity.a2 = Number(values.DBW36);
+    //   this.aLineQuantity.a3 = Number(values.DBW38);
 
-      // B线数量-读取PLC
-      this.bLineQuantity.b1 = Number(values.DBW40);
-      this.bLineQuantity.b2 = Number(values.DBW42);
-      this.bLineQuantity.b3 = Number(values.DBW44);
+    //   // B线数量-读取PLC
+    //   this.bLineQuantity.b1 = Number(values.DBW40);
+    //   this.bLineQuantity.b2 = Number(values.DBW42);
+    //   this.bLineQuantity.b3 = Number(values.DBW44);
 
-      // C线数量-读取PLC
-      this.cLineQuantity.c1 = Number(values.DBW46);
-      this.cLineQuantity.c2 = Number(values.DBW48);
-      this.cLineQuantity.c3 = Number(values.DBW50);
+    //   // C线数量-读取PLC
+    //   this.cLineQuantity.c1 = Number(values.DBW46);
+    //   this.cLineQuantity.c2 = Number(values.DBW48);
+    //   this.cLineQuantity.c3 = Number(values.DBW50);
 
-      // D线数量-读取PLC
-      this.dLineQuantity.d1 = Number(values.DBW52);
-      this.dLineQuantity.d2 = Number(values.DBW54);
-      this.dLineQuantity.d3 = Number(values.DBW56);
+    //   // D线数量-读取PLC
+    //   this.dLineQuantity.d1 = Number(values.DBW52);
+    //   this.dLineQuantity.d2 = Number(values.DBW54);
+    //   this.dLineQuantity.d3 = Number(values.DBW56);
 
-      // E线数量-读取PLC
-      this.eLineQuantity.e1 = Number(values.DBW58);
-      this.eLineQuantity.e2 = Number(values.DBW60);
-      this.eLineQuantity.e3 = Number(values.DBW62);
+    //   // E线数量-读取PLC
+    //   this.eLineQuantity.e1 = Number(values.DBW58);
+    //   this.eLineQuantity.e2 = Number(values.DBW60);
+    //   this.eLineQuantity.e3 = Number(values.DBW62);
 
-      // F线数量-读取PLC
-      this.fLineQuantity.f1 = Number(values.DBW64);
-      this.fLineQuantity.f2 = Number(values.DBW66);
-      this.fLineQuantity.f3 = Number(values.DBW68);
+    //   // F线数量-读取PLC
+    //   this.fLineQuantity.f1 = Number(values.DBW64);
+    //   this.fLineQuantity.f2 = Number(values.DBW66);
+    //   this.fLineQuantity.f3 = Number(values.DBW68);
 
-      // G线数量-读取PLC
-      this.gLineQuantity.g1 = Number(values.DBW70);
-      this.gLineQuantity.g2 = Number(values.DBW72);
-      this.gLineQuantity.g3 = Number(values.DBW74);
+    //   // G线数量-读取PLC
+    //   this.gLineQuantity.g1 = Number(values.DBW70);
+    //   this.gLineQuantity.g2 = Number(values.DBW72);
+    //   this.gLineQuantity.g3 = Number(values.DBW74);
 
-      // 上货区电机运行信号（扫码后入队）-读取PLC
-      let word76 = this.convertToWord(values.DBW76);
-      this.upLoadMotorRunning.bit0 = getBit(word76, 8);
-      this.upLoadMotorRunning.bit1 = getBit(word76, 9);
-      this.upLoadMotorRunning.bit2 = getBit(word76, 10);
-      this.upLoadMotorRunning.bit3 = getBit(word76, 11);
-      this.upLoadMotorRunning.bit4 = getBit(word76, 12);
-      this.upLoadMotorRunning.bit5 = getBit(word76, 13);
-      this.upLoadMotorRunning.bit6 = getBit(word76, 14);
-      this.upLoadMotorRunning.bit7 = getBit(word76, 15);
+    //   // 上货区电机运行信号（扫码后入队）-读取PLC
+    //   let word76 = this.convertToWord(values.DBW76);
+    //   this.upLoadMotorRunning.bit0 = getBit(word76, 8);
+    //   this.upLoadMotorRunning.bit1 = getBit(word76, 9);
+    //   this.upLoadMotorRunning.bit2 = getBit(word76, 10);
+    //   this.upLoadMotorRunning.bit3 = getBit(word76, 11);
+    //   this.upLoadMotorRunning.bit4 = getBit(word76, 12);
+    //   this.upLoadMotorRunning.bit5 = getBit(word76, 13);
+    //   this.upLoadMotorRunning.bit6 = getBit(word76, 14);
+    //   this.upLoadMotorRunning.bit7 = getBit(word76, 15);
 
-      // 上货区输送线光电信号
-      let word78 = this.convertToWord(values.DBW78);
-      this.upLoadPhotoelectricSignal.bit0 = getBit(word78, 8);
-      this.upLoadPhotoelectricSignal.bit1 = getBit(word78, 9);
-      this.upLoadPhotoelectricSignal.bit2 = getBit(word78, 10);
-      this.upLoadPhotoelectricSignal.bit3 = getBit(word78, 11);
-      this.upLoadPhotoelectricSignal.bit4 = getBit(word78, 12);
-      this.upLoadPhotoelectricSignal.bit5 = getBit(word78, 13);
-      this.upLoadPhotoelectricSignal.bit6 = getBit(word78, 14);
-      this.upLoadPhotoelectricSignal.bit7 = getBit(word78, 15);
-      this.upLoadPhotoelectricSignal.bit8 = getBit(word78, 0);
+    //   // 上货区输送线光电信号
+    //   let word78 = this.convertToWord(values.DBW78);
+    //   this.upLoadPhotoelectricSignal.bit0 = getBit(word78, 8);
+    //   this.upLoadPhotoelectricSignal.bit1 = getBit(word78, 9);
+    //   this.upLoadPhotoelectricSignal.bit2 = getBit(word78, 10);
+    //   this.upLoadPhotoelectricSignal.bit3 = getBit(word78, 11);
+    //   this.upLoadPhotoelectricSignal.bit4 = getBit(word78, 12);
+    //   this.upLoadPhotoelectricSignal.bit5 = getBit(word78, 13);
+    //   this.upLoadPhotoelectricSignal.bit6 = getBit(word78, 14);
+    //   this.upLoadPhotoelectricSignal.bit7 = getBit(word78, 15);
+    //   this.upLoadPhotoelectricSignal.bit8 = getBit(word78, 0);
 
-      // 扫码枪处光电信号
-      let word92 = this.convertToWord(values.DBW92);
-      this.scanPhotoelectricSignal.bit0 = getBit(word92, 8);
-      this.scanPhotoelectricSignal.bit1 = getBit(word92, 9);
-      this.scanPhotoelectricSignal.bit2 = getBit(word92, 10);
-      this.scanPhotoelectricSignal.bit3 = getBit(word92, 11);
-      this.scanPhotoelectricSignal.bit4 = getBit(word92, 12);
-      this.scanPhotoelectricSignal.bit5 = getBit(word92, 13);
-      this.scanPhotoelectricSignal.bit6 = getBit(word92, 14);
-      this.scanPhotoelectricSignal.bit7 = getBit(word92, 15);
+    //   // 扫码枪处光电信号
+    //   let word92 = this.convertToWord(values.DBW92);
+    //   this.scanPhotoelectricSignal.bit0 = getBit(word92, 8);
+    //   this.scanPhotoelectricSignal.bit1 = getBit(word92, 9);
+    //   this.scanPhotoelectricSignal.bit2 = getBit(word92, 10);
+    //   this.scanPhotoelectricSignal.bit3 = getBit(word92, 11);
+    //   this.scanPhotoelectricSignal.bit4 = getBit(word92, 12);
+    //   this.scanPhotoelectricSignal.bit5 = getBit(word92, 13);
+    //   this.scanPhotoelectricSignal.bit6 = getBit(word92, 14);
+    //   this.scanPhotoelectricSignal.bit7 = getBit(word92, 15);
 
-      // 下线扫码枪处，申请扫码
-      this.upLineScanPhotoelectricSignal = Number(values.DBW94);
+    //   // 下线扫码枪处，申请扫码
+    //   this.upLineScanPhotoelectricSignal = Number(values.DBW94);
 
-      // 请求上位机下发任务
-      this.requestWCSTask = Number(values.DBW96);
+    //   // 请求上位机下发任务
+    //   this.requestWCSTask = Number(values.DBW96);
 
-      // 一楼出货口有货需取货处理信号
-      this.floor1OutLoadGoodsSignal = Number(values.DBW98);
+    //   // 一楼出货口有货需取货处理信号
+    //   this.floor1OutLoadGoodsSignal = Number(values.DBW98);
 
-      // 一楼下货出口托盘信息（托盘号）
-      this.floor1OutLoadTrayInfo = values.DBB100 ?? '';
+    //   // 一楼下货出口托盘信息（托盘号）
+    //   this.floor1OutLoadTrayInfo = values.DBB100 ?? '';
 
-      // 一楼下线（扫码枪处）（托盘号）
-      this.floor1OutLineTrayInfo = values.DBB130 ?? '';
+    //   // 一楼下线（扫码枪处）（托盘号）
+    //   this.floor1OutLineTrayInfo = values.DBB130 ?? '';
 
-      // 一楼接货站台扫码数据（托盘号）
-      this.floor1InLineTrayInfo = values.DBB160 ?? '';
-      // 一楼上货区（扫码后入队）（托盘号）
-      this.floor1UpLineTrayInfo = values.DBB190 ?? '';
+    //   // 一楼接货站台扫码数据（托盘号）
+    //   this.floor1InLineTrayInfo = values.DBB160 ?? '';
+    //   // 一楼上货区（扫码后入队）（托盘号）
+    //   this.floor1UpLineTrayInfo = values.DBB190 ?? '';
 
-      // 二楼A接货站台扫码数据（托盘号）
-      this.floor2ALineTrayInfo = values.DBB220 ?? '';
+    //   // 二楼A接货站台扫码数据（托盘号）
+    //   this.floor2ALineTrayInfo = values.DBB220 ?? '';
 
-      // 二楼B接货站台扫码数据（托盘号）
-      this.floor2BLineTrayInfo = values.DBB250 ?? '';
+    //   // 二楼B接货站台扫码数据（托盘号）
+    //   this.floor2BLineTrayInfo = values.DBB250 ?? '';
 
-      // 三楼A接货站台扫码数据（托盘号）
-      this.floor3ALineTrayInfo = values.DBB280 ?? '';
+    //   // 三楼A接货站台扫码数据（托盘号）
+    //   this.floor3ALineTrayInfo = values.DBB280 ?? '';
 
-      // 三楼B接货站台扫码数据（托盘号）
-      this.floor3BLineTrayInfo = values.DBB310 ?? '';
+    //   // 三楼B接货站台扫码数据（托盘号）
+    //   this.floor3BLineTrayInfo = values.DBB310 ?? '';
 
-      // 预热房前缓存线请求目的地
-      this.requestDestination = Number(values.DBW360);
+    //   // 预热房前缓存线请求目的地
+    //   this.requestDestination = Number(values.DBW360);
 
-      // 读取小车位置数值
-      this.cartPositionValues.cart1 = Number(values.DBW80 ?? 0);
-      this.cartPositionValues.cart2 = Number(values.DBW84 ?? 0);
-      this.cartPositionValues.cart3 = Number(values.DBW88 ?? 0);
-    });
+    //   // 读取小车位置数值
+    //   this.cartPositionValues.cart1 = Number(values.DBW80 ?? 0);
+    //   this.cartPositionValues.cart2 = Number(values.DBW84 ?? 0);
+    //   this.cartPositionValues.cart3 = Number(values.DBW88 ?? 0);
+    // });
   },
   watch: {
     'cartPositionValues.cart1'(newVal) {
@@ -3161,12 +3496,407 @@ export default {
     },
     'cartPositionValues.cart3'(newVal) {
       this.updateCartPositionByValue(3, newVal);
+    },
+    // 监听A1队列数量变化
+    'aLineQuantity.a1'(newVal, oldVal) {
+      this.handleQueueQuantityChange('a1', newVal, oldVal);
+    },
+    // 监听B1队列数量变化
+    'bLineQuantity.b1'(newVal, oldVal) {
+      this.handleQueueQuantityChange('b1', newVal, oldVal);
+    },
+    // 监听C1队列数量变化
+    'cLineQuantity.c1'(newVal, oldVal) {
+      this.handleQueueQuantityChange('c1', newVal, oldVal);
+    },
+    // 监听D1队列数量变化
+    'dLineQuantity.d1'(newVal, oldVal) {
+      this.handleQueueQuantityChange('d1', newVal, oldVal);
+    },
+    // 监听E1队列数量变化
+    'eLineQuantity.e1'(newVal, oldVal) {
+      this.handleQueueQuantityChange('e1', newVal, oldVal);
+    },
+    // 监听F1队列数量变化
+    'fLineQuantity.f1'(newVal, oldVal) {
+      this.handleQueueQuantityChange('f1', newVal, oldVal);
+    },
+    // 监听G1队列数量变化
+    'gLineQuantity.g1'(newVal, oldVal) {
+      this.handleQueueQuantityChange('g1', newVal, oldVal);
+    },
+    // 一楼接货站台"有载信号"/光电占位
+    'scanPhotoelectricSignal.bit0'(newVal) {
+      // 当值变为1时执行逻辑
+      if (newVal === '1') {
+        // 1、先判断条码状态是否不为空串 或者 不为NoRead
+        if (
+          !this.floor1InLineTrayInfo ||
+          this.floor1InLineTrayInfo === '' ||
+          this.floor1InLineTrayInfo === 'NoRead'
+        ) {
+          // 2、如果异常，直接给PLC发送一楼接货口禁用命令DBW512：1
+          ipcRenderer.send('writeValuesToPLC', 'DBW512', 1);
+          // 发送进货异常报警DBW580.bit0
+          ipcRenderer.send('writeValuesToPLC', 'DBW580', 10);
+          this.addLog('一楼接货口条码异常，已禁用接货口');
+          return;
+        }
+
+        // 3、如果正常，先判断当前有没有正在执行的订单
+        if (!this.currentOrder) {
+          // 没有正在执行的订单，禁用接货口
+          ipcRenderer.send('writeValuesToPLC', 'DBW512', 1);
+          // 发送进货异常报警DBW580.bit0
+          ipcRenderer.send('writeValuesToPLC', 'DBW580', 10);
+          this.addLog('当前无执行订单，已禁用一楼接货口');
+          return;
+        }
+
+        // 4、判断floor1InLineTrayInfo读到的条码是否属于当前执行订单
+        if (
+          this.currentOrder.qrCode &&
+          this.currentOrder.qrCode.includes(this.floor1InLineTrayInfo)
+        ) {
+          // 如果属于当前订单，给PLC发送一楼接货口启用命令DBW512：0
+          ipcRenderer.send('writeValuesToPLC', 'DBW512', 0);
+          this.addLog(
+            `托盘${this.floor1InLineTrayInfo}属于当前订单，已启用一楼接货口`
+          );
+        } else {
+          // 如果不属于当前订单，直接给PLC发送一楼接货口禁用命令DBW512：1
+          ipcRenderer.send('writeValuesToPLC', 'DBW512', 1);
+          // 发送进货异常报警DBW580.bit0
+          ipcRenderer.send('writeValuesToPLC', 'DBW580', 10);
+          this.addLog(
+            `托盘${this.floor1InLineTrayInfo}不属于当前订单，已禁用一楼接货口`
+          );
+        }
+      }
+    },
+    // 一楼上货区（扫码后入队）处“有载信号”/光电占位
+    'scanPhotoelectricSignal.bit1'(newVal) {
+      // 当值变为1时执行逻辑
+      if (newVal === '1') {
+        // 1、先判断条码状态是否不为空串 或者 不为NoRead
+        if (
+          !this.floor1UpLineTrayInfo ||
+          this.floor1UpLineTrayInfo === '' ||
+          this.floor1UpLineTrayInfo === 'NoRead'
+        ) {
+          // 缓存区扫码反馈异常DBW582
+          ipcRenderer.send('writeValuesToPLC', 'DBW582', 10);
+          this.addLog('一楼上货区条码异常，已发送报警信号');
+          return;
+        }
+
+        // 3、如果正常，先判断当前有没有正在执行的订单
+        if (!this.currentOrder) {
+          // 缓存区扫码反馈异常DBW582
+          ipcRenderer.send('writeValuesToPLC', 'DBW582', 10);
+          this.addLog('当前无执行订单，一楼上货区已发送报警信号');
+          return;
+        }
+
+        // 4、判断floor1UpLineTrayInfo读到的条码是否属于当前执行订单
+        if (
+          this.currentOrder.qrCode &&
+          this.currentOrder.qrCode.includes(this.floor1UpLineTrayInfo)
+        ) {
+          // 如果属于当前订单，将托盘信息添加到上货区队列
+          const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
+          const newTray = {
+            trayCode: this.floor1UpLineTrayInfo,
+            trayTime: currentTime,
+            batchId: this.currentOrder.batchId || '',
+            infoId: this.currentOrder.id || '',
+            orderId: this.currentOrder.orderId || '',
+            isPrint1: this.currentOrder.isPrint1 || '',
+            isPrint2: this.currentOrder.isPrint2 || '',
+            isPrint3: this.currentOrder.isPrint3 || '',
+            inPut: this.currentOrder.inPut || '',
+            productName: this.currentOrder.productName || '',
+            productCode: this.currentOrder.productCode || '',
+            hasSentPreheatCommand: false // 添加标识字段，表示是否已发送预热房命令
+          };
+
+          // 确保trayInfo是数组
+          if (!Array.isArray(this.queues[0].trayInfo)) {
+            this.queues[0].trayInfo = [];
+          }
+
+          // 检查托盘是否已存在
+          const existingTrayIndex = this.queues[0].trayInfo.findIndex(
+            (t) => t.trayCode === this.floor1UpLineTrayInfo
+          );
+
+          if (existingTrayIndex === -1) {
+            // 添加新托盘
+            this.queues[0].trayInfo.push(newTray);
+            // 增加已上货托盘计数器
+            this.currentOrderScannedCount++;
+            this.addLog(
+              `托盘${this.floor1UpLineTrayInfo}属于当前订单，已添加到上货区队列 (${this.currentOrderScannedCount}/${this.currentOrderTrayCount})`
+            );
+          } else {
+            // 缓存区扫码反馈异常DBW582
+            ipcRenderer.send('writeValuesToPLC', 'DBW582', 10);
+            this.addLog(
+              `托盘${this.floor1UpLineTrayInfo}已在上货区队列中，已取消报警信号`
+            );
+          }
+        } else {
+          // 缓存区扫码反馈异常DBW582
+          ipcRenderer.send('writeValuesToPLC', 'DBW582', 10);
+          this.addLog(
+            `托盘${this.floor1UpLineTrayInfo}不属于当前订单，已发送报警信号`
+          );
+        }
+      }
+    },
+    // 监听预热房前缓存线请求目的地变化
+    requestDestination(newVal) {
+      if (newVal === 1) {
+        // 1、判断上货区队列是否大于0，如果不是大于0，报警
+        if (!this.queues[0].trayInfo || this.queues[0].trayInfo.length <= 0) {
+          this.addLog(
+            '收到预热房前缓存线请求目的地，但上货区队列为空，本次请求不给PLC发送命令'
+          );
+          return;
+        }
+
+        // 2、读取上货区托盘第一个托盘的信息，遍历上货区里面的托盘信息，看看本orderId下是不是就他一个托盘了
+        // 先找到第一个未发送过预热房命令的托盘
+        const firstUnprocessedTray = this.queues[0].trayInfo.find(
+          (tray) => !tray.hasSentPreheatCommand
+        );
+
+        // 如果没有找到未处理的托盘，记录日志并返回
+        if (!firstUnprocessedTray) {
+          this.addLog('上货区所有托盘都已发送过预热房命令，本次请求不处理');
+          return;
+        }
+
+        const currentOrderId = firstUnprocessedTray.orderId;
+
+        // 统计当前订单在上货区的托盘数量（只统计未发送过预热房命令的托盘）
+        const sameOrderTrayCount = this.queues[0].trayInfo.filter(
+          (tray) =>
+            tray.orderId === currentOrderId && !tray.hasSentPreheatCommand
+        ).length;
+
+        const isLastTray = sameOrderTrayCount === 1;
+
+        // 3、判断完是否为本订单最后一个托盘后，给PLC发送，对应预热房命令
+        const isPrint1 = firstUnprocessedTray.isPrint1 || '';
+        let plcCommand = 0;
+
+        // 读取isPrint1字段，判断是否包含字母：ABCDEFG
+        if (isPrint1.includes('A')) {
+          plcCommand = isLastTray ? 11 : 1; // 预热房A启用进货，如果是本订单最后一个托盘发11
+        } else if (isPrint1.includes('B')) {
+          plcCommand = isLastTray ? 21 : 2; // 预热房B启用进货，如果是本订单最后一个托盘发21
+        } else if (isPrint1.includes('C')) {
+          plcCommand = isLastTray ? 31 : 3; // 预热房C启用进货，如果是本订单最后一个托盘发31
+        } else if (isPrint1.includes('D')) {
+          plcCommand = isLastTray ? 41 : 4; // 预热房D启用进货，如果是本订单最后一个托盘发41
+        } else if (isPrint1.includes('E')) {
+          plcCommand = isLastTray ? 51 : 5; // 预热房E启用进货，如果是本订单最后一个托盘发51
+        } else if (isPrint1.includes('F')) {
+          plcCommand = isLastTray ? 61 : 6; // 预热房F启用进货，如果是本订单最后一个托盘发61
+        } else if (isPrint1.includes('G')) {
+          plcCommand = isLastTray ? 71 : 7; // 预热房G启用进货，如果是本订单最后一个托盘发71
+        }
+
+        // 给PLC的DBW524发送对应信息
+        if (plcCommand > 0) {
+          ipcRenderer.send('writeValuesToPLC', 'DBW524', plcCommand);
+
+          // 设置托盘已发送预热房命令的标识
+          firstUnprocessedTray.hasSentPreheatCommand = true;
+
+          this.addLog(
+            `预热房命令已发送：${plcCommand}，托盘：${
+              firstUnprocessedTray.trayCode
+            }，订单：${currentOrderId}，${
+              isLastTray ? '本订单最后一个托盘' : '非本订单最后一个托盘'
+            }`
+          );
+        } else {
+          this.addLog(
+            `托盘${firstUnprocessedTray.trayCode}的isPrint1字段不包含有效预热房信息：${isPrint1}`
+          );
+        }
+      }
+    },
+    // ---- 新增：监听指定队列的 trayInfo 变化 ----
+    'queues.0.trayInfo': {
+      // 监听上货区 (ID: 1)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(1);
+      }
+    },
+    'queues.1.trayInfo': {
+      // 监听分发区 (ID: 2)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(2);
+      }
+    },
+    'queues.2.trayInfo': {
+      // 监听缓存区 (ID: 3)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(3);
+      }
+    },
+    'queues.3.trayInfo': {
+      // 监听 A1 (ID: 4)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(4);
+      }
+    },
+    'queues.4.trayInfo': {
+      // 监听 B1 (ID: 5)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(5);
+      }
+    },
+    'queues.5.trayInfo': {
+      // 监听 C1 (ID: 6)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(6);
+      }
+    },
+    'queues.6.trayInfo': {
+      // 监听 A2 (ID: 7)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(7);
+      }
+    },
+    'queues.7.trayInfo': {
+      // 监听 B2 (ID: 8)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(8);
+      }
+    },
+    'queues.8.trayInfo': {
+      // 监听 C2 (ID: 9)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(9);
+      }
+    },
+    'queues.9.trayInfo': {
+      // 监听 A3 (ID: 10)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(10);
+      }
+    },
+    'queues.10.trayInfo': {
+      // 监听 B3 (ID: 11)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(11);
+      }
+    },
+    'queues.11.trayInfo': {
+      // 监听 C3 (ID: 12)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(12);
+      }
+    },
+    'queues.12.trayInfo': {
+      // 监听 D (ID: 13)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(13);
+      }
+    },
+    'queues.13.trayInfo': {
+      // 监听 E (ID: 14)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(14);
+      }
+    },
+    'queues.14.trayInfo': {
+      // 监听非灭菌缓存区 (ID: 15)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(15);
+      }
+    },
+    'queues.15.trayInfo': {
+      // 监听下货区 (ID: 16)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(16);
+      }
+    },
+    'queues.16.trayInfo': {
+      // 监听下货区 (ID: 17)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(17);
+      }
+    },
+    'queues.17.trayInfo': {
+      // 监听下货区 (ID: 18)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(18);
+      }
+    },
+    'queues.18.trayInfo': {
+      // 监听下货区 (ID: 19)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(19);
+      }
+    },
+    'queues.19.trayInfo': {
+      // 监听下货区 (ID: 20)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(20);
+      }
+    },
+    'queues.20.trayInfo': {
+      // 监听下货区 (ID: 21)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(21);
+      }
+    },
+    'queues.21.trayInfo': {
+      // 监听下货区 (ID: 22)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(22);
+      }
+    },
+    'queues.22.trayInfo': {
+      // 监听下货区 (ID: 23)
+      deep: true,
+      handler(newVal, oldVal) {
+        this.updateQueueInfo(23);
+      }
     }
+    // ---- 监听指定队列的 trayInfo 变化结束 ----
   },
   methods: {
     changeQueueExpanded() {
       this.isQueueExpanded = !this.isQueueExpanded;
-      this.queryQueueList();
+      // 队列数据已在前端，无需重新查询
     },
     queryQueueList() {
       HttpUtil.post('/queue_info/queryQueueList', {})
@@ -3357,6 +4087,89 @@ export default {
           return this.getQueueCountFromDatabase(queueName);
       }
     },
+    // 处理队列数量变化的方法
+    handleQueueQuantityChange(queueName, newVal, oldVal) {
+      // 获取对应的队列索引
+      const queueIndexMap = {
+        a1: 1, // A1队列索引为1
+        b1: 2, // B1队列索引为2
+        c1: 3, // C1队列索引为3
+        d1: 4, // D1队列索引为4
+        e1: 5, // E1队列索引为5
+        f1: 6, // F1队列索引为6
+        g1: 7 // G1队列索引为7
+      };
+
+      const queueIndex = queueIndexMap[queueName];
+      if (queueIndex === undefined) return;
+
+      const targetQueue = this.queues[queueIndex];
+      const uploadQueue = this.queues[0]; // 上货区队列
+
+      if (newVal > oldVal) {
+        // 数量增加，从上货区挪托盘数据
+        const increaseCount = newVal - oldVal;
+        const availableTrays = uploadQueue.trayInfo || [];
+
+        if (availableTrays.length >= increaseCount) {
+          // 从上货区移除托盘并添加到目标队列
+          for (let i = 0; i < increaseCount; i++) {
+            const tray = availableTrays.shift(); // 移除第一个托盘
+            if (tray) {
+              if (!targetQueue.trayInfo) {
+                targetQueue.trayInfo = [];
+              }
+              targetQueue.trayInfo.push(tray);
+            }
+          }
+
+          this.addLog(
+            `${queueName.toUpperCase()}队列数量增加${increaseCount}，已从上货区移动${increaseCount}个托盘`
+          );
+        } else {
+          this.addLog(
+            `${queueName.toUpperCase()}队列数量增加${increaseCount}，但上货区托盘不足，仅移动${
+              availableTrays.length
+            }个托盘`
+          );
+          // 移动所有可用的托盘
+          const remainingTrays = availableTrays.splice(0);
+          if (!targetQueue.trayInfo) {
+            targetQueue.trayInfo = [];
+          }
+          targetQueue.trayInfo.push(...remainingTrays);
+        }
+      } else if (newVal < oldVal) {
+        // 数量减少，直接删除对应数量的托盘
+        const decreaseCount = oldVal - newVal;
+        const currentTrays = targetQueue.trayInfo || [];
+
+        if (currentTrays.length >= decreaseCount) {
+          // 删除对应数量的托盘
+          targetQueue.trayInfo.splice(0, decreaseCount);
+          this.addLog(
+            `${queueName.toUpperCase()}队列数量减少${decreaseCount}，已删除${decreaseCount}个托盘`
+          );
+        } else {
+          // 删除所有托盘
+          targetQueue.trayInfo = [];
+          this.addLog(
+            `${queueName.toUpperCase()}队列数量减少${decreaseCount}，已删除所有托盘`
+          );
+        }
+      }
+    },
+    // 重置所有队列数量
+    resetAllQueueQuantities() {
+      this.aLineQuantity.a1 = 0;
+      this.bLineQuantity.b1 = 0;
+      this.cLineQuantity.c1 = 0;
+      this.dLineQuantity.d1 = 0;
+      this.eLineQuantity.e1 = 0;
+      this.fLineQuantity.f1 = 0;
+      this.gLineQuantity.g1 = 0;
+      this.addLog('已重置所有队列数量为0');
+    },
     // 根据队列名称获取数据库中的队列数量
     getQueueCountFromDatabase(queueName) {
       const marker = this.queueMarkers.find((m) => m.name === queueName);
@@ -3373,14 +4186,6 @@ export default {
         3: '已完成'
       };
       return statusMap[status] || status;
-    },
-    updateTime() {
-      this.currentTime = new Date().toLocaleString('zh-CN', {
-        hour12: false,
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      });
     },
     initializeMarkers() {
       this.$nextTick(() => {
@@ -3528,12 +4333,11 @@ export default {
         const [movedTray] = sourceQueue.trayInfo.splice(trayIndex, 1);
         targetQueue.trayInfo.push(movedTray);
 
-        await Promise.all([
-          this.updateQueueTrays(sourceQueue.id, sourceQueue.trayInfo),
-          this.updateQueueTrays(targetQueue.id, targetQueue.trayInfo)
-        ]);
+        // 添加日志
+        this.addLog(`队列 ${sourceQueue.queueName} 数据已更新`);
+        this.addLog(`队列 ${targetQueue.queueName} 数据已更新`);
 
-        await this.queryQueueList();
+        // 队列数据已在前端，无需重新查询
 
         const currentQueueIndex = this.selectedQueueIndex;
         if (
@@ -3558,27 +4362,22 @@ export default {
       } catch (error) {
         console.error('移动托盘时出错:', error);
         this.$message.error(error.message || '移动托盘失败，请重试');
-        await this.queryQueueList();
+        // 队列数据已在前端，无需重新查询
       } finally {
         this.draggedTray = null;
         this.dragSourceQueue = null;
         this.isDragging = false;
       }
     },
-    handleOrderStatusChange(order, newStatus) {
-      // 更新订单状态
-      const index = this.ordersList.findIndex((o) => o.id === order.id);
-      if (index !== -1) {
-        this.$set(this.ordersList[index], 'orderStatus', newStatus);
-      }
+    async handleOrderStatusChange(order, newStatus) {
       // 根据状态显示不同的消息
       if (newStatus === '1') {
-        this.$message.success(`订单 ${order.id} 已开始执行`);
+        this.$message.success(`订单 ${order.orderId} 已开始执行`);
       } else if (newStatus === '3') {
-        this.$message.success(`订单 ${order.id} 已完成`);
+        this.$message.success(`订单 ${order.orderId} 已完成`);
       }
-      // 刷新订单列表
-      this.refreshOrders();
+      // 重新查询数据库获取最新订单信息
+      await this.refreshOrders();
     },
     async switchOrder(order) {
       try {
@@ -3616,12 +4415,16 @@ export default {
           .then((res) => {
             if (res.code === '200') {
               this.handleOrderStatusChange(order, '1');
+              // 重置已上货托盘计数器
+              this.currentOrderScannedCount = 0;
               // 添加开始订单日志
               this.addLog(
                 `订单 ${order.orderId} 开始执行，产品：${
                   order.productName
                 }，进货口：${this.getInputText(order.inPut)}`
               );
+              // 判断当前订单order.inPut进货口是几楼的，给PLC发送进货口启动命令，启用0禁用1，一个口启动，其他口都禁用
+              this.controlPLCInputPorts(order.inPut);
             } else {
               this.$message.error('启动订单失败，请重试');
             }
@@ -3654,6 +4457,8 @@ export default {
           .then((res) => {
             if (res.code === '200') {
               this.handleOrderStatusChange(order, '3');
+              // 重置已上货托盘计数器
+              this.currentOrderScannedCount = 0;
               // 添加完成订单日志
               this.addLog(
                 `订单 ${order.orderId} 已完成，产品：${order.productName}`
@@ -3690,6 +4495,8 @@ export default {
           .then((res) => {
             if (res.code === '200') {
               this.handleOrderStatusChange(order, '0'); // 更新为待执行状态
+              // 重置已上货托盘计数器
+              this.currentOrderScannedCount = 0;
               this.$message.success('订单状态已更新为待执行');
             } else {
               this.$message.error('取消订单失败，请重试');
@@ -3783,16 +4590,59 @@ export default {
       this.floor1InLineTrayInfo = '';
       this.floor1UpLineTrayInfo = '';
     },
-    // 添加更新队列托盘的方法
-    updateQueueTrays(queueId, trayInfo) {
+    // 触发光电信号测试
+    triggerPhotoelectricSignal(bit) {
+      if (this.photoelectricLoading[bit]) return;
+
+      this.photoelectricLoading[bit] = true;
+
+      // 设置光电信号为1
+      this.scanPhotoelectricSignal[bit] = '1';
+
+      // 1秒后恢复为0
+      setTimeout(() => {
+        this.scanPhotoelectricSignal[bit] = '0';
+        this.photoelectricLoading[bit] = false;
+      }, 1000);
+
+      // 添加日志
+      const bitNames = {
+        bit0: '一楼接货站台光电',
+        bit1: '一楼上货区光电',
+        bit2: '二楼A接货光电',
+        bit3: '二楼B接货光电',
+        bit4: '三楼A接货光电',
+        bit5: '三楼B接货光电',
+        bit6: '下线扫码处光电',
+        bit7: '一楼出货站台光电'
+      };
+
+      this.addLog(`触发${bitNames[bit]}信号测试`);
+    },
+    // 触发预热房前缓存线请求目的地测试
+    triggerRequestDestination() {
+      // 设置loading状态
+      this.isRequestDestinationLoading = true;
+
+      // 模拟requestDestination变为1
+      this.requestDestination = 1;
+      this.addLog('触发预热房前缓存线请求目的地测试');
+
+      // 1秒后恢复为0并关闭loading
+      setTimeout(() => {
+        this.requestDestination = 0;
+        this.isRequestDestinationLoading = false;
+      }, 1000);
+    },
+
+    // 更新数据库队列信息
+    updateQueueInfo(id) {
       const param = {
-        id: queueId,
-        trayInfo: JSON.stringify(trayInfo)
+        id: id,
+        trayInfo: JSON.stringify(this.queues[id - 1].trayInfo)
       };
       HttpUtil.post('/queue_info/update', param).catch((err) => {
-        this.$message.error('更新队列信息失败');
-        // 失败后刷新队列列表
-        this.queryQueueList();
+        this.$message.error('更新队列信息失败: ' + err);
       });
     },
     async deleteTray(tray) {
@@ -3813,11 +4663,8 @@ export default {
         if (trayIndex > -1) {
           this.selectedQueue.trayInfo.splice(trayIndex, 1);
 
-          // 更新后端数据
-          await this.updateQueueTrays(
-            this.selectedQueue.id,
-            this.selectedQueue.trayInfo
-          );
+          // 添加日志
+          this.addLog(`队列 ${this.selectedQueue.queueName} 数据已更新`);
 
           // 刷新显示
           this.showTrays(this.selectedQueueIndex);
@@ -3865,11 +4712,8 @@ export default {
         // 添加新托盘
         this.selectedQueue.trayInfo.push(newTray);
 
-        // 更新后端数据
-        await this.updateQueueTrays(
-          this.selectedQueue.id,
-          this.selectedQueue.trayInfo
-        );
+        // 添加日志
+        this.addLog(`队列 ${this.selectedQueue.queueName} 数据已更新`);
 
         // 刷新显示
         this.showTrays(this.selectedQueueIndex);
@@ -3889,126 +4733,7 @@ export default {
         this.isSubmitting = false;
       }
     },
-    // 添加托盘到上货区队列的方法
-    async addCurrentTraysToQueue() {
-      if (!this.currentOrder || !this.currentOrder.qrCode) {
-        this.$message.warning('当前没有运行中的订单或托盘信息为空');
-        return;
-      }
 
-      try {
-        const trays = this.currentOrder.qrCode.split(',');
-        const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
-
-        if (!this.queues[0]) {
-          this.$message.error('上货区队列不存在');
-          return;
-        }
-
-        if (!Array.isArray(this.queues[0].trayInfo)) {
-          this.queues[0].trayInfo = [];
-        }
-
-        const addedTrays = [];
-        trays.forEach((tray) => {
-          if (tray && tray.trim()) {
-            const newTray = {
-              trayCode: tray.trim(),
-              trayTime: currentTime,
-              batchId: this.currentOrder.orderId
-            };
-            this.queues[0].trayInfo.push(newTray);
-            addedTrays.push(newTray.trayCode);
-          }
-        });
-
-        await this.updateQueueTrays(this.queues[0].id, this.queues[0].trayInfo);
-        await this.queryQueueList();
-
-        // 添加托盘添加日志
-        this.addLog(
-          `已添加 ${
-            addedTrays.length
-          } 个托盘到上货区队列，托盘编号：${addedTrays.join('、')}`
-        );
-
-        this.$message.success(`成功添加 ${trays.length} 个托盘到上货区队列`);
-      } catch (error) {
-        console.error('添加托盘失败:', error);
-        this.$message.error('添加托盘失败，请重试');
-      }
-    },
-    // 批量移动托盘的方法
-    async moveAllTrays() {
-      try {
-        const sourceQueue = this.queues.find(
-          (q) => q.id === this.queueMoveForm.sourceQueueId
-        );
-        const targetQueue = this.queues.find(
-          (q) => q.id === this.queueMoveForm.targetQueueId
-        );
-
-        if (!sourceQueue || !targetQueue) {
-          this.$message.error('队列不存在');
-          return;
-        }
-
-        sourceQueue.trayInfo = Array.isArray(sourceQueue.trayInfo)
-          ? sourceQueue.trayInfo
-          : [];
-        targetQueue.trayInfo = Array.isArray(targetQueue.trayInfo)
-          ? targetQueue.trayInfo
-          : [];
-
-        if (sourceQueue.trayInfo.length === 0) {
-          this.$message.warning('源队列没有托盘可移动');
-          return;
-        }
-
-        await this.$confirm(
-          `确认要将 ${sourceQueue.queueName} 的所有托盘(${sourceQueue.trayInfo.length}个)移动到 ${targetQueue.queueName} 吗？`,
-          '提示',
-          {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning'
-          }
-        );
-
-        const movedTraysCount = sourceQueue.trayInfo.length;
-        const movedTrayCodes = sourceQueue.trayInfo
-          .map((t) => t.trayCode)
-          .join('、');
-
-        targetQueue.trayInfo = [
-          ...targetQueue.trayInfo,
-          ...sourceQueue.trayInfo
-        ];
-        sourceQueue.trayInfo = [];
-
-        await Promise.all([
-          this.updateQueueTrays(sourceQueue.id, sourceQueue.trayInfo),
-          this.updateQueueTrays(targetQueue.id, targetQueue.trayInfo)
-        ]);
-
-        await this.queryQueueList();
-
-        // 添加批量移动日志，包含托盘编号信息
-        this.addLog(
-          `已将 ${sourceQueue.queueName} 的 ${movedTraysCount} 个托盘(${movedTrayCodes})移动到 ${targetQueue.queueName}`
-        );
-
-        this.$message.success('托盘批量移动成功');
-
-        this.queueMoveForm.sourceQueueId = '';
-        this.queueMoveForm.targetQueueId = '';
-      } catch (error) {
-        if (error !== 'cancel') {
-          console.error('移动托盘失败:', error);
-          this.$message.error('移动托盘失败，请重试');
-        }
-      }
-    },
     // 点击队列标识
     handleQueueMarkerClick(queueId) {
       // 展开队列面板
@@ -4071,6 +4796,79 @@ export default {
       this.$nextTick(() => {
         this.updateMarkerPositions();
       });
+    },
+    // 根据楼层控制PLC接货口启用/禁用
+    controlPLCInputPorts(floor) {
+      // PLC地址映射：0启用，1禁用
+      const plcAddresses = {
+        1: ['DBW512'], // 一楼接货口
+        2: ['DBW514', 'DBW516'], // 二楼1#和2#接货口
+        3: ['DBW518', 'DBW520'] // 三楼1#和2#接货口
+      };
+
+      // 所有接货口地址列表
+      const allAddresses = ['DBW512', 'DBW514', 'DBW516', 'DBW518', 'DBW520'];
+
+      // 先禁用所有接货口
+      allAddresses.forEach((address) => {
+        ipcRenderer.send('writeValuesToPLC', address, 1); // 1表示禁用
+      });
+
+      // 启用指定楼层的接货口
+      if (plcAddresses[floor]) {
+        plcAddresses[floor].forEach((address) => {
+          ipcRenderer.send('writeValuesToPLC', address, 0); // 0表示启用
+        });
+        this.addLog(
+          `已启用${this.getInputText(floor)}接货口，禁用其他楼层接货口`
+        );
+      } else {
+        this.addLog(`未知楼层：${floor}，所有接货口已禁用`);
+      }
+    },
+    // 从数据库加载队列信息
+    loadQueueInfoFromDatabase() {
+      HttpUtil.post('/queue_info/queryQueueList', {})
+        .then((res) => {
+          if (res.data && res.data.length > 0) {
+            // 遍历数据库返回的队列信息
+            res.data.forEach((queueData) => {
+              const queueId = queueData.id;
+              const queueIndex = queueId - 1; // 数组索引从0开始，队列ID从1开始
+
+              // 确保队列索引有效
+              if (queueIndex >= 0 && queueIndex < this.queues.length) {
+                try {
+                  // 解析托盘信息JSON字符串
+                  const trayInfo = queueData.trayInfo
+                    ? JSON.parse(queueData.trayInfo)
+                    : [];
+                  // 赋值给对应的队列
+                  this.queues[queueIndex].trayInfo = Array.isArray(trayInfo)
+                    ? trayInfo
+                    : [];
+                  this.addLog(
+                    `已加载队列${queueData.queueName || queueId}的托盘信息，共${
+                      this.queues[queueIndex].trayInfo.length
+                    }个托盘`
+                  );
+                } catch (error) {
+                  console.error(`解析队列${queueId}的托盘信息失败:`, error);
+                  this.queues[queueIndex].trayInfo = [];
+                  this.addLog(`队列${queueId}托盘信息解析失败，已重置为空`);
+                }
+              }
+            });
+            this.addLog('队列信息加载完成');
+          } else {
+            this.addLog('数据库中暂无队列信息');
+          }
+        })
+        .catch((err) => {
+          console.error('加载队列信息失败:', err);
+          this.$message.error('加载队列信息失败: ' + err);
+          this.addLog('队列信息加载失败');
+        });
     }
   }
 };
@@ -5641,65 +6439,6 @@ export default {
   color: #fff;
 }
 
-/* 添加队列移动相关样式 */
-.queue-move-container {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 10px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-}
-
-.queue-select-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.queue-move-label {
-  width: 60px;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.8);
-  text-align: right;
-}
-
-.queue-move-actions {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  margin-top: 8px;
-}
-
-.upload-area-actions {
-  padding: 10px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-  display: flex;
-  justify-content: center;
-}
-
-.upload-area-actions .el-button {
-  background: rgba(10, 197, 168, 0.2);
-  border: 1px solid rgba(10, 197, 168, 0.3);
-  color: #0ac5a8;
-  width: 100%;
-}
-
-.upload-area-actions .el-button:hover:not(:disabled) {
-  background: rgba(10, 197, 168, 0.3);
-  border-color: rgba(10, 197, 168, 0.5);
-  color: #fff;
-}
-
-.upload-area-actions .el-button:disabled {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.4);
-  cursor: not-allowed;
-}
-
 .cart-position-test-container {
   display: flex;
   flex-direction: column;
@@ -5707,6 +6446,45 @@ export default {
   padding: 10px;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 8px;
+}
+
+/* 光电信号测试面板样式 */
+.photoelectric-test-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.photoelectric-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.photoelectric-buttons .el-button {
+  background: rgba(10, 197, 168, 0.2);
+  border: 1px solid rgba(10, 197, 168, 0.3);
+  color: #0ac5a8;
+  font-size: 12px;
+  padding: 8px 12px;
+  height: auto;
+  line-height: 1.2;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.photoelectric-buttons .el-button:hover {
+  background: rgba(10, 197, 168, 0.3);
+  border-color: rgba(10, 197, 168, 0.5);
+  color: #fff;
+}
+
+.photoelectric-buttons .el-button:active {
+  background: rgba(10, 197, 168, 0.4);
+  transform: scale(0.98);
 }
 
 .cart-position-group {
@@ -5733,5 +6511,106 @@ export default {
 .cart-value {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.8);
+}
+
+/* 队列数量测试面板样式 */
+.queue-quantity-test-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.queue-quantity-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(10, 197, 168, 0.1);
+}
+
+.queue-quantity-label {
+  width: 100px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: right;
+  font-weight: 500;
+}
+
+.queue-quantity-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+}
+
+.quantity-display {
+  display: inline-block;
+  width: 60px;
+  height: 32px;
+  line-height: 32px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(10, 197, 168, 0.3);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  margin-right: 5px;
+}
+
+.queue-quantity-controls .el-button {
+  background: rgba(10, 197, 168, 0.2);
+  border: 1px solid rgba(10, 197, 168, 0.3);
+  color: #0ac5a8;
+  font-size: 12px;
+  padding: 8px 12px;
+  height: 32px;
+  line-height: 1;
+  min-width: 32px;
+}
+
+.queue-quantity-controls .el-button:hover {
+  background: rgba(10, 197, 168, 0.3);
+  border-color: rgba(10, 197, 168, 0.5);
+  color: #fff;
+}
+
+.queue-quantity-controls .el-button.el-button--danger {
+  background: rgba(245, 108, 108, 0.2);
+  border: 1px solid rgba(245, 108, 108, 0.3);
+  color: #f56c6c;
+}
+
+.queue-quantity-controls .el-button.el-button--danger:hover {
+  background: rgba(245, 108, 108, 0.3);
+  border-color: rgba(245, 108, 108, 0.5);
+  color: #fff;
+}
+
+.queue-quantity-actions {
+  display: flex;
+  justify-content: center;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 8px;
+}
+
+.queue-quantity-actions .el-button {
+  background: rgba(10, 197, 168, 0.2);
+  border: 1px solid rgba(10, 197, 168, 0.3);
+  color: #0ac5a8;
+  font-size: 13px;
+  padding: 8px 16px;
+}
+
+.queue-quantity-actions .el-button:hover {
+  background: rgba(10, 197, 168, 0.3);
+  border-color: rgba(10, 197, 168, 0.5);
+  color: #fff;
 }
 </style>
