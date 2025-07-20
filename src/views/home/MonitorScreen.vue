@@ -4936,11 +4936,8 @@ export default {
   font-family: 'Roboto', sans-serif;
   overflow: hidden;
   box-sizing: border-box;
+  border-radius: 10px;
   user-select: none;
-  // GPU加速优化
-  transform: translateZ(0);
-  will-change: transform;
-  backface-visibility: hidden;
   .header {
     position: relative;
     width: 100%;
@@ -5208,9 +5205,6 @@ export default {
                   .order-status.running {
                     background: rgba(64, 158, 255, 0.15);
                     color: #409eff;
-                    i {
-                      animation: rotate 1s linear infinite;
-                    }
                   }
                 }
                 .order-info {
@@ -5620,13 +5614,10 @@ export default {
                 position: absolute;
                 width: 12px;
                 height: 12px;
-                transform: translate(-50%, -50%) translateZ(0);
+                transform: translate(-50%, -50%);
                 cursor: pointer;
                 z-index: 2;
                 pointer-events: auto;
-                // GPU加速优化
-                will-change: transform;
-                backface-visibility: hidden;
                 .marker-label {
                   position: absolute;
                   white-space: nowrap;
@@ -5692,13 +5683,10 @@ export default {
                 position: absolute;
                 width: 12px;
                 height: 12px;
-                transform: translate(-50%, -50%) translateZ(0);
+                transform: translate(-50%, -50%);
                 cursor: pointer;
                 z-index: 2;
                 pointer-events: auto;
-                // GPU加速优化
-                will-change: transform;
-                backface-visibility: hidden;
                 .marker-label {
                   position: absolute;
                   white-space: nowrap;
@@ -5765,12 +5753,9 @@ export default {
                 position: absolute;
                 width: 12px;
                 height: 12px;
-                transform: translate(-50%, -50%) translateZ(0);
+                transform: translate(-50%, -50%);
                 cursor: pointer;
                 z-index: 2;
-                // GPU加速优化
-                will-change: transform;
-                backface-visibility: hidden;
                 .data-panel {
                   position: absolute;
                   background: rgba(30, 42, 56, 0.95);
@@ -5877,7 +5862,7 @@ export default {
             .image-wrapper {
               .queue-marker {
                 position: absolute;
-                transform: translate(-50%, -50%) translateZ(0);
+                transform: translate(-50%, -50%);
                 cursor: pointer;
                 z-index: 10;
                 background: rgba(10, 30, 50, 0.85);
@@ -5889,9 +5874,6 @@ export default {
                 text-align: center;
                 box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
                 color: #ffffff;
-                // GPU加速优化
-                will-change: transform;
-                backface-visibility: hidden;
                 .queue-marker-content {
                   display: flex;
                   flex-direction: column;
@@ -5917,24 +5899,17 @@ export default {
               /* 添加小车样式 */
               .cart-container {
                 position: absolute;
-                transform: translate(-50%, -50%) translateZ(0);
+                transform: translate(-50%, -50%);
                 z-index: 3;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                // GPU加速优化
-                will-change: transform;
-                backface-visibility: hidden;
               }
 
               .cart-image {
                 width: 100%;
                 height: auto;
                 object-fit: contain;
-                // 图片GPU加速
-                image-rendering: optimizeSpeed;
-                image-rendering: -webkit-optimize-contrast;
-                image-rendering: crisp-edges;
               }
             }
           }
@@ -6016,7 +5991,6 @@ export default {
           display: flex;
           background: rgba(30, 42, 56, 0.9);
           border-radius: 12px;
-          backdrop-filter: blur(10px);
           padding: 15px;
           gap: 20px;
           overflow: hidden;
@@ -6271,8 +6245,8 @@ export default {
         justify-content: center;
         cursor: pointer;
         box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-        /* 只对必要的属性使用过渡，减少GPU负担 */
-        transition: transform 0.3s ease, background-color 0.3s ease;
+        /* 简化过渡效果，减少GPU负担 */
+        transition: background-color 0.3s ease;
         padding: 0;
         span {
           display: none;
@@ -6280,8 +6254,6 @@ export default {
         i {
           color: #fff;
           font-size: 20px;
-          /* 减少动画频率，降低GPU负担 */
-          animation: rotate 20s linear infinite;
         }
       }
       .section-header:hover {
@@ -6312,8 +6284,8 @@ export default {
   border: 1px solid rgba(10, 197, 168, 0.3);
   border-radius: 15px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-  /* 只对必要的属性使用过渡，减少GPU负担 */
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  /* 简化过渡效果，减少GPU负担 */
+  transition: opacity 0.3s ease;
   transform-origin: top right;
   opacity: 1;
   transform: scale(1);
@@ -6374,8 +6346,8 @@ export default {
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-  /* 只对必要的属性使用过渡，减少GPU负担 */
-  transition: transform 0.3s ease, background-color 0.3s ease;
+  /* 简化过渡效果，减少GPU负担 */
+  transition: background-color 0.3s ease;
 }
 
 .test-toggle-btn:hover {

@@ -34,13 +34,12 @@ export default {
 .welcome {
   width: 100%;
   height: 100%;
-  padding: 5px;
   box-sizing: border-box;
   > div {
     width: 100%;
     height: 100%;
     opacity: 1;
-    border-radius: 20px;
+    border-radius: 10px;
     background: rgb(255, 255, 255);
     box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.15);
     background-image: url(./img/welcome.jpg);

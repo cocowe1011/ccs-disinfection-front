@@ -157,8 +157,6 @@ export default {
   color: #fff;
   user-select: none;
   opacity: 0.85;
-  /* 添加GPU优化 */
-  transform: translateZ(0);
   .inner {
     width: 100%;
     height: 100%;
