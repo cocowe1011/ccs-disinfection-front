@@ -42,13 +42,11 @@ export default {
     opacity: 1;
     border-radius: 20px;
     background: rgb(255, 255, 255);
-    box-shadow: 0px 60px 90px 0px rgba(0, 0, 0, 0.2);
+    box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.15);
     background-image: url(./img/welcome.jpg);
-    background-size: cover; /* 改为cover减少GPU计算 */
-    background-position: center; /* 添加居中定位 */
+    background-size: cover;
+    background-position: center;
     background-repeat: no-repeat;
-    /* 添加GPU优化 */
-    transform: translateZ(0);
     .center {
       letter-spacing: 3px;
       width: 37%;

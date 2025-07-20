@@ -8,12 +8,12 @@
     >
       <div class="inner">
         <i
-          class="el-icon-check icon"
+          class="el-icon-check"
           style="font-size: 28px; color: #fff"
           v-if="plcStatus"
         ></i>
         <i
-          class="el-icon-close icon"
+          class="el-icon-close"
           style="font-size: 28px; color: #fff"
           v-else
         ></i>
@@ -179,23 +179,5 @@ export default {
 }
 .offline {
   background-color: #f56c6c !important;
-}
-.icon {
-  /* 优化动画性能，减少GPU占用 */
-  animation: icon-animation 3s infinite ease-in-out; /* 增加动画时间，减少频率 */
-  /* 添加GPU优化 */
-  transform: translateZ(0);
-  will-change: transform;
-}
-@keyframes icon-animation {
-  0% {
-    transform: scale(1) translateZ(0);
-  }
-  50% {
-    transform: scale(1.2) translateZ(0); /* 减少缩放幅度 */
-  }
-  100% {
-    transform: scale(1) translateZ(0);
-  }
 }
 </style>
