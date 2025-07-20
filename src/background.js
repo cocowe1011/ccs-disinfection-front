@@ -56,31 +56,6 @@ app.on('window-all-closed', () => {
 global.sharedObject = {
   userInfo: {}
 };
-
-// GPU硬件加速配置 - 优化版本
-// 注释掉GPU相关的命令行开关，降低GPU使用率
-// app.commandLine.appendSwitch('--enable-gpu-rasterization');
-// app.commandLine.appendSwitch('--enable-zero-copy');
-
-// 添加CPU优先的配置
-app.commandLine.appendSwitch('--disable-gpu-rasterization');
-app.commandLine.appendSwitch('--disable-gpu-sandbox');
-app.commandLine.appendSwitch('--disable-software-rasterizer');
-app.commandLine.appendSwitch('--disable-gpu-process-crash-limit');
-app.commandLine.appendSwitch('--disable-gpu-driver-bug-workarounds');
-app.commandLine.appendSwitch('--disable-gpu-program-cache');
-app.commandLine.appendSwitch('--disable-gpu-shader-disk-cache');
-app.commandLine.appendSwitch('--disable-gpu-vsync');
-app.commandLine.appendSwitch('--disable-accelerated-2d-canvas');
-app.commandLine.appendSwitch('--disable-accelerated-video-decode');
-app.commandLine.appendSwitch('--disable-accelerated-video-encode');
-app.commandLine.appendSwitch('--disable-webgl');
-app.commandLine.appendSwitch('--disable-webgl2');
-app.commandLine.appendSwitch('--disable-3d-apis');
-app.commandLine.appendSwitch('--disable-web-security');
-app.commandLine.appendSwitch('--disable-features=VizDisplayCompositor');
-app.commandLine.appendSwitch('--force-cpu-draw');
-
 let mainWindow = null;
 app.on('ready', () => {
   // Create the browser window.
@@ -92,19 +67,7 @@ app.on('ready', () => {
       nodeIntegration: true,
       contextIsolation: false,
       enableRemoteModule: true,
-      webSecurity: false,
-      // 禁用硬件加速，使用CPU渲染
-      enableWebGL: false,
-      // 禁用GPU加速
-      accelerator: 'cpu',
-      // 禁用实验性功能
-      experimentalFeatures: false,
-      // 禁用硬件加速
-      hardwareAcceleration: false,
-      // 禁用GPU进程
-      offscreen: false,
-      // 禁用背景节流
-      backgroundThrottling: false
+      webSecurity: false
     },
     icon: './build/icons/icon.ico'
   });

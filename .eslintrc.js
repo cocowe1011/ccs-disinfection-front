@@ -20,6 +20,7 @@ module.exports = {
     'space-before-function-paren': 0,
     'vue/multi-word-component-names': 'off',
     'no-constant-condition': ['error', { checkLoops: false }],
+    // prettier 是用来格式化代码的，不能设置为off
     'prettier/prettier': [
       'error',
       {
