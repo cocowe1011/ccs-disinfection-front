@@ -3537,12 +3537,12 @@ export default {
         if (
           !this.floor1InLineTrayInfo ||
           this.floor1InLineTrayInfo === '' ||
-          this.floor1InLineTrayInfo === 'NoRead'
+          this.floor1InLineTrayInfo.toLowerCase() === 'noread'
         ) {
           // 2、如果异常，直接给PLC发送一楼接货口禁用命令DBW512：1
           ipcRenderer.send('writeValuesToPLC', 'DBW512', 1);
           // 发送进货异常报警DBW580.bit0
-          ipcRenderer.send('writeValuesToPLC', 'DBW580', 10);
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW580', 10);
           this.addLog('一楼接货口条码异常，已禁用接货口');
           return;
         }
@@ -3552,7 +3552,7 @@ export default {
           // 没有正在执行的订单，禁用接货口
           ipcRenderer.send('writeValuesToPLC', 'DBW512', 1);
           // 发送进货异常报警DBW580.bit0
-          ipcRenderer.send('writeValuesToPLC', 'DBW580', 10);
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW580', 10);
           this.addLog('当前无执行订单，已禁用一楼接货口');
           return;
         }
@@ -3564,14 +3564,16 @@ export default {
         ) {
           // 如果属于当前订单，给PLC发送一楼接货口启用命令DBW512：0
           ipcRenderer.send('writeValuesToPLC', 'DBW512', 0);
+          // 使用新的单次写入方法，写入DBW580值为11，1秒内发送3次
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW580', 11);
           this.addLog(
-            `托盘${this.floor1InLineTrayInfo}属于当前订单，已启用一楼接货口`
+            `托盘${this.floor1InLineTrayInfo}属于当前订单，已启用一楼接货口，给PLC发送DBW580值为11`
           );
         } else {
           // 如果不属于当前订单，直接给PLC发送一楼接货口禁用命令DBW512：1
           ipcRenderer.send('writeValuesToPLC', 'DBW512', 1);
           // 发送进货异常报警DBW580.bit0
-          ipcRenderer.send('writeValuesToPLC', 'DBW580', 10);
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW580', 10);
           this.addLog(
             `托盘${this.floor1InLineTrayInfo}不属于当前订单，已禁用一楼接货口`
           );
@@ -3586,10 +3588,10 @@ export default {
         if (
           !this.floor1UpLineTrayInfo ||
           this.floor1UpLineTrayInfo === '' ||
-          this.floor1UpLineTrayInfo === 'NoRead'
+          this.floor1UpLineTrayInfo.toLowerCase() === 'noread'
         ) {
           // 缓存区扫码反馈异常DBW582
-          ipcRenderer.send('writeValuesToPLC', 'DBW582', 10);
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW582', 10);
           this.addLog('一楼上货区条码异常，已发送报警信号');
           return;
         }
@@ -3597,7 +3599,7 @@ export default {
         // 3、如果正常，先判断当前有没有正在执行的订单
         if (!this.currentOrder) {
           // 缓存区扫码反馈异常DBW582
-          ipcRenderer.send('writeValuesToPLC', 'DBW582', 10);
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW582', 10);
           this.addLog('当前无执行订单，一楼上货区已发送报警信号');
           return;
         }
@@ -3635,6 +3637,8 @@ export default {
           );
 
           if (existingTrayIndex === -1) {
+            this.addLog('缓存区可以通行，给PLC发送DBW582值为11');
+            ipcRenderer.send('writeSingleValueToPLC', 'DBW582', 11);
             // 添加新托盘
             this.queues[0].trayInfo.push(newTray);
             // 增加已上货托盘计数器
@@ -3644,14 +3648,14 @@ export default {
             );
           } else {
             // 缓存区扫码反馈异常DBW582
-            ipcRenderer.send('writeValuesToPLC', 'DBW582', 10);
+            ipcRenderer.send('writeSingleValueToPLC', 'DBW582', 10);
             this.addLog(
               `托盘${this.floor1UpLineTrayInfo}已在上货区队列中，已取消报警信号`
             );
           }
         } else {
           // 缓存区扫码反馈异常DBW582
-          ipcRenderer.send('writeValuesToPLC', 'DBW582', 10);
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW582', 10);
           this.addLog(
             `托盘${this.floor1UpLineTrayInfo}不属于当前订单，已发送报警信号`
           );

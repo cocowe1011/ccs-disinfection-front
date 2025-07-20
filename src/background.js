@@ -150,6 +150,10 @@ app.on('ready', () => {
   ipcMain.on('writeValuesToPLC', (event, arg1, arg2) => {
     writeValuesToPLC(arg1, arg2);
   });
+  // writeSingleValueToPLC - 单独给PLC某个变量写值，持续指定时间后停止
+  ipcMain.on('writeSingleValueToPLC', (event, arg1, arg2) => {
+    writeSingleValueToPLC(arg1, arg2);
+  });
   // 定义自定义事件
   ipcMain.on('max-window', (event, arg) => {
     if (arg === 'max-window') {
@@ -845,34 +849,7 @@ var variables = {
   DBW592: 'DB101,INT592' // 出库扫码反馈
 };
 
-var writeStrArr = [
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  '',
-  0,
-  0,
-  0,
-  0,
-  0,
-  0,
-  0
-];
+var writeStrArr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ''];
 var writeAddArr = [
   'DBW500', // WCS看门狗心跳
   'DBW502', // WCS-全线启动
@@ -892,14 +869,7 @@ var writeAddArr = [
   'DBW530', // WCS执行出货灭菌柜编号
   'DBW540', // WCS下发任务完成
   'DBW542', // WCS下发目的地
-  'DBB544', // WCS下发托盘号
-  'DBW580', // 1楼上货扫码反馈
-  'DBW582', // 缓存扫码反馈
-  'DBW584', // 2楼A扫码反馈
-  'DBW586', // 2楼B扫码反馈
-  'DBW588', // 3楼A扫码反馈
-  'DBW590', // 3楼B扫码反馈
-  'DBW592' // 出库扫码反馈
+  'DBB544' // WCS下发托盘号
 ];
 
 // 给PLC写值
@@ -910,6 +880,41 @@ function writeValuesToPLC(add, values) {
   } else {
     console.warn(`Address ${add} not found in writeAddArr.`);
   }
+}
+
+// 单独给PLC某个变量写值，1秒内发送3次
+function writeSingleValueToPLC(add, values) {
+  // 检查地址是否在variables中定义
+  if (!variables[add]) {
+    console.warn(`Address ${add} not found in variables.`);
+    return;
+  }
+
+  // 立即写入第一次
+  conn.writeItems([add], [values], (err) => {
+    if (err) {
+      console.error(`写入PLC地址 ${add} 失败:`, err);
+    }
+  });
+
+  // 500ms后写入第二次
+  setTimeout(() => {
+    conn.writeItems([add], [values], (err) => {
+      if (err) {
+        console.error(`写入PLC地址 ${add} 失败:`, err);
+      }
+    });
+  }, 500);
+
+  // 1000ms后写入第三次
+  setTimeout(() => {
+    conn.writeItems([add], [values], (err) => {
+      if (err) {
+        console.error(`写入PLC地址 ${add} 失败:`, err);
+      }
+    });
+    console.log(`完成写入PLC地址 ${add}，值：${values}，1秒内发送3次`);
+  }, 1000);
 }
 
 function valuesWritten(anythingBad) {
