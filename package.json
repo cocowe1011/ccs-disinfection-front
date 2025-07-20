@@ -7,7 +7,8 @@
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "electron:build": "vue-cli-service electron:build",
-    "electron:serve": "vue-cli-service electron:serve --enable-gpu-rasterization --enable-zero-copy --ignore-gpu-blocklist",
+    "electron:serve": "vue-cli-service electron:serve --disable-gpu --disable-gpu-rasterization --disable-accelerated-2d-canvas --disable-webgl --force-cpu-draw",
+    "electron:serve:cpu": "vue-cli-service electron:serve --disable-gpu --disable-gpu-rasterization --disable-accelerated-2d-canvas --disable-webgl --force-cpu-draw --disable-gpu-sandbox --disable-software-rasterizer --disable-gpu-process-crash-limit --disable-gpu-driver-bug-workarounds --disable-gpu-program-cache --disable-gpu-shader-disk-cache --disable-gpu-vsync --disable-accelerated-video-decode --disable-accelerated-video-encode --disable-3d-apis --disable-web-security --disable-features=VizDisplayCompositor",
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps",
     "electron:generate-icons": "electron-icon-builder --input=./public/icon.png --output=build --flatten"
@@ -25,7 +26,6 @@
     "node-polyfill-webpack-plugin": "^2.0.1",
     "nodes7": "^0.3.18",
     "path-browserify": "^1.0.1",
-    "three": "^0.170.0",
     "vue": "^2.6.14",
     "vue-cookies": "^1.8.2",
     "vue-router": "^3.5.1",
