@@ -4528,10 +4528,11 @@ export default {
       // 刷新订单 列表
       await HttpUtil.post('/order_info/queryOrderList', {})
         .then((res) => {
+          this.$message.success('刷新订单列表成功');
           this.ordersList = res.data;
         })
         .catch((err) => {
-          this.$message.error('刷新订单列表失败，请重试');
+          this.$message.error('刷新订单列表失败，请重试，错误：' + err);
         })
         .finally(() => {
           this.isRefreshing = false;
