@@ -2655,7 +2655,7 @@ export default {
         {
           id: 1,
           name: '小车1',
-          x: 1368,
+          x: 1395,
           y: 1740,
           width: 150,
           image: require('@/assets/cart.png')
@@ -3140,7 +3140,7 @@ export default {
       },
       // 小车y轴范围配置（MonitorScreen页面小车沿x轴水平行走）
       cartXRanges: {
-        cart1: { min: 318, max: 1368 }, // x轴范围318-1368线到G线)
+        cart1: { min: 318, max: 1395 }, // x轴范围318-1395线到G线)
         cart2: { min: 330, max: 1210 }, // x轴范围330-1210线到G线)
         cart3: { min: 335, max: 1210 } // x轴范围335-1210 (A线到G线)
       },
@@ -3718,7 +3718,7 @@ export default {
 
         // 给PLC的DBW524发送对应信息
         if (plcCommand > 0) {
-          ipcRenderer.send('writeValuesToPLC', 'DBW524', plcCommand);
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW524', plcCommand);
 
           // 设置托盘已发送预热房命令的标识
           firstUnprocessedTray.hasSentPreheatCommand = true;
@@ -4779,6 +4779,11 @@ export default {
           this.alarmLogs.pop();
         }
       }
+
+      // 同时写入本地文件
+      const logTypeText = type === 'running' ? '运行日志' : '报警日志';
+      const logMessage = `[${logTypeText}] ${message}`;
+      ipcRenderer.send('writeLogToLocal', logMessage);
     },
     convertToWord(value) {
       if (value < 0) {
