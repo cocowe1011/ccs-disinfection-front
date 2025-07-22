@@ -793,6 +793,8 @@ function conPLC() {
           conn.addItems('DBW344');
           // 出库电机运行信号
           conn.addItems('DBW346');
+          // 预热→灭菌完成信号
+          conn.addItems('DBW348');
           // 预热房前缓存线请求目的地
           conn.addItems('DBW360');
           setInterval(() => {
@@ -887,6 +889,7 @@ var variables = {
   DBW342: 'DB101,INT342', // 入库电机运行信号
   DBW344: 'DB101,INT344', // 出库区光电点位显示
   DBW346: 'DB101,INT346', // 出库电机运行信号
+  DBW348: 'DB101,INT348', // 预热→灭菌完成信号
   DBW360: 'DB101,INT360', // 预热房前缓存线请求目的地
   DBW500: 'DB101,INT500', // WCS看门狗心跳
   DBW502: 'DB101,INT502', // WCS-全线启动

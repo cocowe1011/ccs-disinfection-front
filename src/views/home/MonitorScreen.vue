@@ -2177,6 +2177,14 @@
                         style="color: orange; margin-left: 10px"
                         >执行中...</span
                       >
+                      <el-button
+                        v-if="isDisinfectionExecuting"
+                        type="danger"
+                        size="mini"
+                        @click="cancelDisinfectionExecute"
+                      >
+                        取消
+                      </el-button>
                     </div>
                   </div>
                 </div>
@@ -4036,7 +4044,9 @@ export default {
       // 出库执行状态
       isOutboundExecuting: false,
       // 目的地选择
-      destinationSelected: ''
+      destinationSelected: '',
+      // 预热→灭菌完成信号
+      isPreheatingCompleted: 0
     };
   },
   computed: {
@@ -4421,6 +4431,9 @@ export default {
       // 预热房前缓存线请求目的地
       this.requestDestination = Number(values.DBW360);
 
+      // 预热→灭菌完成信号
+      this.isPreheatingCompleted = Number(values.DBW348);
+
       // 读取小车位置数值
       this.cartPositionValues.cart1 = Number(values.DBW80 ?? 0);
       this.cartPositionValues.cart2 = Number(values.DBW84 ?? 0);
@@ -4492,6 +4505,13 @@ export default {
     // 监听G2队列数量变化
     'gLineQuantity.g2'(newVal, oldVal) {
       this.handleLevel2QueueQuantityChange('g2', newVal, oldVal);
+    },
+    // 监听预热完成信号
+    isPreheatingCompleted(newVal, oldVal) {
+      if (newVal === 1 && oldVal === 0 && this.isDisinfectionExecuting) {
+        this.finishDisinfectionMove();
+        this.addLog('预热→灭菌完成信号触发，执行状态已完成');
+      }
     },
     // 一楼接货站台"有载信号"/光电占位
     'scanPhotoelectricSignal.bit0'(newVal) {
@@ -5989,19 +6009,30 @@ export default {
       this.addLog(
         `预热房选择：${this.disinfectionRoomSelectedFrom}，发送DBW526值：${fromValue}`
       );
-      this.addLog(
-        `灭菌柜选择：${this.disinfectionRoomSelectedTo}，发送DBW528值：${toValue}`
-      );
       ipcRenderer.send('writeSingleValueToPLC', 'DBW526', fromValue);
-      ipcRenderer.send('writeSingleValueToPLC', 'DBW528', toValue);
+      setTimeout(() => {
+        ipcRenderer.send('writeSingleValueToPLC', 'DBW528', toValue);
+        this.addLog(
+          `灭菌柜选择：${this.disinfectionRoomSelectedTo}，发送DBW528值：${toValue}`
+        );
+      }, 1000);
       this.isDisinfectionExecuting = true;
     },
     finishDisinfectionMove() {
       this.isDisinfectionExecuting = false;
       this.$message.success('托盘已移入目标灭菌柜队列，可继续操作');
     },
+    cancelDisinfectionExecute() {
+      this.isDisinfectionExecuting = false;
+      this.$message.info('已取消预热→灭菌柜执行操作');
+      this.addLog('用户手动取消了预热→灭菌柜执行操作');
+    },
     handleDisinfectionQueueChange(queueName, newVal, oldVal) {
-      if (!this.isDisinfectionExecuting) return;
+      if (!this.isDisinfectionExecuting) {
+        // 加日志
+        this.addLog('灭菌柜队列变化，但预热->灭菌柜未执行，不处理');
+        return;
+      }
       // 灭菌柜选择和队列名一致才处理
       if (queueName[0] === this.disinfectionRoomSelectedTo) {
         if (newVal > oldVal) {
@@ -6033,7 +6064,7 @@ export default {
           this.addLog(
             `已将${traysToMove.length}个托盘从${this.disinfectionRoomSelectedFrom}预热房移到${queueName}`
           );
-          this.finishDisinfectionMove();
+          // 移除完成执行状态的调用，改为监听isPreheatingCompleted
         }
       }
     },
