@@ -4655,16 +4655,19 @@ export default {
         const trayOrderCount = firstUnprocessedTray.trayOrderCount;
 
         // 新逻辑：遍历所有队列，查找orderId与当前托盘相同且hasSentPreheatCommand为true的托盘数量
+        // 需要排除当前托盘本身，因为它还没有发送命令
         let sentCount = 0;
         this.queues.forEach((queue) => {
           if (Array.isArray(queue.trayInfo)) {
             sentCount += queue.trayInfo.filter(
               (tray) =>
-                tray.orderId === currentOrderId && tray.hasSentPreheatCommand
+                tray.orderId === currentOrderId &&
+                tray.hasSentPreheatCommand &&
+                tray.trayCode !== firstUnprocessedTray.trayCode
             ).length;
           }
         });
-        // 判断是否为尾托盘
+        // 判断是否为尾托盘：已发送命令的托盘数量 + 当前托盘 = 订单总托盘数量
         const isLastTray = sentCount + 1 === trayOrderCount;
 
         // 输出一下当前发送命令的托盘的订单托盘数量和已发送托盘数量，以及本托盘是不是最后一个托盘
