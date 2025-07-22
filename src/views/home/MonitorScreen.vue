@@ -452,19 +452,20 @@
                   </div>
                 </div>
                 <!-- 下货点信息 -->
-                <div class="marker-with-panel" data-x="1230" data-y="62">
+                <div class="marker-with-panel" data-x="1380" data-y="25">
                   <div
                     class="data-panel"
-                    style="padding: 4px 12px"
+                    style="padding: 4px 12px; width: 140px"
                     :class="['position-left', { 'always-show': true }]"
                   >
+                    <div class="data-panel-header">下货扫码信息</div>
                     <div class="data-panel-content">
                       <div class="data-panel-row">
                         <span class="data-panel-label">扫码信息：</span>
-                        <span>{{ floor1OutLoadTrayInfo || '--' }}</span>
+                        <span>{{ floor1OutLineTrayInfo || '--' }}</span>
                       </div>
                       <div class="data-panel-row">
-                        <span class="data-panel-label">运行订单信息：</span>
+                        <span class="data-panel-label">订单号：</span>
                         <span>--</span>
                       </div>
                       <div class="data-panel-row">
@@ -1769,6 +1770,469 @@
                 >
                   <div class="marker-label">G-10#</div>
                 </div>
+                <!-- 入库区光电点位显示 -->
+                <div
+                  class="marker label-top"
+                  :class="{ scanning: inLoadPhotoelectricSignal.bit0 === '1' }"
+                  data-x="1490"
+                  data-y="1200"
+                  @click="toggleBitValue(inLoadPhotoelectricSignal, 'bit0')"
+                >
+                  <div class="marker-label">上货光电</div>
+                </div>
+                <div
+                  class="marker label-top"
+                  :class="{ scanning: inLoadPhotoelectricSignal.bit1 === '1' }"
+                  data-x="1400"
+                  data-y="1200"
+                  @click="toggleBitValue(inLoadPhotoelectricSignal, 'bit1')"
+                >
+                  <div class="marker-label">称重到位</div>
+                </div>
+                <div
+                  class="marker label-left"
+                  :class="{ scanning: inLoadPhotoelectricSignal.bit2 === '1' }"
+                  data-x="1335"
+                  data-y="1182"
+                  @click="toggleBitValue(inLoadPhotoelectricSignal, 'bit2')"
+                >
+                  <div class="marker-label">上货到位</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: inLoadPhotoelectricSignal.bit3 === '1' }"
+                  data-x="1335"
+                  data-y="1130"
+                  @click="toggleBitValue(inLoadPhotoelectricSignal, 'bit3')"
+                >
+                  <div class="marker-label">A-4#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: inLoadPhotoelectricSignal.bit4 === '1' }"
+                  data-x="1335"
+                  data-y="1065"
+                  @click="toggleBitValue(inLoadPhotoelectricSignal, 'bit4')"
+                >
+                  <div class="marker-label">A-5#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: inLoadPhotoelectricSignal.bit5 === '1' }"
+                  data-x="1335"
+                  data-y="1020"
+                  @click="toggleBitValue(inLoadPhotoelectricSignal, 'bit5')"
+                >
+                  <div class="marker-label">A-6#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: inLoadPhotoelectricSignal.bit6 === '1' }"
+                  data-x="1335"
+                  data-y="970"
+                  @click="toggleBitValue(inLoadPhotoelectricSignal, 'bit6')"
+                >
+                  <div class="marker-label">A-7#</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: inLoadPhotoelectricSignal.bit7 === '1' }"
+                  data-x="1335"
+                  data-y="888"
+                  @click="toggleBitValue(inLoadPhotoelectricSignal, 'bit7')"
+                >
+                  <div class="marker-label">货物到位</div>
+                </div>
+                <!-- 入库电机运行信号 -->
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: inLoadMotorRunning.bit0 === '1' }"
+                  data-x="1430"
+                  data-y="1182"
+                  @click="toggleBitValue(inLoadMotorRunning, 'bit0')"
+                >
+                  <div class="marker-label">S-1#</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: inLoadMotorRunning.bit1 === '1' }"
+                  data-x="1365"
+                  data-y="1182"
+                  @click="toggleBitValue(inLoadMotorRunning, 'bit1')"
+                >
+                  <div class="marker-label">S-2#</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: inLoadMotorRunning.bit2 === '1' }"
+                  data-x="1365"
+                  data-y="1128"
+                  @click="toggleBitValue(inLoadMotorRunning, 'bit2')"
+                >
+                  <div class="marker-label">S-3#</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: inLoadMotorRunning.bit3 === '1' }"
+                  data-x="1365"
+                  data-y="1065"
+                  @click="toggleBitValue(inLoadMotorRunning, 'bit3')"
+                >
+                  <div class="marker-label">S-4#</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: inLoadMotorRunning.bit4 === '1' }"
+                  data-x="1365"
+                  data-y="1018"
+                  @click="toggleBitValue(inLoadMotorRunning, 'bit4')"
+                >
+                  <div class="marker-label">S-5#</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: inLoadMotorRunning.bit5 === '1' }"
+                  data-x="1365"
+                  data-y="960"
+                  @click="toggleBitValue(inLoadMotorRunning, 'bit5')"
+                >
+                  <div class="marker-label">S-6#</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: inLoadMotorRunning.bit6 === '1' }"
+                  data-x="1365"
+                  data-y="890"
+                  @click="toggleBitValue(inLoadMotorRunning, 'bit6')"
+                >
+                  <div class="marker-label">S-7#</div>
+                </div>
+                <!-- 出库区光电点位显示 -->
+                <div
+                  class="marker label-top"
+                  :class="{ scanning: outLoadPhotoelectricSignal.bit0 === '1' }"
+                  data-x="920"
+                  data-y="150"
+                  @click="toggleBitValue(outLoadPhotoelectricSignal, 'bit0')"
+                >
+                  <div class="marker-label">3002</div>
+                </div>
+                <div
+                  class="marker label-top"
+                  :class="{ scanning: outLoadPhotoelectricSignal.bit1 === '1' }"
+                  data-x="980"
+                  data-y="150"
+                  @click="toggleBitValue(outLoadPhotoelectricSignal, 'bit1')"
+                >
+                  <div class="marker-label">3003</div>
+                </div>
+                <div
+                  class="marker label-top"
+                  :class="{ scanning: outLoadPhotoelectricSignal.bit2 === '1' }"
+                  data-x="1080"
+                  data-y="150"
+                  @click="toggleBitValue(outLoadPhotoelectricSignal, 'bit2')"
+                >
+                  <div class="marker-label">3006</div>
+                </div>
+                <div
+                  class="marker label-top"
+                  :class="{ scanning: outLoadPhotoelectricSignal.bit3 === '1' }"
+                  data-x="1180"
+                  data-y="150"
+                  @click="toggleBitValue(outLoadPhotoelectricSignal, 'bit3')"
+                >
+                  <div class="marker-label">3007</div>
+                </div>
+                <div
+                  class="marker label-top"
+                  :class="{ scanning: outLoadPhotoelectricSignal.bit4 === '1' }"
+                  data-x="1280"
+                  data-y="150"
+                  @click="toggleBitValue(outLoadPhotoelectricSignal, 'bit4')"
+                >
+                  <div class="marker-label">3008</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: outLoadPhotoelectricSignal.bit5 === '1' }"
+                  data-x="1370"
+                  data-y="150"
+                  @click="toggleBitValue(outLoadPhotoelectricSignal, 'bit5')"
+                >
+                  <div class="marker-label">3010-1</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: outLoadPhotoelectricSignal.bit6 === '1' }"
+                  data-x="1370"
+                  data-y="190"
+                  @click="toggleBitValue(outLoadPhotoelectricSignal, 'bit6')"
+                >
+                  <div class="marker-label">3010-2</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: outLoadPhotoelectricSignal.bit7 === '1' }"
+                  data-x="1320"
+                  data-y="210"
+                  @click="toggleBitValue(outLoadPhotoelectricSignal, 'bit7')"
+                >
+                  <div class="marker-label">3013-1</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: outLoadPhotoelectricSignal.bit8 === '1' }"
+                  data-x="1320"
+                  data-y="300"
+                  @click="toggleBitValue(outLoadPhotoelectricSignal, 'bit8')"
+                >
+                  <div class="marker-label">3013-2</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{ scanning: outLoadPhotoelectricSignal.bit9 === '1' }"
+                  data-x="1320"
+                  data-y="330"
+                  @click="toggleBitValue(outLoadPhotoelectricSignal, 'bit9')"
+                >
+                  <div class="marker-label">3016</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{
+                    scanning: outLoadPhotoelectricSignal.bit10 === '1'
+                  }"
+                  data-x="1320"
+                  data-y="450"
+                  @click="toggleBitValue(outLoadPhotoelectricSignal, 'bit10')"
+                >
+                  <div class="marker-label">3017</div>
+                </div>
+                <div
+                  class="marker label-right"
+                  :class="{
+                    scanning: outLoadPhotoelectricSignal.bit11 === '1'
+                  }"
+                  data-x="1475"
+                  data-y="300"
+                  @click="toggleBitValue(outLoadPhotoelectricSignal, 'bit11')"
+                >
+                  <div class="marker-label">3014</div>
+                </div>
+                <!-- 出库电机运行信号 -->
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: outLoadMotorRunning.bit0 === '1' }"
+                  data-x="880"
+                  data-y="175"
+                  @click="toggleBitValue(outLoadMotorRunning, 'bit0')"
+                >
+                  <div class="marker-label">3002</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: outLoadMotorRunning.bit1 === '1' }"
+                  data-x="950"
+                  data-y="175"
+                  @click="toggleBitValue(outLoadMotorRunning, 'bit1')"
+                >
+                  <div class="marker-label">3003</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: outLoadMotorRunning.bit2 === '1' }"
+                  data-x="1010"
+                  data-y="175"
+                  @click="toggleBitValue(outLoadMotorRunning, 'bit2')"
+                >
+                  <div class="marker-label">3001</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: outLoadMotorRunning.bit3 === '1' }"
+                  data-x="1040"
+                  data-y="175"
+                  @click="toggleBitValue(outLoadMotorRunning, 'bit3')"
+                >
+                  <div class="marker-label">3006</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: outLoadMotorRunning.bit4 === '1' }"
+                  data-x="1100"
+                  data-y="175"
+                  @click="toggleBitValue(outLoadMotorRunning, 'bit4')"
+                >
+                  <div class="marker-label">3007</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: outLoadMotorRunning.bit5 === '1' }"
+                  data-x="1205"
+                  data-y="175"
+                  @click="toggleBitValue(outLoadMotorRunning, 'bit5')"
+                >
+                  <div class="marker-label">3008</div>
+                </div>
+                <div
+                  class="motor-marker label-top"
+                  :class="{ running: outLoadMotorRunning.bit6 === '1' }"
+                  data-x="1340"
+                  data-y="175"
+                  @click="toggleBitValue(outLoadMotorRunning, 'bit6')"
+                >
+                  <div class="marker-label">3010</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: outLoadMotorRunning.bit7 === '1' }"
+                  data-x="1355"
+                  data-y="250"
+                  @click="toggleBitValue(outLoadMotorRunning, 'bit7')"
+                >
+                  <div class="marker-label">3012</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: outLoadMotorRunning.bit8 === '1' }"
+                  data-x="1355"
+                  data-y="328"
+                  @click="toggleBitValue(outLoadMotorRunning, 'bit8')"
+                >
+                  <div class="marker-label">3016</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: outLoadMotorRunning.bit9 === '1' }"
+                  data-x="1355"
+                  data-y="410"
+                  @click="toggleBitValue(outLoadMotorRunning, 'bit9')"
+                >
+                  <div class="marker-label">3013</div>
+                </div>
+                <div
+                  class="motor-marker label-right"
+                  :class="{ running: outLoadMotorRunning.bit10 === '1' }"
+                  data-x="1435"
+                  data-y="330"
+                  @click="toggleBitValue(outLoadMotorRunning, 'bit10')"
+                >
+                  <div class="marker-label">3014</div>
+                </div>
+                <!-- 测试-手动发送PLC命令 -->
+                <div
+                  class="preheating-room-marker"
+                  data-x="120"
+                  data-y="1200"
+                  style="width: 140px"
+                >
+                  <div class="preheating-room-content">
+                    <div class="preheating-room-header">预热房到灭菌柜选择</div>
+                    <div class="preheating-room-body">
+                      <div style="display: flex; align-items: center">
+                        <el-select
+                          v-model="disinfectionRoomSelectedFrom"
+                          placeholder="预"
+                          size="mini"
+                          :disabled="isDisinfectionExecuting"
+                        >
+                          <el-option label="A" value="A"></el-option>
+                          <el-option label="B" value="B"></el-option>
+                          <el-option label="C" value="C"></el-option>
+                          <el-option label="D" value="D"></el-option>
+                          <el-option label="E" value="E"></el-option>
+                          <el-option label="F" value="F"></el-option>
+                          <el-option label="G" value="G"></el-option>
+                        </el-select>
+                        <span
+                          style="font-size: 12px; color: #fff; margin-left: 5px"
+                          >到：</span
+                        >
+                        <el-select
+                          v-model="disinfectionRoomSelectedTo"
+                          placeholder="灭"
+                          size="mini"
+                          :disabled="isDisinfectionExecuting"
+                        >
+                          <el-option label="A" value="A"></el-option>
+                          <el-option label="B" value="B"></el-option>
+                          <el-option label="C" value="C"></el-option>
+                          <el-option label="D" value="D"></el-option>
+                          <el-option label="E" value="E"></el-option>
+                          <el-option label="F" value="F"></el-option>
+                          <el-option label="G" value="G"></el-option>
+                        </el-select>
+                      </div>
+                      <el-button
+                        type="primary"
+                        size="mini"
+                        style="width: 100%"
+                        @click="handleDisinfectionRoomExecute"
+                        :disabled="isDisinfectionExecuting"
+                        >执行</el-button
+                      >
+                      <span
+                        v-if="isDisinfectionExecuting"
+                        style="color: orange; margin-left: 10px"
+                        >执行中...</span
+                      >
+                    </div>
+                  </div>
+                </div>
+                <div class="preheating-room-marker" data-x="150" data-y="450">
+                  <div class="preheating-room-content">
+                    <div class="preheating-room-header">出库选择</div>
+                    <div class="preheating-room-body">
+                      <el-select
+                        v-model="outboundSelectedQueue"
+                        placeholder="选择"
+                        size="mini"
+                        :disabled="isOutboundExecuting"
+                      >
+                        <el-option label="A" value="A"></el-option>
+                        <el-option label="B" value="B"></el-option>
+                        <el-option label="C" value="C"></el-option>
+                        <el-option label="D" value="D"></el-option>
+                        <el-option label="E" value="E"></el-option>
+                        <el-option label="F" value="F"></el-option>
+                        <el-option label="G" value="G"></el-option>
+                      </el-select>
+                      <el-button
+                        type="primary"
+                        size="mini"
+                        @click="handleOutboundExecute"
+                        :disabled="
+                          isOutboundExecuting || !outboundSelectedQueue
+                        "
+                        :loading="isOutboundExecuting"
+                      >
+                        执行
+                      </el-button>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="preheating-room-marker"
+                  data-x="1700"
+                  data-y="70"
+                  style="width: 100px"
+                >
+                  <div class="preheating-room-content">
+                    <div class="preheating-room-header">目的地选择</div>
+                    <div class="preheating-room-body">
+                      <el-select
+                        v-model="destinationSelected"
+                        placeholder="选择"
+                        size="mini"
+                      >
+                        <el-option label="一楼下货口" value="1"></el-option>
+                        <el-option label="二楼A解析出口" value="2"></el-option>
+                        <el-option label="二楼B解析出口" value="3"></el-option>
+                      </el-select>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1893,6 +2357,70 @@
                       </div>
                     </div>
                   </div>
+                  <!-- 入库区光电点位显示 -->
+                  <div
+                    class="marker label-top"
+                    :class="{
+                      scanning: inLoadPhotoelectricSignal.bit8 === '1'
+                    }"
+                    data-x="530"
+                    data-y="780"
+                    @click="toggleBitValue(inLoadPhotoelectricSignal, 'bit8')"
+                  >
+                    <div class="marker-label">提升机1二层检测B</div>
+                  </div>
+                  <div
+                    class="marker label-top"
+                    :class="{
+                      scanning: inLoadPhotoelectricSignal.bit9 === '1'
+                    }"
+                    data-x="580"
+                    data-y="780"
+                    @click="toggleBitValue(inLoadPhotoelectricSignal, 'bit9')"
+                  >
+                    <div class="marker-label">提升机1二层检测A</div>
+                  </div>
+                  <div
+                    class="marker label-top"
+                    :class="{
+                      scanning: inLoadPhotoelectricSignal.bit12 === '1'
+                    }"
+                    data-x="530"
+                    data-y="640"
+                    @click="toggleBitValue(inLoadPhotoelectricSignal, 'bit12')"
+                  >
+                    <div class="marker-label">提升机2二层检测B</div>
+                  </div>
+                  <div
+                    class="marker label-top"
+                    :class="{
+                      scanning: inLoadPhotoelectricSignal.bit13 === '1'
+                    }"
+                    data-x="580"
+                    data-y="640"
+                    @click="toggleBitValue(inLoadPhotoelectricSignal, 'bit13')"
+                  >
+                    <div class="marker-label">提升机2二层检测A</div>
+                  </div>
+                  <!-- 入库电机运行信号 -->
+                  <div
+                    class="motor-marker label-top"
+                    :class="{ running: inLoadMotorRunning.bit7 === '1' }"
+                    data-x="553"
+                    data-y="760"
+                    @click="toggleBitValue(inLoadMotorRunning, 'bit7')"
+                  >
+                    <div class="marker-label">S-8#</div>
+                  </div>
+                  <div
+                    class="motor-marker label-top"
+                    :class="{ running: inLoadMotorRunning.bit9 === '1' }"
+                    data-x="553"
+                    data-y="625"
+                    @click="toggleBitValue(inLoadMotorRunning, 'bit9')"
+                  >
+                    <div class="marker-label">S-10#</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2014,6 +2542,70 @@
                         </div>
                       </div>
                     </div>
+                  </div>
+                  <!-- 入库区光电点位显示 -->
+                  <div
+                    class="marker label-top"
+                    :class="{
+                      scanning: inLoadPhotoelectricSignal.bit10 === '1'
+                    }"
+                    data-x="560"
+                    data-y="500"
+                    @click="toggleBitValue(inLoadPhotoelectricSignal, 'bit10')"
+                  >
+                    <div class="marker-label">提升机1三层检测B</div>
+                  </div>
+                  <div
+                    class="marker label-top"
+                    :class="{
+                      scanning: inLoadPhotoelectricSignal.bit11 === '1'
+                    }"
+                    data-x="610"
+                    data-y="500"
+                    @click="toggleBitValue(inLoadPhotoelectricSignal, 'bit11')"
+                  >
+                    <div class="marker-label">提升机1三层检测A</div>
+                  </div>
+                  <div
+                    class="marker label-top"
+                    :class="{
+                      scanning: inLoadPhotoelectricSignal.bit14 === '1'
+                    }"
+                    data-x="560"
+                    data-y="355"
+                    @click="toggleBitValue(inLoadPhotoelectricSignal, 'bit14')"
+                  >
+                    <div class="marker-label">提升机2三层检测B</div>
+                  </div>
+                  <div
+                    class="marker label-top"
+                    :class="{
+                      scanning: inLoadPhotoelectricSignal.bit15 === '1'
+                    }"
+                    data-x="610"
+                    data-y="355"
+                    @click="toggleBitValue(inLoadPhotoelectricSignal, 'bit15')"
+                  >
+                    <div class="marker-label">提升机2三层检测A</div>
+                  </div>
+                  <!-- 入库电机运行信号 -->
+                  <div
+                    class="motor-marker label-top"
+                    :class="{ running: inLoadMotorRunning.bit8 === '1' }"
+                    data-x="583"
+                    data-y="478"
+                    @click="toggleBitValue(inLoadMotorRunning, 'bit8')"
+                  >
+                    <div class="marker-label">S-9#</div>
+                  </div>
+                  <div
+                    class="motor-marker label-top"
+                    :class="{ running: inLoadMotorRunning.bit10 === '1' }"
+                    data-x="583"
+                    data-y="340"
+                    @click="toggleBitValue(inLoadMotorRunning, 'bit10')"
+                  >
+                    <div class="marker-label">S-11#</div>
                   </div>
                 </div>
               </div>
@@ -2247,6 +2839,15 @@
                   class="qrcode-input"
                 ></el-input>
               </div>
+              <div class="qrcode-input-group">
+                <div class="qrcode-label">下货扫码信息:</div>
+                <el-input
+                  v-model="floor1OutLineTrayInfo"
+                  size="small"
+                  placeholder="输入下货扫码信息"
+                  class="qrcode-input"
+                ></el-input>
+              </div>
               <div class="qrcode-actions">
                 <el-button type="primary" size="small" @click="clearAllQrCodes"
                   >清空所有</el-button
@@ -2322,6 +2923,14 @@
                   :loading="photoelectricLoading.bit7"
                 >
                   一楼出货站台光电
+                </el-button>
+                <el-button
+                  type="success"
+                  size="small"
+                  @click="testScanPhotoelectricBit6"
+                  :loading="photoelectricLoading.bit6"
+                >
+                  测试下货扫码处光电bit6
                 </el-button>
               </div>
             </div>
@@ -2507,6 +3116,198 @@
                     size="small"
                     @click="
                       gLineQuantity.g1 = Math.max(0, gLineQuantity.g1 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">A2队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ aLineQuantity.a2 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="aLineQuantity.a2++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      aLineQuantity.a2 = Math.max(0, aLineQuantity.a2 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">A3队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ aLineQuantity.a3 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="aLineQuantity.a3++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      aLineQuantity.a3 = Math.max(0, aLineQuantity.a3 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">B3队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ bLineQuantity.b3 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="bLineQuantity.b3++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      bLineQuantity.b3 = Math.max(0, bLineQuantity.b3 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">C3队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ cLineQuantity.c3 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="cLineQuantity.c3++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      cLineQuantity.c3 = Math.max(0, cLineQuantity.c3 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">D3队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ dLineQuantity.d3 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="dLineQuantity.d3++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      dLineQuantity.d3 = Math.max(0, dLineQuantity.d3 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">E3队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ eLineQuantity.e3 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="eLineQuantity.e3++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      eLineQuantity.e3 = Math.max(0, eLineQuantity.e3 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">F3队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ fLineQuantity.f3 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="fLineQuantity.f3++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      fLineQuantity.f3 = Math.max(0, fLineQuantity.f3 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">G3队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ gLineQuantity.g3 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="gLineQuantity.g3++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      gLineQuantity.g3 = Math.max(0, gLineQuantity.g3 - 1)
                     "
                     style="margin-left: 5px"
                   >
@@ -2848,7 +3649,7 @@ export default {
         { id: 20, name: 'E3', queueId: 20, x: 612, y: 680 },
         { id: 21, name: 'F3', queueId: 21, x: 484, y: 680 },
         { id: 22, name: 'G3', queueId: 22, x: 333, y: 680 },
-        { id: 23, name: '下货区', queueId: 23, x: 1235, y: 145 }
+        { id: 23, name: '下货区', queueId: 23, x: 1580, y: 220 }
       ],
       logId: 1000, // 添加一个日志ID计数器
       // 输送线当前运行状态-读取PLC
@@ -3130,7 +3931,69 @@ export default {
       floor3ALineTrayInfo: '',
       // 三楼B接货站台扫码数据（托盘号）-读取PLC
       floor3BLineTrayInfo: '',
-      // 预热房前缓存线请求目的地
+      // 入库区光电点位显示
+      inLoadPhotoelectricSignal: {
+        bit0: '0',
+        bit1: '0',
+        bit2: '0',
+        bit3: '0',
+        bit4: '0',
+        bit5: '0',
+        bit6: '0',
+        bit7: '0',
+        bit8: '0',
+        bit9: '0',
+        bit10: '0',
+        bit11: '0',
+        bit12: '0',
+        bit13: '0',
+        bit14: '0',
+        bit15: '0'
+      },
+      // 入库电机运行信号
+      inLoadMotorRunning: {
+        bit0: '0',
+        bit1: '0',
+        bit2: '0',
+        bit3: '0',
+        bit4: '0',
+        bit5: '0',
+        bit6: '0',
+        bit7: '0',
+        bit8: '0',
+        bit9: '0',
+        bit10: '0'
+      },
+      // 出库区光电点位显示
+      outLoadPhotoelectricSignal: {
+        bit0: '0',
+        bit1: '0',
+        bit2: '0',
+        bit3: '0',
+        bit4: '0',
+        bit5: '0',
+        bit6: '0',
+        bit7: '0',
+        bit8: '0',
+        bit9: '0',
+        bit10: '0',
+        bit11: '0'
+      },
+      // 出库电机运行信号
+      outLoadMotorRunning: {
+        bit0: '0',
+        bit1: '0',
+        bit2: '0',
+        bit3: '0',
+        bit4: '0',
+        bit5: '0',
+        bit6: '0',
+        bit7: '0',
+        bit8: '0',
+        bit9: '0',
+        bit10: '0'
+      },
+      // 请求上位机下发任务-读取PLC
       requestDestination: '',
       // 小车位置数值-读取PLC
       cartPositionValues: {
@@ -3162,7 +4025,18 @@ export default {
         bit7: false
       },
       // 当前订单已上货托盘计数器
-      currentOrderScannedCount: 0
+      currentOrderScannedCount: 0,
+      // 灭菌出发地
+      disinfectionRoomSelectedFrom: '',
+      // 灭菌目的地
+      disinfectionRoomSelectedTo: '',
+      isDisinfectionExecuting: false,
+      // 出库选择的队列
+      outboundSelectedQueue: '',
+      // 出库执行状态
+      isOutboundExecuting: false,
+      // 目的地选择
+      destinationSelected: ''
     };
   },
   computed: {
@@ -3450,6 +4324,68 @@ export default {
       this.scanPhotoelectricSignal.bit6 = getBit(word92, 14);
       this.scanPhotoelectricSignal.bit7 = getBit(word92, 15);
 
+      // 入库区光电点位显示
+      let word340 = this.convertToWord(values.DBW340);
+      this.inLoadPhotoelectricSignal.bit0 = getBit(word340, 8);
+      this.inLoadPhotoelectricSignal.bit1 = getBit(word340, 9);
+      this.inLoadPhotoelectricSignal.bit2 = getBit(word340, 10);
+      this.inLoadPhotoelectricSignal.bit3 = getBit(word340, 11);
+      this.inLoadPhotoelectricSignal.bit4 = getBit(word340, 12);
+      this.inLoadPhotoelectricSignal.bit5 = getBit(word340, 13);
+      this.inLoadPhotoelectricSignal.bit6 = getBit(word340, 14);
+      this.inLoadPhotoelectricSignal.bit7 = getBit(word340, 15);
+      this.inLoadPhotoelectricSignal.bit8 = getBit(word340, 0);
+      this.inLoadPhotoelectricSignal.bit9 = getBit(word340, 1);
+      this.inLoadPhotoelectricSignal.bit10 = getBit(word340, 2);
+      this.inLoadPhotoelectricSignal.bit11 = getBit(word340, 3);
+      this.inLoadPhotoelectricSignal.bit12 = getBit(word340, 4);
+      this.inLoadPhotoelectricSignal.bit13 = getBit(word340, 5);
+      this.inLoadPhotoelectricSignal.bit14 = getBit(word340, 6);
+      this.inLoadPhotoelectricSignal.bit15 = getBit(word340, 7);
+
+      // 入库电机运行信号
+      let word342 = this.convertToWord(values.DBW342);
+      this.inLoadMotorRunning.bit0 = getBit(word342, 8);
+      this.inLoadMotorRunning.bit1 = getBit(word342, 9);
+      this.inLoadMotorRunning.bit2 = getBit(word342, 10);
+      this.inLoadMotorRunning.bit3 = getBit(word342, 11);
+      this.inLoadMotorRunning.bit4 = getBit(word342, 12);
+      this.inLoadMotorRunning.bit5 = getBit(word342, 13);
+      this.inLoadMotorRunning.bit6 = getBit(word342, 14);
+      this.inLoadMotorRunning.bit7 = getBit(word342, 15);
+      this.inLoadMotorRunning.bit8 = getBit(word342, 0);
+      this.inLoadMotorRunning.bit9 = getBit(word342, 1);
+      this.inLoadMotorRunning.bit10 = getBit(word342, 2);
+
+      // 出库区光电点位显示
+      let word344 = this.convertToWord(values.DBW344);
+      this.outLoadPhotoelectricSignal.bit0 = getBit(word344, 8);
+      this.outLoadPhotoelectricSignal.bit1 = getBit(word344, 9);
+      this.outLoadPhotoelectricSignal.bit2 = getBit(word344, 10);
+      this.outLoadPhotoelectricSignal.bit3 = getBit(word344, 11);
+      this.outLoadPhotoelectricSignal.bit4 = getBit(word344, 12);
+      this.outLoadPhotoelectricSignal.bit5 = getBit(word344, 13);
+      this.outLoadPhotoelectricSignal.bit6 = getBit(word344, 14);
+      this.outLoadPhotoelectricSignal.bit7 = getBit(word344, 15);
+      this.outLoadPhotoelectricSignal.bit8 = getBit(word344, 0);
+      this.outLoadPhotoelectricSignal.bit9 = getBit(word344, 1);
+      this.outLoadPhotoelectricSignal.bit10 = getBit(word344, 2);
+      this.outLoadPhotoelectricSignal.bit11 = getBit(word344, 3);
+
+      // 出库电机运行信号
+      let word346 = this.convertToWord(values.DBW346);
+      this.outLoadMotorRunning.bit0 = getBit(word346, 8);
+      this.outLoadMotorRunning.bit1 = getBit(word346, 9);
+      this.outLoadMotorRunning.bit2 = getBit(word346, 10);
+      this.outLoadMotorRunning.bit3 = getBit(word346, 11);
+      this.outLoadMotorRunning.bit4 = getBit(word346, 12);
+      this.outLoadMotorRunning.bit5 = getBit(word346, 13);
+      this.outLoadMotorRunning.bit6 = getBit(word346, 14);
+      this.outLoadMotorRunning.bit7 = getBit(word346, 15);
+      this.outLoadMotorRunning.bit8 = getBit(word346, 0);
+      this.outLoadMotorRunning.bit9 = getBit(word346, 1);
+      this.outLoadMotorRunning.bit10 = getBit(word346, 2);
+
       // 下线扫码枪处，申请扫码
       this.upLineScanPhotoelectricSignal = Number(values.DBW94);
 
@@ -3528,6 +4464,34 @@ export default {
     // 监听G1队列数量变化
     'gLineQuantity.g1'(newVal, oldVal) {
       this.handleQueueQuantityChange('g1', newVal, oldVal);
+    },
+    // 监听A2队列数量变化
+    'aLineQuantity.a2'(newVal, oldVal) {
+      this.handleLevel2QueueQuantityChange('a2', newVal, oldVal);
+    },
+    // 监听B2队列数量变化
+    'bLineQuantity.b2'(newVal, oldVal) {
+      this.handleLevel2QueueQuantityChange('b2', newVal, oldVal);
+    },
+    // 监听C2队列数量变化
+    'cLineQuantity.c2'(newVal, oldVal) {
+      this.handleLevel2QueueQuantityChange('c2', newVal, oldVal);
+    },
+    // 监听D2队列数量变化
+    'dLineQuantity.d2'(newVal, oldVal) {
+      this.handleLevel2QueueQuantityChange('d2', newVal, oldVal);
+    },
+    // 监听E2队列数量变化
+    'eLineQuantity.e2'(newVal, oldVal) {
+      this.handleLevel2QueueQuantityChange('e2', newVal, oldVal);
+    },
+    // 监听F2队列数量变化
+    'fLineQuantity.f2'(newVal, oldVal) {
+      this.handleLevel2QueueQuantityChange('f2', newVal, oldVal);
+    },
+    // 监听G2队列数量变化
+    'gLineQuantity.g2'(newVal, oldVal) {
+      this.handleLevel2QueueQuantityChange('g2', newVal, oldVal);
     },
     // 一楼接货站台"有载信号"/光电占位
     'scanPhotoelectricSignal.bit0'(newVal) {
@@ -3623,7 +4587,9 @@ export default {
             inPut: this.currentOrder.inPut || '',
             productName: this.currentOrder.productName || '',
             productCode: this.currentOrder.productCode || '',
-            hasSentPreheatCommand: false // 添加标识字段，表示是否已发送预热房命令
+            hasSentPreheatCommand: false, // 添加标识字段，表示是否已发送预热房命令
+            // 订单托盘数量,计算方式： this.currentOrder.qrCode字段，每个托盘号使用英文逗号间隔。计算托盘数量。
+            trayOrderCount: this.currentOrder.qrCode.split(',').length
           };
 
           // 确保trayInfo是数组
@@ -3686,14 +4652,29 @@ export default {
         }
 
         const currentOrderId = firstUnprocessedTray.orderId;
+        const trayOrderCount = firstUnprocessedTray.trayOrderCount;
 
-        // 统计当前订单在上货区的托盘数量（只统计未发送过预热房命令的托盘）
-        const sameOrderTrayCount = this.queues[0].trayInfo.filter(
-          (tray) =>
-            tray.orderId === currentOrderId && !tray.hasSentPreheatCommand
-        ).length;
+        // 新逻辑：遍历所有队列，查找orderId与当前托盘相同且hasSentPreheatCommand为true的托盘数量
+        let sentCount = 0;
+        this.queues.forEach((queue) => {
+          if (Array.isArray(queue.trayInfo)) {
+            sentCount += queue.trayInfo.filter(
+              (tray) =>
+                tray.orderId === currentOrderId && tray.hasSentPreheatCommand
+            ).length;
+          }
+        });
+        // 判断是否为尾托盘
+        const isLastTray = sentCount + 1 === trayOrderCount;
 
-        const isLastTray = sameOrderTrayCount === 1;
+        // 输出一下当前发送命令的托盘的订单托盘数量和已发送托盘数量，以及本托盘是不是最后一个托盘
+        this.addLog(
+          `当前托盘：${
+            firstUnprocessedTray.trayCode
+          }，订单号：${currentOrderId}，订单托盘数量：${trayOrderCount}，已发送托盘数量：${sentCount}，本托盘${
+            isLastTray ? '是' : '不是'
+          }尾托盘`
+        );
 
         // 3、判断完是否为本订单最后一个托盘后，给PLC发送，对应预热房命令
         const isPrint1 = firstUnprocessedTray.isPrint1 || '';
@@ -3746,147 +4727,147 @@ export default {
       }
     },
     'queues.1.trayInfo': {
-      // 监听分发区 (ID: 2)
+      // 监听A1 (ID: 2)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(2);
       }
     },
     'queues.2.trayInfo': {
-      // 监听缓存区 (ID: 3)
+      // 监听B1 (ID: 3)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(3);
       }
     },
     'queues.3.trayInfo': {
-      // 监听 A1 (ID: 4)
+      // 监听 C1 (ID: 4)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(4);
       }
     },
     'queues.4.trayInfo': {
-      // 监听 B1 (ID: 5)
+      // 监听 D1 (ID: 5)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(5);
       }
     },
     'queues.5.trayInfo': {
-      // 监听 C1 (ID: 6)
+      // 监听 E1 (ID: 6)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(6);
       }
     },
     'queues.6.trayInfo': {
-      // 监听 A2 (ID: 7)
+      // 监听 F1 (ID: 7)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(7);
       }
     },
     'queues.7.trayInfo': {
-      // 监听 B2 (ID: 8)
+      // 监听 G1 (ID: 8)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(8);
       }
     },
     'queues.8.trayInfo': {
-      // 监听 C2 (ID: 9)
+      // 监听 A2 (ID: 9)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(9);
       }
     },
     'queues.9.trayInfo': {
-      // 监听 A3 (ID: 10)
+      // 监听 B2 (ID: 10)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(10);
       }
     },
     'queues.10.trayInfo': {
-      // 监听 B3 (ID: 11)
+      // 监听 C2 (ID: 11)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(11);
       }
     },
     'queues.11.trayInfo': {
-      // 监听 C3 (ID: 12)
+      // 监听 D2 (ID: 12)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(12);
       }
     },
     'queues.12.trayInfo': {
-      // 监听 D (ID: 13)
+      // 监听 E2 (ID: 13)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(13);
       }
     },
     'queues.13.trayInfo': {
-      // 监听 E (ID: 14)
+      // 监听 F2 (ID: 14)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(14);
       }
     },
     'queues.14.trayInfo': {
-      // 监听非灭菌缓存区 (ID: 15)
+      // 监听 G2 (ID: 15)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(15);
       }
     },
     'queues.15.trayInfo': {
-      // 监听下货区 (ID: 16)
+      // 监听 A3 (ID: 16)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(16);
       }
     },
     'queues.16.trayInfo': {
-      // 监听下货区 (ID: 17)
+      // 监听 B3 (ID: 17)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(17);
       }
     },
     'queues.17.trayInfo': {
-      // 监听下货区 (ID: 18)
+      // 监听 C3 (ID: 18)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(18);
       }
     },
     'queues.18.trayInfo': {
-      // 监听下货区 (ID: 19)
+      // 监听 D3 (ID: 19)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(19);
       }
     },
     'queues.19.trayInfo': {
-      // 监听下货区 (ID: 20)
+      // 监听 E3 (ID: 20)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(20);
       }
     },
     'queues.20.trayInfo': {
-      // 监听下货区 (ID: 21)
+      // 监听 F3 (ID: 21)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(21);
       }
     },
     'queues.21.trayInfo': {
-      // 监听下货区 (ID: 22)
+      // 监听 G3 (ID: 22)
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(22);
@@ -3897,6 +4878,33 @@ export default {
       deep: true,
       handler(newVal, oldVal) {
         this.updateQueueInfo(23);
+      }
+    },
+    'aLineQuantity.a3'(newVal, oldVal) {
+      this.handleDisinfectionQueueChange('A3', newVal, oldVal);
+    },
+    'bLineQuantity.b3'(newVal, oldVal) {
+      this.handleDisinfectionQueueChange('B3', newVal, oldVal);
+    },
+    'cLineQuantity.c3'(newVal, oldVal) {
+      this.handleDisinfectionQueueChange('C3', newVal, oldVal);
+    },
+    'dLineQuantity.d3'(newVal, oldVal) {
+      this.handleDisinfectionQueueChange('D3', newVal, oldVal);
+    },
+    'eLineQuantity.e3'(newVal, oldVal) {
+      this.handleDisinfectionQueueChange('E3', newVal, oldVal);
+    },
+    'fLineQuantity.f3'(newVal, oldVal) {
+      this.handleDisinfectionQueueChange('F3', newVal, oldVal);
+    },
+    'gLineQuantity.g3'(newVal, oldVal) {
+      this.handleDisinfectionQueueChange('G3', newVal, oldVal);
+    },
+    // 监听下货扫码处光电信号
+    'scanPhotoelectricSignal.bit6'(newVal) {
+      if (newVal === '1') {
+        this.handleDownLoadScan();
       }
     }
     // ---- 监听指定队列的 trayInfo 变化结束 ----
@@ -4120,16 +5128,12 @@ export default {
         const availableTrays = uploadQueue.trayInfo || [];
 
         if (availableTrays.length >= increaseCount) {
-          // 从上货区移除托盘并添加到目标队列
-          for (let i = 0; i < increaseCount; i++) {
-            const tray = availableTrays.shift(); // 移除第一个托盘
-            if (tray) {
-              if (!targetQueue.trayInfo) {
-                targetQueue.trayInfo = [];
-              }
-              targetQueue.trayInfo.push(tray);
-            }
+          // 批量移除托盘并添加到目标队列
+          const traysToMove = availableTrays.splice(0, increaseCount);
+          if (!targetQueue.trayInfo) {
+            targetQueue.trayInfo = [];
           }
+          targetQueue.trayInfo.push(...traysToMove);
 
           this.addLog(
             `${queueName.toUpperCase()}队列数量增加${increaseCount}，已从上货区移动${increaseCount}个托盘`
@@ -4147,23 +5151,68 @@ export default {
           }
           targetQueue.trayInfo.push(...remainingTrays);
         }
-      } else if (newVal < oldVal) {
-        // 数量减少，直接删除对应数量的托盘
-        const decreaseCount = oldVal - newVal;
-        const currentTrays = targetQueue.trayInfo || [];
+      }
+    },
+    // 处理*2队列数量变化的方法
+    handleLevel2QueueQuantityChange(queueName, newVal, oldVal) {
+      // 获取对应的队列索引
+      const queueIndexMap = {
+        a2: 8, // A2队列索引为8
+        b2: 9, // B2队列索引为9
+        c2: 10, // C2队列索引为10
+        d2: 11, // D2队列索引为11
+        e2: 12, // E2队列索引为12
+        f2: 13, // F2队列索引为13
+        g2: 14 // G2队列索引为14
+      };
 
-        if (currentTrays.length >= decreaseCount) {
-          // 删除对应数量的托盘
-          targetQueue.trayInfo.splice(0, decreaseCount);
+      const queueIndex = queueIndexMap[queueName];
+      if (queueIndex === undefined) return;
+
+      // 获取对应*1队列的索引
+      const sourceQueueIndexMap = {
+        a2: 1, // A2对应A1
+        b2: 2, // B2对应B1
+        c2: 3, // C2对应C1
+        d2: 4, // D2对应D1
+        e2: 5, // E2对应E1
+        f2: 6, // F2对应F1
+        g2: 7 // G2对应G1
+      };
+
+      const targetQueue = this.queues[queueIndex];
+      const sourceQueue = this.queues[sourceQueueIndexMap[queueName]]; // 对应的*1队列
+
+      if (newVal > oldVal) {
+        // 数量增加，从*1队列挪托盘数据
+        const increaseCount = newVal - oldVal;
+        const availableTrays = sourceQueue.trayInfo || [];
+
+        if (availableTrays.length >= increaseCount) {
+          // 批量移除托盘并添加到目标队列
+          const traysToMove = availableTrays.splice(0, increaseCount);
+          if (!targetQueue.trayInfo) {
+            targetQueue.trayInfo = [];
+          }
+          targetQueue.trayInfo.push(...traysToMove);
+
           this.addLog(
-            `${queueName.toUpperCase()}队列数量减少${decreaseCount}，已删除${decreaseCount}个托盘`
+            `${queueName.toUpperCase()}队列数量增加${increaseCount}，已从${
+              sourceQueue.queueName
+            }移动${increaseCount}个托盘`
           );
         } else {
-          // 删除所有托盘
-          targetQueue.trayInfo = [];
           this.addLog(
-            `${queueName.toUpperCase()}队列数量减少${decreaseCount}，已删除所有托盘`
+            `${queueName.toUpperCase()}队列数量增加${increaseCount}，但${
+              sourceQueue.queueName
+            }托盘不足，仅移动${availableTrays.length}个托盘`
           );
+          // 移动所有可用的托盘
+          const remainingTrays = availableTrays.splice(0);
+          if (!targetQueue.trayInfo) {
+            targetQueue.trayInfo = [];
+          }
+          targetQueue.trayInfo.push(...remainingTrays);
         }
       }
     },
@@ -4208,7 +5257,7 @@ export default {
         if (!imageWrapper) return;
 
         const markers = imageWrapper.querySelectorAll(
-          '.marker, .marker-with-panel, .queue-marker, .motor-marker'
+          '.marker, .marker-with-panel, .queue-marker, .motor-marker, .preheating-room-marker'
         );
         const carts = imageWrapper.querySelectorAll('.cart-container');
         const wrapperRect = imageWrapper.getBoundingClientRect();
@@ -4600,6 +5649,7 @@ export default {
       this.floor3BLineTrayInfo = '';
       this.floor1InLineTrayInfo = '';
       this.floor1UpLineTrayInfo = '';
+      this.floor1OutLineTrayInfo = '';
     },
     // 触发光电信号测试
     triggerPhotoelectricSignal(bit) {
@@ -4926,6 +5976,213 @@ export default {
           this.$message.error('加载队列信息失败: ' + err);
           this.addLog('队列信息加载失败');
         });
+    },
+    handleDisinfectionRoomExecute() {
+      // 预热房编号映射
+      const fromMap = { A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, '': 0 };
+      const toMap = { A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, '': 0 };
+      const fromValue = fromMap[this.disinfectionRoomSelectedFrom] || 0;
+      const toValue = toMap[this.disinfectionRoomSelectedTo] || 0;
+      this.addLog(
+        `预热房选择：${this.disinfectionRoomSelectedFrom}，发送DBW526值：${fromValue}`
+      );
+      this.addLog(
+        `灭菌柜选择：${this.disinfectionRoomSelectedTo}，发送DBW528值：${toValue}`
+      );
+      ipcRenderer.send('writeSingleValueToPLC', 'DBW526', fromValue);
+      ipcRenderer.send('writeSingleValueToPLC', 'DBW528', toValue);
+      this.isDisinfectionExecuting = true;
+    },
+    finishDisinfectionMove() {
+      this.isDisinfectionExecuting = false;
+      this.$message.success('托盘已移入目标灭菌柜队列，可继续操作');
+    },
+    handleDisinfectionQueueChange(queueName, newVal, oldVal) {
+      if (!this.isDisinfectionExecuting) return;
+      // 灭菌柜选择和队列名一致才处理
+      if (queueName[0] === this.disinfectionRoomSelectedTo) {
+        if (newVal > oldVal) {
+          // 计算需要移动的托盘数量
+          const moveCount = newVal - oldVal;
+          // 预热房A2-G2队列索引为8~14
+          const preheatIndex =
+            8 + 'ABCDEFG'.indexOf(this.disinfectionRoomSelectedFrom);
+
+          // 检查预热房是否有足够的托盘
+          const availableTrays = this.queues[preheatIndex].trayInfo || [];
+          if (availableTrays.length < moveCount) {
+            this.addLog(
+              `预热房${this.disinfectionRoomSelectedFrom}托盘不足，需要${moveCount}个，实际只有${availableTrays.length}个`
+            );
+            return;
+          }
+
+          // 根据变化数量移动对应数量的托盘
+          const traysToMove = this.queues[preheatIndex].trayInfo.splice(
+            0,
+            moveCount
+          );
+          // 根据灭菌柜选择确定目标队列，A3-G3队列索引为15~21
+          const targetIndex = 15 + 'ABCDEFG'.indexOf(queueName[0]);
+          if (!this.queues[targetIndex].trayInfo)
+            this.queues[targetIndex].trayInfo = [];
+          this.queues[targetIndex].trayInfo.push(...traysToMove);
+          this.addLog(
+            `已将${traysToMove.length}个托盘从${this.disinfectionRoomSelectedFrom}预热房移到${queueName}`
+          );
+          this.finishDisinfectionMove();
+        }
+      }
+    },
+    // 出库选择执行逻辑
+    handleOutboundExecute() {
+      if (!this.outboundSelectedQueue) {
+        this.$message.warning('请选择要出库的队列');
+        return;
+      }
+
+      this.isOutboundExecuting = true;
+
+      // 根据选择的队列给PLC发送对应命令
+      // 根据图片协议：00无灭菌柜启用出货，01灭菌柜A启用出货...07灭菌柜G启用出货
+      const queueCommandMap = {
+        A: '01',
+        B: '02',
+        C: '03',
+        D: '04',
+        E: '05',
+        F: '06',
+        G: '07'
+      };
+
+      const commandValue = queueCommandMap[this.outboundSelectedQueue] || '00';
+
+      // 发送PLC命令 - 根据协议图片，使用DBW530地址
+      ipcRenderer.send(
+        'writeSingleValueToPLC',
+        'DBW530',
+        parseInt(commandValue)
+      );
+
+      this.addLog(
+        `出库选择执行：队列${this.outboundSelectedQueue}，发送命令值：${commandValue}到PLC地址DBW530`
+      );
+
+      // 1秒后重置执行状态
+      setTimeout(() => {
+        this.isOutboundExecuting = false;
+        this.$message.success(
+          `${this.outboundSelectedQueue}队列出库命令已发送`
+        );
+      }, 1000);
+    },
+    // 处理下货扫码逻辑
+    handleDownLoadScan() {
+      this.addLog('检测到下货扫码处光电信号，开始处理下货扫码逻辑');
+
+      // 1、读取下货扫码的条码
+      const scanCode = this.floor1OutLineTrayInfo;
+
+      if (!scanCode || scanCode === '' || scanCode.toLowerCase() === 'noread') {
+        this.addLog('下货扫码条码异常或为空，无法处理');
+        return;
+      }
+
+      this.addLog(`读取到下货条码：${scanCode}`);
+
+      // 2、通过下货条码的托盘码，查找A3-G3队列符合的托盘
+      const targetQueues = [15, 16, 17, 18, 19, 20, 21]; // A3-G3队列索引
+      let foundTray = null;
+      let sourceQueueIndex = -1;
+
+      for (let queueIndex of targetQueues) {
+        const queue = this.queues[queueIndex];
+        if (queue.trayInfo && Array.isArray(queue.trayInfo)) {
+          const trayIndex = queue.trayInfo.findIndex(
+            (tray) => tray.trayCode === scanCode
+          );
+
+          if (trayIndex !== -1) {
+            foundTray = queue.trayInfo[trayIndex];
+            sourceQueueIndex = queueIndex;
+            break;
+          }
+        }
+      }
+
+      if (!foundTray) {
+        this.addLog(`在A3-G3队列中未找到匹配的托盘：${scanCode}`);
+        return;
+      }
+
+      this.addLog(
+        `在队列${this.queues[sourceQueueIndex].queueName}中找到匹配托盘：${scanCode}`
+      );
+
+      // 3、根据目的地选择给PLC发送下发目的地命令
+      if (!this.destinationSelected) {
+        this.addLog('目的地未选择，无法发送目的地命令');
+        return;
+      }
+
+      // 根据图片协议：01一楼下货口，02二楼A解析出口，03二楼B解析出口
+      const destinationValue = this.destinationSelected;
+
+      // 发送目的地命令到PLC - 根据协议图片，使用DBW542地址
+      ipcRenderer.send(
+        'writeSingleValueToPLC',
+        'DBW542',
+        parseInt(destinationValue)
+      );
+
+      this.addLog(
+        `发送目的地命令：${this.getDestinationText(
+          destinationValue
+        )}，命令值：${destinationValue}到PLC地址DBW542`
+      );
+
+      // 4、把找到的托盘移到下货区队列去
+      const downLoadQueue = this.queues[22]; // 下货区队列索引为22
+
+      // 从源队列中移除托盘
+      this.queues[sourceQueueIndex].trayInfo.splice(
+        this.queues[sourceQueueIndex].trayInfo.findIndex(
+          (t) => t.trayCode === scanCode
+        ),
+        1
+      );
+
+      // 添加到下货区队列
+      if (!downLoadQueue.trayInfo) {
+        downLoadQueue.trayInfo = [];
+      }
+      downLoadQueue.trayInfo.push(foundTray);
+
+      this.addLog(
+        `托盘${scanCode}已从${this.queues[sourceQueueIndex].queueName}移动到下货区队列`
+      );
+    },
+    // 获取目的地文本描述
+    getDestinationText(value) {
+      const destinationMap = {
+        1: '一楼下货口',
+        2: '二楼A解析出口',
+        3: '二楼B解析出口'
+      };
+      return destinationMap[value] || '未知目的地';
+    },
+    // 测试按钮：触发scanPhotoelectricSignal.bit6
+    testScanPhotoelectricBit6() {
+      this.addLog('测试按钮触发：下货扫码处光电信号bit6');
+
+      // 设置bit6为1
+      this.scanPhotoelectricSignal.bit6 = '1';
+
+      // 1秒后恢复为0
+      setTimeout(() => {
+        this.scanPhotoelectricSignal.bit6 = '0';
+        this.addLog('下货扫码处光电信号bit6已恢复为0');
+      }, 1000);
     }
   }
 };
@@ -5757,14 +7014,14 @@ export default {
               /* 带数据面板的标识点样式 */
               .marker-with-panel {
                 position: absolute;
-                width: 12px;
-                height: 12px;
+                width: 16px;
+                height: 16px;
                 transform: translate(-50%, -50%);
                 cursor: pointer;
                 z-index: 2;
                 .data-panel {
                   position: absolute;
-                  background: rgba(30, 42, 56, 0.95);
+                  background: linear-gradient(135deg, #0e1a27, #3c4c63);
                   border: 1px solid rgba(64, 158, 255, 0.3);
                   border-radius: 8px;
                   padding: 12px;
@@ -5777,8 +7034,8 @@ export default {
                   .data-panel-header {
                     font-size: 14px;
                     color: #409eff;
-                    margin-bottom: 8px;
-                    padding-bottom: 8px;
+                    margin-bottom: 6px;
+                    padding-bottom: 6px;
                     border-bottom: 1px solid rgba(64, 158, 255, 0.2);
                   }
                   .data-panel-content {
@@ -5786,7 +7043,6 @@ export default {
                     .data-panel-row {
                       display: flex;
                       justify-content: space-between;
-                      margin-bottom: 6px;
                       color: rgba(255, 255, 255, 0.9);
                       .data-panel-label {
                         color: rgba(255, 255, 255, 0.6);
@@ -5819,6 +7075,7 @@ export default {
                 /* 始终显示的面板 */
                 .data-panel.always-show {
                   opacity: 1;
+                  pointer-events: auto; /* 重新启用指针事件 */
                 }
                 /* 竖向布局样式 */
                 .data-panel.vertical-layout {
@@ -5836,10 +7093,62 @@ export default {
                   }
                 }
               }
-
               /* 悬停时显示面板 */
               .marker-with-panel:hover .data-panel:not(.always-show) {
                 opacity: 1;
+              }
+              /* 预热房选择样式 */
+              .preheating-room-marker {
+                position: absolute;
+                transform: translate(-50%, -50%);
+                z-index: 10;
+                background: linear-gradient(135deg, #005aff 0%, #000000 100%);
+                border-radius: 5px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+                overflow: hidden;
+                width: 80px;
+                .preheating-room-content {
+                  display: flex;
+                  flex-direction: column;
+                  width: 100%;
+                  .preheating-room-header {
+                    width: 100%;
+                    text-align: center;
+                    padding: 4px 0;
+                    font-size: 11px;
+                    color: white;
+                    background-color: rgba(0, 0, 0, 0.2);
+                    font-weight: bold;
+                  }
+                  .preheating-room-body {
+                    padding: 6px 8px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 6px;
+                  }
+                }
+              }
+              .preheating-room-marker :deep(.el-select) {
+                width: 100%;
+              }
+              .preheating-room-marker :deep(.el-input__inner) {
+                background-color: rgba(255, 255, 255, 0.15);
+                border-color: rgba(255, 255, 255, 0.2);
+                color: #fff;
+                height: 24px;
+                line-height: 24px;
+                font-size: 11px;
+                border-radius: 3px;
+                padding: 0 8px;
+              }
+              .preheating-room-marker :deep(.el-button) {
+                background-color: rgba(255, 255, 255, 0.2);
+                border-color: rgba(255, 255, 255, 0.3);
+                font-size: 11px;
+                height: 24px;
+                width: 100%;
+                padding: 4px 8px;
               }
             }
           }
