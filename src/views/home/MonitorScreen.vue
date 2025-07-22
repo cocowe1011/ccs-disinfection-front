@@ -6118,7 +6118,8 @@ export default {
       const scanCode = this.floor1OutLineTrayInfo;
 
       if (!scanCode || scanCode === '' || scanCode.toLowerCase() === 'noread') {
-        this.addLog('下货扫码条码异常或为空，无法处理');
+        ipcRenderer.send('writeSingleValueToPLC', 'DBW592', 10);
+        this.addLog('下货扫码条码异常或为空，无法处理，已发送报警信号');
         return;
       }
 
@@ -6145,7 +6146,10 @@ export default {
       }
 
       if (!foundTray) {
-        this.addLog(`在A3-G3队列中未找到匹配的托盘：${scanCode}`);
+        this.addLog(
+          `在A3-G3队列中未找到匹配的托盘：${scanCode}，已发送报警信号`
+        );
+        ipcRenderer.send('writeSingleValueToPLC', 'DBW592', 10);
         return;
       }
 
@@ -6156,6 +6160,7 @@ export default {
       // 3、根据目的地选择给PLC发送下发目的地命令
       if (!this.destinationSelected) {
         this.addLog('目的地未选择，无法发送目的地命令');
+        ipcRenderer.send('writeSingleValueToPLC', 'DBW592', 10);
         return;
       }
 
@@ -6168,11 +6173,12 @@ export default {
         'DBW542',
         parseInt(destinationValue)
       );
+      ipcRenderer.send('writeSingleValueToPLC', 'DBW592', 11);
 
       this.addLog(
         `发送目的地命令：${this.getDestinationText(
           destinationValue
-        )}，命令值：${destinationValue}到PLC地址DBW542`
+        )}，命令值：${destinationValue}到PLC地址DBW542，已给PLC发送DBW592扫码反馈通行11命令`
       );
 
       // 4、把找到的托盘移到下货区队列去
