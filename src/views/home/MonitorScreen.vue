@@ -2525,7 +2525,7 @@
                   <div
                     class="marker-with-panel"
                     data-x="650"
-                    data-y="402"
+                    data-y="415"
                     v-show="currentOrder && currentOrder.inPut === '3'"
                   >
                     <div class="pulse"></div>
@@ -4923,6 +4923,210 @@ export default {
     },
     'gLineQuantity.g3'(newVal, oldVal) {
       this.handleDisinfectionQueueChange('G3', newVal, oldVal);
+    },
+    // 二楼A接货站台"有载信号"/光电占位
+    'scanPhotoelectricSignal.bit2'(newVal) {
+      // 当值变为1时执行逻辑
+      if (newVal === '1') {
+        // 1、先判断条码状态是否不为空串 或者 不为NoRead
+        if (
+          !this.floor2ALineTrayInfo ||
+          this.floor2ALineTrayInfo === '' ||
+          this.floor2ALineTrayInfo.toLowerCase() === 'noread'
+        ) {
+          // 2、如果异常，直接给PLC发送二楼A接货口禁用命令DBW514：1
+          ipcRenderer.send('writeValuesToPLC', 'DBW514', 1);
+          // 发送进货异常报警DB101.DBW584
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW584', 10);
+          this.addLog('二楼A接货口条码异常，已禁用接货口');
+          return;
+        }
+
+        // 3、如果正常，先判断当前有没有正在执行的订单
+        if (!this.currentOrder) {
+          // 没有正在执行的订单，禁用接货口
+          ipcRenderer.send('writeValuesToPLC', 'DBW514', 1);
+          // 发送进货异常报警DB101.DBW584
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW584', 10);
+          this.addLog('当前无执行订单，已禁用二楼A接货口');
+          return;
+        }
+
+        // 4、判断floor2ALineTrayInfo读到的条码是否属于当前执行订单
+        if (
+          this.currentOrder.qrCode &&
+          this.currentOrder.qrCode.includes(this.floor2ALineTrayInfo)
+        ) {
+          // 如果属于当前订单，给PLC发送二楼A接货口启用命令DBW514：0
+          ipcRenderer.send('writeValuesToPLC', 'DBW514', 0);
+          // 使用新的单次写入方法，写入DB101.DBW584值为11，1秒内发送3次
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW584', 11);
+          this.addLog(
+            `托盘${this.floor2ALineTrayInfo}属于当前订单，已启用二楼A接货口，给PLC发送DBW584值为11`
+          );
+        } else {
+          // 如果不属于当前订单，直接给PLC发送二楼A接货口禁用命令DBW514：1
+          ipcRenderer.send('writeValuesToPLC', 'DBW514', 1);
+          // 发送进货异常报警DB101.DBW584
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW584', 10);
+          this.addLog(
+            `托盘${this.floor2ALineTrayInfo}不属于当前订单，已禁用二楼A接货口`
+          );
+        }
+      }
+    },
+    // 二楼B接货站台"有载信号"/光电占位
+    'scanPhotoelectricSignal.bit3'(newVal) {
+      // 当值变为1时执行逻辑
+      if (newVal === '1') {
+        // 1、先判断条码状态是否不为空串 或者 不为NoRead
+        if (
+          !this.floor2BLineTrayInfo ||
+          this.floor2BLineTrayInfo === '' ||
+          this.floor2BLineTrayInfo.toLowerCase() === 'noread'
+        ) {
+          // 2、如果异常，直接给PLC发送二楼B接货口禁用命令DBW516：1
+          ipcRenderer.send('writeValuesToPLC', 'DBW516', 1);
+          // 发送进货异常报警DB101.DBW586
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW586', 10);
+          this.addLog('二楼B接货口条码异常，已禁用接货口');
+          return;
+        }
+
+        // 3、如果正常，先判断当前有没有正在执行的订单
+        if (!this.currentOrder) {
+          // 没有正在执行的订单，禁用接货口
+          ipcRenderer.send('writeValuesToPLC', 'DBW516', 1);
+          // 发送进货异常报警DB101.DBW586
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW586', 10);
+          this.addLog('当前无执行订单，已禁用二楼B接货口');
+          return;
+        }
+
+        // 4、判断floor2BLineTrayInfo读到的条码是否属于当前执行订单
+        if (
+          this.currentOrder.qrCode &&
+          this.currentOrder.qrCode.includes(this.floor2BLineTrayInfo)
+        ) {
+          // 如果属于当前订单，给PLC发送二楼B接货口启用命令DBW516：0
+          ipcRenderer.send('writeValuesToPLC', 'DBW516', 0);
+          // 使用新的单次写入方法，写入DB101.DBW586值为11，1秒内发送3次
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW586', 11);
+          this.addLog(
+            `托盘${this.floor2BLineTrayInfo}属于当前订单，已启用二楼B接货口，给PLC发送DBW586值为11`
+          );
+        } else {
+          // 如果不属于当前订单，直接给PLC发送二楼B接货口禁用命令DBW516：1
+          ipcRenderer.send('writeValuesToPLC', 'DBW516', 1);
+          // 发送进货异常报警DB101.DBW586
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW586', 10);
+          this.addLog(
+            `托盘${this.floor2BLineTrayInfo}不属于当前订单，已禁用二楼B接货口`
+          );
+        }
+      }
+    },
+    // 三楼A接货站台"有载信号"/光电占位
+    'scanPhotoelectricSignal.bit4'(newVal) {
+      // 当值变为1时执行逻辑
+      if (newVal === '1') {
+        // 1、先判断条码状态是否不为空串 或者 不为NoRead
+        if (
+          !this.floor3ALineTrayInfo ||
+          this.floor3ALineTrayInfo === '' ||
+          this.floor3ALineTrayInfo.toLowerCase() === 'noread'
+        ) {
+          // 2、如果异常，直接给PLC发送三楼A接货口禁用命令DBW518：1
+          ipcRenderer.send('writeValuesToPLC', 'DBW518', 1);
+          // 发送进货异常报警DB101.DBW588
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW588', 10);
+          this.addLog('三楼A接货口条码异常，已禁用接货口');
+          return;
+        }
+
+        // 3、如果正常，先判断当前有没有正在执行的订单
+        if (!this.currentOrder) {
+          // 没有正在执行的订单，禁用接货口
+          ipcRenderer.send('writeValuesToPLC', 'DBW518', 1);
+          // 发送进货异常报警DB101.DBW588
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW588', 10);
+          this.addLog('当前无执行订单，已禁用三楼A接货口');
+          return;
+        }
+
+        // 4、判断floor3ALineTrayInfo读到的条码是否属于当前执行订单
+        if (
+          this.currentOrder.qrCode &&
+          this.currentOrder.qrCode.includes(this.floor3ALineTrayInfo)
+        ) {
+          // 如果属于当前订单，给PLC发送三楼A接货口启用命令DBW518：0
+          ipcRenderer.send('writeValuesToPLC', 'DBW518', 0);
+          // 使用新的单次写入方法，写入DB101.DBW588值为11，1秒内发送3次
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW588', 11);
+          this.addLog(
+            `托盘${this.floor3ALineTrayInfo}属于当前订单，已启用三楼A接货口，给PLC发送DBW588值为11`
+          );
+        } else {
+          // 如果不属于当前订单，直接给PLC发送三楼A接货口禁用命令DBW518：1
+          ipcRenderer.send('writeValuesToPLC', 'DBW518', 1);
+          // 发送进货异常报警DB101.DBW588
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW588', 10);
+          this.addLog(
+            `托盘${this.floor3ALineTrayInfo}不属于当前订单，已禁用三楼A接货口`
+          );
+        }
+      }
+    },
+    // 三楼B接货站台"有载信号"/光电占位
+    'scanPhotoelectricSignal.bit5'(newVal) {
+      // 当值变为1时执行逻辑
+      if (newVal === '1') {
+        // 1、先判断条码状态是否不为空串 或者 不为NoRead
+        if (
+          !this.floor3BLineTrayInfo ||
+          this.floor3BLineTrayInfo === '' ||
+          this.floor3BLineTrayInfo.toLowerCase() === 'noread'
+        ) {
+          // 2、如果异常，直接给PLC发送三楼B接货口禁用命令DBW520：1
+          ipcRenderer.send('writeValuesToPLC', 'DBW520', 1);
+          // 发送进货异常报警DB101.DBW590
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW590', 10);
+          this.addLog('三楼B接货口条码异常，已禁用接货口');
+          return;
+        }
+
+        // 3、如果正常，先判断当前有没有正在执行的订单
+        if (!this.currentOrder) {
+          // 没有正在执行的订单，禁用接货口
+          ipcRenderer.send('writeValuesToPLC', 'DBW520', 1);
+          // 发送进货异常报警DB101.DBW590
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW590', 10);
+          this.addLog('当前无执行订单，已禁用三楼B接货口');
+          return;
+        }
+
+        // 4、判断floor3BLineTrayInfo读到的条码是否属于当前执行订单
+        if (
+          this.currentOrder.qrCode &&
+          this.currentOrder.qrCode.includes(this.floor3BLineTrayInfo)
+        ) {
+          // 如果属于当前订单，给PLC发送三楼B接货口启用命令DBW520：0
+          ipcRenderer.send('writeValuesToPLC', 'DBW520', 0);
+          // 使用新的单次写入方法，写入DB101.DBW590值为11，1秒内发送3次
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW590', 11);
+          this.addLog(
+            `托盘${this.floor3BLineTrayInfo}属于当前订单，已启用三楼B接货口，给PLC发送DBW590值为11`
+          );
+        } else {
+          // 如果不属于当前订单，直接给PLC发送三楼B接货口禁用命令DBW520：1
+          ipcRenderer.send('writeValuesToPLC', 'DBW520', 1);
+          // 发送进货异常报警DB101.DBW590
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW590', 10);
+          this.addLog(
+            `托盘${this.floor3BLineTrayInfo}不属于当前订单，已禁用三楼B接货口`
+          );
+        }
+      }
     },
     // 监听下货扫码处光电信号
     'scanPhotoelectricSignal.bit6'(newVal) {
