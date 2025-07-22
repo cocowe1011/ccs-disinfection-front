@@ -947,39 +947,32 @@ function writeValuesToPLC(add, values) {
   }
 }
 
-// 单独给PLC某个变量写值，1秒内发送3次
+// 单独给PLC某个变量写值，2秒内每200ms发送一次，总共10次
 function writeSingleValueToPLC(add, values) {
-  // 检查地址是否在variables中定义
   if (!variables[add]) {
     console.warn(`Address ${add} not found in variables.`);
     return;
   }
 
-  // 立即写入第一次
-  conn.writeItems([add], [values], (err) => {
-    if (err) {
-      console.error(`写入PLC地址 ${add} 失败:`, err);
+  let sendCount = 0;
+  const maxCount = 10;
+  const interval = 200; // 200ms
+
+  function sendFunc() {
+    conn.writeItems([add], [values], (err) => {
+      if (err) {
+        console.error(`写入PLC地址 ${add} 失败:`, err);
+      }
+    });
+    sendCount++;
+    if (sendCount < maxCount) {
+      setTimeout(sendFunc, interval);
+    } else {
+      console.log(`完成写入PLC地址 ${add}，值：${values}，2秒内发送10次`);
     }
-  });
+  }
 
-  // 500ms后写入第二次
-  setTimeout(() => {
-    conn.writeItems([add], [values], (err) => {
-      if (err) {
-        console.error(`写入PLC地址 ${add} 失败:`, err);
-      }
-    });
-  }, 500);
-
-  // 1000ms后写入第三次
-  setTimeout(() => {
-    conn.writeItems([add], [values], (err) => {
-      if (err) {
-        console.error(`写入PLC地址 ${add} 失败:`, err);
-      }
-    });
-    console.log(`完成写入PLC地址 ${add}，值：${values}，1秒内发送3次`);
-  }, 1000);
+  sendFunc();
 }
 
 function valuesWritten(anythingBad) {
