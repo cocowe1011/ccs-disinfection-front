@@ -6173,14 +6173,15 @@ export default {
         'DBW542',
         parseInt(destinationValue)
       );
-      ipcRenderer.send('writeSingleValueToPLC', 'DBW592', 11);
-
       this.addLog(
         `发送目的地命令：${this.getDestinationText(
           destinationValue
-        )}，命令值：${destinationValue}到PLC地址DBW542，已给PLC发送DBW592扫码反馈通行11命令`
+        )}，命令值：${destinationValue}到PLC地址DBW542`
       );
-
+      setTimeout(() => {
+        ipcRenderer.send('writeSingleValueToPLC', 'DBW592', 11);
+        this.addLog('已给PLC发送DBW592扫码反馈通行11命令');
+      }, 1000);
       // 4、把找到的托盘移到下货区队列去
       const downLoadQueue = this.queues[22]; // 下货区队列索引为22
 
