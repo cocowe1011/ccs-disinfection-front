@@ -194,9 +194,13 @@ app.on('ready', () => {
   ipcMain.on('writeValuesToPLC', (event, arg1, arg2) => {
     writeValuesToPLC(arg1, arg2);
   });
-  // writeSingleValueToPLC - 单独给PLC某个变量写值，持续指定时间后停止
+  // writeSingleValueToPLC - 单独给PLC某个变量写值，通过批量写入数组实现
   ipcMain.on('writeSingleValueToPLC', (event, arg1, arg2) => {
     writeSingleValueToPLC(arg1, arg2);
+  });
+  // cancelWriteToPLC - 取消PLC某个变量的写入
+  ipcMain.on('cancelWriteToPLC', (event, arg1) => {
+    cancelWriteToPLC(arg1);
   });
   // 定义自定义事件
   ipcMain.on('max-window', (event, arg) => {
@@ -947,32 +951,71 @@ function writeValuesToPLC(add, values) {
   }
 }
 
-// 单独给PLC某个变量写值，2秒内每200ms发送一次，总共10次
+// 单独给PLC某个变量写值，通过操作批量写入数组实现，避免写入冲突
 function writeSingleValueToPLC(add, values) {
   if (!variables[add]) {
     console.warn(`Address ${add} not found in variables.`);
     return;
   }
 
-  let sendCount = 0;
-  const maxCount = 10;
-  const interval = 200; // 200ms
+  // 查找地址在批量写入数组中的索引
+  const index = writeAddArr.indexOf(add);
 
-  function sendFunc() {
-    conn.writeItems([add], [values], (err) => {
-      if (err) {
-        console.error(`写入PLC地址 ${add} 失败:`, err);
-      }
-    });
-    sendCount++;
-    if (sendCount < maxCount) {
-      setTimeout(sendFunc, interval);
-    } else {
-      console.log(`完成写入PLC地址 ${add}，值：${values}，2秒内发送10次`);
+  if (index !== -1) {
+    // 地址已存在，直接更新值（这个操作是原子的）
+    writeStrArr[index] = values;
+    console.log(`更新PLC地址 ${add} 的值为：${values}`);
+  } else {
+    // 地址不存在，使用原子性操作添加到批量写入数组
+    const newAddArr = [...writeAddArr, add];
+    const newStrArr = [...writeStrArr, values];
+
+    // 原子性替换数组内容
+    writeAddArr.length = 0;
+    writeStrArr.length = 0;
+    writeAddArr.push(...newAddArr);
+    writeStrArr.push(...newStrArr);
+
+    console.log(`添加PLC地址 ${add} 到批量写入数组，值：${values}`);
+  }
+}
+
+// 取消PLC某个变量的写入，从批量写入数组中移除
+function cancelWriteToPLC(add) {
+  // 使用 filter 方法重建数组，避免 splice 的并发问题
+  const originalLength = writeAddArr.length;
+  const newAddArr = [];
+  const newStrArr = [];
+
+  for (let i = 0; i < writeAddArr.length; i++) {
+    if (writeAddArr[i] !== add) {
+      newAddArr.push(writeAddArr[i]);
+      newStrArr.push(writeStrArr[i]);
     }
   }
 
-  sendFunc();
+  // 检查是否找到并移除了地址
+  if (newAddArr.length === originalLength) {
+    console.warn(`Address ${add} not found in writeAddArr, cannot cancel.`);
+    return false;
+  }
+
+  // 原子性替换数组内容
+  writeAddArr.length = 0;
+  writeStrArr.length = 0;
+  writeAddArr.push(...newAddArr);
+  writeStrArr.push(...newStrArr);
+
+  console.log(`已从批量写入数组中移除PLC地址：${add}`);
+
+  // 验证数组长度一致性
+  if (writeAddArr.length !== writeStrArr.length) {
+    console.error(
+      `数组长度不一致！地址数组长度：${writeAddArr.length}，值数组长度：${writeStrArr.length}`
+    );
+  }
+
+  return true;
 }
 
 function valuesWritten(anythingBad) {

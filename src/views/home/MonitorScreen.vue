@@ -2262,7 +2262,7 @@
                     @load="updateMarkerPositions"
                   />
                   <!-- 二楼区域上货点信息-上部分 -->
-                  <div class="marker-with-panel" data-x="500" data-y="610">
+                  <div class="marker-with-panel" data-x="500" data-y="752">
                     <div class="pulse"></div>
                     <div
                       class="data-panel"
@@ -2271,7 +2271,7 @@
                     >
                       <div class="data-panel-content">
                         <div class="data-panel-row">
-                          <span class="data-panel-label">扫码信息：</span>
+                          <span class="data-panel-label">2A 扫码信息：</span>
                           <span>{{ floor2ALineTrayInfo || '--' }}</span>
                         </div>
                         <div
@@ -2299,7 +2299,7 @@
                     </div>
                   </div>
                   <!-- 二楼区域上货点信息-下部分 -->
-                  <div class="marker-with-panel" data-x="500" data-y="752">
+                  <div class="marker-with-panel" data-x="500" data-y="610">
                     <div class="pulse"></div>
                     <div
                       class="data-panel"
@@ -2308,7 +2308,7 @@
                     >
                       <div class="data-panel-content">
                         <div class="data-panel-row">
-                          <span class="data-panel-label">扫码信息：</span>
+                          <span class="data-panel-label">2B 扫码信息：</span>
                           <span>{{ floor2BLineTrayInfo || '--' }}</span>
                         </div>
                         <div
@@ -2448,7 +2448,7 @@
                     @load="updateMarkerPositions"
                   />
                   <!-- 三楼区域上货点信息-上部分 -->
-                  <div class="marker-with-panel" data-x="580" data-y="270">
+                  <div class="marker-with-panel" data-x="580" data-y="560">
                     <div class="pulse"></div>
                     <div
                       class="data-panel"
@@ -2457,7 +2457,7 @@
                     >
                       <div class="data-panel-content">
                         <div class="data-panel-row">
-                          <span class="data-panel-label">扫码信息：</span>
+                          <span class="data-panel-label">3A 扫码信息：</span>
                           <span>{{ floor3ALineTrayInfo || '--' }}</span>
                         </div>
                         <div
@@ -2485,7 +2485,7 @@
                     </div>
                   </div>
                   <!-- 三楼区域上货点信息-下部分 -->
-                  <div class="marker-with-panel" data-x="580" data-y="560">
+                  <div class="marker-with-panel" data-x="580" data-y="270">
                     <div class="pulse"></div>
                     <div
                       class="data-panel"
@@ -2494,7 +2494,7 @@
                     >
                       <div class="data-panel-content">
                         <div class="data-panel-row">
-                          <span class="data-panel-label">扫码信息：</span>
+                          <span class="data-panel-label">3B 扫码信息：</span>
                           <span>{{ floor3BLineTrayInfo || '--' }}</span>
                         </div>
                         <div
@@ -4527,6 +4527,9 @@ export default {
           ipcRenderer.send('writeValuesToPLC', 'DBW512', 1);
           // 发送进货异常报警DBW580.bit0
           ipcRenderer.send('writeSingleValueToPLC', 'DBW580', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW580');
+          }, 2000);
           this.addLog('一楼接货口条码异常，已禁用接货口');
           return;
         }
@@ -4537,6 +4540,9 @@ export default {
           ipcRenderer.send('writeValuesToPLC', 'DBW512', 1);
           // 发送进货异常报警DBW580.bit0
           ipcRenderer.send('writeSingleValueToPLC', 'DBW580', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW580');
+          }, 2000);
           this.addLog('当前无执行订单，已禁用一楼接货口');
           return;
         }
@@ -4550,6 +4556,9 @@ export default {
           ipcRenderer.send('writeValuesToPLC', 'DBW512', 0);
           // 使用新的单次写入方法，写入DBW580值为11，1秒内发送3次
           ipcRenderer.send('writeSingleValueToPLC', 'DBW580', 11);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW580');
+          }, 2000);
           this.addLog(
             `托盘${this.floor1InLineTrayInfo}属于当前订单，已启用一楼接货口，给PLC发送DBW580值为11`
           );
@@ -4558,6 +4567,9 @@ export default {
           ipcRenderer.send('writeValuesToPLC', 'DBW512', 1);
           // 发送进货异常报警DBW580.bit0
           ipcRenderer.send('writeSingleValueToPLC', 'DBW580', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW580');
+          }, 2000);
           this.addLog(
             `托盘${this.floor1InLineTrayInfo}不属于当前订单，已禁用一楼接货口`
           );
@@ -4576,6 +4588,9 @@ export default {
         ) {
           // 缓存区扫码反馈异常DBW582
           ipcRenderer.send('writeSingleValueToPLC', 'DBW582', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW582');
+          }, 2000);
           this.addLog('一楼上货区条码异常，已发送报警信号');
           return;
         }
@@ -4584,6 +4599,9 @@ export default {
         if (!this.currentOrder) {
           // 缓存区扫码反馈异常DBW582
           ipcRenderer.send('writeSingleValueToPLC', 'DBW582', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW582');
+          }, 2000);
           this.addLog('当前无执行订单，一楼上货区已发送报警信号');
           return;
         }
@@ -4625,6 +4643,9 @@ export default {
           if (existingTrayIndex === -1) {
             this.addLog('缓存区可以通行，给PLC发送DBW582值为11');
             ipcRenderer.send('writeSingleValueToPLC', 'DBW582', 11);
+            setTimeout(() => {
+              ipcRenderer.send('cancelWriteToPLC', 'DBW582');
+            }, 2000);
             // 添加新托盘
             this.queues[0].trayInfo.push(newTray);
             // 增加已上货托盘计数器
@@ -4635,6 +4656,9 @@ export default {
           } else {
             // 缓存区扫码反馈异常DBW582
             ipcRenderer.send('writeSingleValueToPLC', 'DBW582', 10);
+            setTimeout(() => {
+              ipcRenderer.send('cancelWriteToPLC', 'DBW582');
+            }, 2000);
             this.addLog(
               `托盘${this.floor1UpLineTrayInfo}已在上货区队列中，已取消报警信号`
             );
@@ -4642,6 +4666,9 @@ export default {
         } else {
           // 缓存区扫码反馈异常DBW582
           ipcRenderer.send('writeSingleValueToPLC', 'DBW582', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW582');
+          }, 2000);
           this.addLog(
             `托盘${this.floor1UpLineTrayInfo}不属于当前订单，已发送报警信号`
           );
@@ -4723,7 +4750,9 @@ export default {
         // 给PLC的DBW524发送对应信息
         if (plcCommand > 0) {
           ipcRenderer.send('writeSingleValueToPLC', 'DBW524', plcCommand);
-
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW524');
+          }, 2000);
           // 设置托盘已发送预热房命令的标识
           firstUnprocessedTray.hasSentPreheatCommand = true;
 
@@ -4938,6 +4967,9 @@ export default {
           ipcRenderer.send('writeValuesToPLC', 'DBW514', 1);
           // 发送进货异常报警DB101.DBW584
           ipcRenderer.send('writeSingleValueToPLC', 'DBW584', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW584');
+          }, 2000);
           this.addLog('二楼A接货口条码异常，已禁用接货口');
           return;
         }
@@ -4948,6 +4980,9 @@ export default {
           ipcRenderer.send('writeValuesToPLC', 'DBW514', 1);
           // 发送进货异常报警DB101.DBW584
           ipcRenderer.send('writeSingleValueToPLC', 'DBW584', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW584');
+          }, 2000);
           this.addLog('当前无执行订单，已禁用二楼A接货口');
           return;
         }
@@ -4961,6 +4996,9 @@ export default {
           ipcRenderer.send('writeValuesToPLC', 'DBW514', 0);
           // 使用新的单次写入方法，写入DB101.DBW584值为11，1秒内发送3次
           ipcRenderer.send('writeSingleValueToPLC', 'DBW584', 11);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW584');
+          }, 2000);
           this.addLog(
             `托盘${this.floor2ALineTrayInfo}属于当前订单，已启用二楼A接货口，给PLC发送DBW584值为11`
           );
@@ -4969,6 +5007,9 @@ export default {
           ipcRenderer.send('writeValuesToPLC', 'DBW514', 1);
           // 发送进货异常报警DB101.DBW584
           ipcRenderer.send('writeSingleValueToPLC', 'DBW584', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW584');
+          }, 2000);
           this.addLog(
             `托盘${this.floor2ALineTrayInfo}不属于当前订单，已禁用二楼A接货口`
           );
@@ -4989,6 +5030,9 @@ export default {
           ipcRenderer.send('writeValuesToPLC', 'DBW516', 1);
           // 发送进货异常报警DB101.DBW586
           ipcRenderer.send('writeSingleValueToPLC', 'DBW586', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW586');
+          }, 2000);
           this.addLog('二楼B接货口条码异常，已禁用接货口');
           return;
         }
@@ -4999,6 +5043,9 @@ export default {
           ipcRenderer.send('writeValuesToPLC', 'DBW516', 1);
           // 发送进货异常报警DB101.DBW586
           ipcRenderer.send('writeSingleValueToPLC', 'DBW586', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW586');
+          }, 2000);
           this.addLog('当前无执行订单，已禁用二楼B接货口');
           return;
         }
@@ -5012,6 +5059,9 @@ export default {
           ipcRenderer.send('writeValuesToPLC', 'DBW516', 0);
           // 使用新的单次写入方法，写入DB101.DBW586值为11，1秒内发送3次
           ipcRenderer.send('writeSingleValueToPLC', 'DBW586', 11);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW586');
+          }, 2000);
           this.addLog(
             `托盘${this.floor2BLineTrayInfo}属于当前订单，已启用二楼B接货口，给PLC发送DBW586值为11`
           );
@@ -5020,6 +5070,9 @@ export default {
           ipcRenderer.send('writeValuesToPLC', 'DBW516', 1);
           // 发送进货异常报警DB101.DBW586
           ipcRenderer.send('writeSingleValueToPLC', 'DBW586', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW586');
+          }, 2000);
           this.addLog(
             `托盘${this.floor2BLineTrayInfo}不属于当前订单，已禁用二楼B接货口`
           );
@@ -5040,6 +5093,9 @@ export default {
           ipcRenderer.send('writeValuesToPLC', 'DBW518', 1);
           // 发送进货异常报警DB101.DBW588
           ipcRenderer.send('writeSingleValueToPLC', 'DBW588', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW588');
+          }, 2000);
           this.addLog('三楼A接货口条码异常，已禁用接货口');
           return;
         }
@@ -5050,6 +5106,9 @@ export default {
           ipcRenderer.send('writeValuesToPLC', 'DBW518', 1);
           // 发送进货异常报警DB101.DBW588
           ipcRenderer.send('writeSingleValueToPLC', 'DBW588', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW588');
+          }, 2000);
           this.addLog('当前无执行订单，已禁用三楼A接货口');
           return;
         }
@@ -5063,6 +5122,9 @@ export default {
           ipcRenderer.send('writeValuesToPLC', 'DBW518', 0);
           // 使用新的单次写入方法，写入DB101.DBW588值为11，1秒内发送3次
           ipcRenderer.send('writeSingleValueToPLC', 'DBW588', 11);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW588');
+          }, 2000);
           this.addLog(
             `托盘${this.floor3ALineTrayInfo}属于当前订单，已启用三楼A接货口，给PLC发送DBW588值为11`
           );
@@ -5071,6 +5133,9 @@ export default {
           ipcRenderer.send('writeValuesToPLC', 'DBW518', 1);
           // 发送进货异常报警DB101.DBW588
           ipcRenderer.send('writeSingleValueToPLC', 'DBW588', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW588');
+          }, 2000);
           this.addLog(
             `托盘${this.floor3ALineTrayInfo}不属于当前订单，已禁用三楼A接货口`
           );
@@ -5091,6 +5156,9 @@ export default {
           ipcRenderer.send('writeValuesToPLC', 'DBW520', 1);
           // 发送进货异常报警DB101.DBW590
           ipcRenderer.send('writeSingleValueToPLC', 'DBW590', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW590');
+          }, 2000);
           this.addLog('三楼B接货口条码异常，已禁用接货口');
           return;
         }
@@ -5101,6 +5169,9 @@ export default {
           ipcRenderer.send('writeValuesToPLC', 'DBW520', 1);
           // 发送进货异常报警DB101.DBW590
           ipcRenderer.send('writeSingleValueToPLC', 'DBW590', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW590');
+          }, 2000);
           this.addLog('当前无执行订单，已禁用三楼B接货口');
           return;
         }
@@ -5114,6 +5185,9 @@ export default {
           ipcRenderer.send('writeValuesToPLC', 'DBW520', 0);
           // 使用新的单次写入方法，写入DB101.DBW590值为11，1秒内发送3次
           ipcRenderer.send('writeSingleValueToPLC', 'DBW590', 11);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW590');
+          }, 2000);
           this.addLog(
             `托盘${this.floor3BLineTrayInfo}属于当前订单，已启用三楼B接货口，给PLC发送DBW590值为11`
           );
@@ -5122,6 +5196,9 @@ export default {
           ipcRenderer.send('writeValuesToPLC', 'DBW520', 1);
           // 发送进货异常报警DB101.DBW590
           ipcRenderer.send('writeSingleValueToPLC', 'DBW590', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW590');
+          }, 2000);
           this.addLog(
             `托盘${this.floor3BLineTrayInfo}不属于当前订单，已禁用三楼B接货口`
           );
@@ -6211,14 +6288,13 @@ export default {
       const fromValue = fromMap[this.disinfectionRoomSelectedFrom] || 0;
       const toValue = toMap[this.disinfectionRoomSelectedTo] || 0;
       this.addLog(
-        `预热房选择：${this.disinfectionRoomSelectedFrom}，发送DBW526值：${fromValue}`
+        `预热房选择：${this.disinfectionRoomSelectedFrom}，发送DBW526值：${fromValue}，灭菌柜选择：${this.disinfectionRoomSelectedTo}，发送DBW528值：${toValue}`
       );
       ipcRenderer.send('writeSingleValueToPLC', 'DBW526', fromValue);
+      ipcRenderer.send('writeSingleValueToPLC', 'DBW528', toValue);
       setTimeout(() => {
-        ipcRenderer.send('writeSingleValueToPLC', 'DBW528', toValue);
-        this.addLog(
-          `灭菌柜选择：${this.disinfectionRoomSelectedTo}，发送DBW528值：${toValue}`
-        );
+        ipcRenderer.send('cancelWriteToPLC', 'DBW526');
+        ipcRenderer.send('cancelWriteToPLC', 'DBW528');
       }, 2000);
       this.isDisinfectionExecuting = true;
     },
@@ -6301,6 +6377,9 @@ export default {
         'DBW530',
         parseInt(commandValue)
       );
+      setTimeout(() => {
+        ipcRenderer.send('cancelWriteToPLC', 'DBW530');
+      }, 2000);
 
       this.addLog(
         `出库选择执行：队列${this.outboundSelectedQueue}，发送命令值：${commandValue}到PLC地址DBW530`
@@ -6323,6 +6402,9 @@ export default {
 
       if (!scanCode || scanCode === '' || scanCode.toLowerCase() === 'noread') {
         ipcRenderer.send('writeSingleValueToPLC', 'DBW592', 10);
+        setTimeout(() => {
+          ipcRenderer.send('cancelWriteToPLC', 'DBW592');
+        }, 2000);
         this.addLog('下货扫码条码异常或为空，无法处理，已发送报警信号');
         return;
       }
@@ -6354,6 +6436,9 @@ export default {
           `在A3-G3队列中未找到匹配的托盘：${scanCode}，已发送报警信号`
         );
         ipcRenderer.send('writeSingleValueToPLC', 'DBW592', 10);
+        setTimeout(() => {
+          ipcRenderer.send('cancelWriteToPLC', 'DBW592');
+        }, 2000);
         return;
       }
 
@@ -6365,6 +6450,9 @@ export default {
       if (!this.destinationSelected) {
         this.addLog('目的地未选择，无法发送目的地命令');
         ipcRenderer.send('writeSingleValueToPLC', 'DBW592', 10);
+        setTimeout(() => {
+          ipcRenderer.send('cancelWriteToPLC', 'DBW592');
+        }, 2000);
         return;
       }
 
@@ -6377,15 +6465,16 @@ export default {
         'DBW542',
         parseInt(destinationValue)
       );
+      ipcRenderer.send('writeSingleValueToPLC', 'DBW592', 11);
+      setTimeout(() => {
+        ipcRenderer.send('cancelWriteToPLC', 'DBW542');
+        ipcRenderer.send('cancelWriteToPLC', 'DBW592');
+      }, 2000);
       this.addLog(
         `发送目的地命令：${this.getDestinationText(
           destinationValue
-        )}，命令值：${destinationValue}到PLC地址DBW542`
+        )}，命令值：${destinationValue}到PLC地址DBW542，已给PLC发送DBW592扫码反馈通行11命令`
       );
-      setTimeout(() => {
-        ipcRenderer.send('writeSingleValueToPLC', 'DBW592', 11);
-        this.addLog('已给PLC发送DBW592扫码反馈通行11命令');
-      }, 2000);
       // 4、把找到的托盘移到下货区队列去
       const downLoadQueue = this.queues[22]; // 下货区队列索引为22
 
