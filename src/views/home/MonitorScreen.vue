@@ -2701,8 +2701,15 @@
                       <div class="tray-info-row">
                         <span class="tray-name">{{ tray.name }}</span>
                         <span class="tray-batch"
-                          >批次号: {{ tray.batchId }}</span
+                          >批次id：{{ tray.batchId }} / 订单id：{{
+                            tray.orderId
+                          }}</span
                         >
+                      </div>
+                      <div class="tray-info-row status-row">
+                        <span>预热房：{{ tray.isPrint1 }}</span>
+                        <span>灭菌房：{{ tray.isPrint2 }}</span>
+                        <span>预热命令：{{ tray.hasSentPreheatCommand }}</span>
                       </div>
                       <span class="tray-time">{{ tray.time }}</span>
                     </div>
@@ -3402,17 +3409,42 @@
 
     <!-- 添加托盘对话框 -->
     <el-dialog
-      title="添加托盘"
+      :title="`添加托盘 - ${selectedQueue ? selectedQueue.queueName : ''}`"
       :visible.sync="addTrayDialogVisible"
-      width="500px"
+      width="600px"
       append-to-body
       :close-on-click-modal="false"
+      @close="cancelAddTray"
     >
       <div class="add-tray-form">
+        <!-- 提示信息 -->
+        <div
+          class="form-tips"
+          v-if="isCacheQueueAdd"
+          style="margin-bottom: 10px"
+        >
+          <el-alert
+            title="缓存区托盘添加"
+            description="当前为缓存区添加托盘，系统将自动获取当前运行订单的信息，您只需填写托盘编号。"
+            type="warning"
+            :closable="false"
+            show-icon
+          />
+        </div>
+        <div class="form-tips" v-else style="margin-bottom: 10px">
+          <el-alert
+            title="非缓存区托盘添加"
+            description="当前为非缓存区添加托盘，请填写完整的托盘信息。"
+            type="warning"
+            :closable="false"
+            show-icon
+          />
+        </div>
+
         <el-form
           :model="newTrayForm"
           ref="newTrayForm"
-          label-width="100px"
+          label-width="120px"
           :rules="trayFormRules"
         >
           <el-form-item label="托盘编号" prop="trayCode">
@@ -3421,16 +3453,122 @@
               placeholder="请输入托盘编号"
             ></el-input>
           </el-form-item>
-          <el-form-item label="批次号" prop="batchId">
+          <el-form-item label="批次号" prop="batchId" v-if="!isCacheQueueAdd">
             <el-input
               v-model="newTrayForm.batchId"
               placeholder="请输入批次号"
             ></el-input>
           </el-form-item>
+          <el-form-item label="批次号" v-else>
+            <el-input
+              v-model="newTrayForm.batchId"
+              placeholder="自动获取当前订单批次号"
+              disabled
+            ></el-input>
+          </el-form-item>
+          <el-form-item label="订单号" prop="orderId" v-if="!isCacheQueueAdd">
+            <el-input
+              v-model="newTrayForm.orderId"
+              placeholder="请输入订单号"
+            ></el-input>
+          </el-form-item>
+          <el-form-item label="订单号" v-else>
+            <el-input
+              v-model="newTrayForm.orderId"
+              placeholder="自动获取当前订单号"
+              disabled
+            ></el-input>
+          </el-form-item>
+          <el-form-item
+            label="指定预热房"
+            prop="isPrint1"
+            v-if="!isCacheQueueAdd"
+          >
+            <el-select
+              v-model="newTrayForm.isPrint1"
+              placeholder="请选择指定预热房"
+              style="width: 100%"
+            >
+              <el-option label="A" value="A"></el-option>
+              <el-option label="B" value="B"></el-option>
+              <el-option label="C" value="C"></el-option>
+              <el-option label="D" value="D"></el-option>
+              <el-option label="E" value="E"></el-option>
+              <el-option label="F" value="F"></el-option>
+              <el-option label="G" value="G"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="指定预热房" v-else>
+            <el-input
+              v-model="newTrayForm.isPrint1"
+              placeholder="自动获取当前订单预热房"
+              disabled
+            ></el-input>
+          </el-form-item>
+          <el-form-item
+            label="指定灭菌柜"
+            prop="isPrint2"
+            v-if="!isCacheQueueAdd"
+          >
+            <el-select
+              v-model="newTrayForm.isPrint2"
+              placeholder="请选择指定灭菌柜"
+              style="width: 100%"
+            >
+              <el-option label="A" value="A"></el-option>
+              <el-option label="B" value="B"></el-option>
+              <el-option label="C" value="C"></el-option>
+              <el-option label="D" value="D"></el-option>
+              <el-option label="E" value="E"></el-option>
+              <el-option label="F" value="F"></el-option>
+              <el-option label="G" value="G"></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="指定灭菌柜" v-else>
+            <el-input
+              v-model="newTrayForm.isPrint2"
+              placeholder="自动获取当前订单灭菌柜"
+              disabled
+            ></el-input>
+          </el-form-item>
+          <el-form-item
+            label="产品名称"
+            prop="productName"
+            v-if="!isCacheQueueAdd"
+          >
+            <el-input
+              v-model="newTrayForm.productName"
+              placeholder="请输入产品名称"
+            ></el-input>
+          </el-form-item>
+          <el-form-item label="产品名称" v-else>
+            <el-input
+              v-model="newTrayForm.productName"
+              placeholder="自动获取当前订单产品名称"
+              disabled
+            ></el-input>
+          </el-form-item>
+          <el-form-item
+            label="产品编码"
+            prop="productCode"
+            v-if="!isCacheQueueAdd"
+          >
+            <el-input
+              v-model="newTrayForm.productCode"
+              placeholder="请输入产品编码"
+            ></el-input>
+          </el-form-item>
+          <el-form-item label="产品编码" v-else>
+            <el-input
+              v-model="newTrayForm.productCode"
+              placeholder="自动获取当前订单产品编码"
+              disabled
+            ></el-input>
+          </el-form-item>
         </el-form>
       </div>
       <div slot="footer" class="dialog-footer">
-        <el-button @click="addTrayDialogVisible = false">取 消</el-button>
+        <el-button @click="cancelAddTray">取 消</el-button>
         <el-button type="primary" @click="submitAddTray" :loading="isSubmitting"
           >确 定</el-button
         >
@@ -3617,10 +3755,16 @@ export default {
       totalHistoryOrders: 0,
       addTrayDialogVisible: false,
       isSubmitting: false,
+      isCacheQueueAdd: false,
       isRequestDestinationLoading: false,
       newTrayForm: {
         trayCode: '',
-        batchId: ''
+        batchId: '',
+        orderId: '',
+        isPrint1: '',
+        isPrint2: '',
+        productName: '',
+        productCode: ''
       },
       trayFormRules: {
         trayCode: [
@@ -3629,6 +3773,29 @@ export default {
         ],
         batchId: [
           { required: true, message: '请输入批次号', trigger: 'blur' },
+          { min: 1, max: 50, message: '长度在 1 到 50 个字符', trigger: 'blur' }
+        ],
+        orderId: [
+          { required: true, message: '请输入订单号', trigger: 'blur' },
+          { min: 1, max: 50, message: '长度在 1 到 50 个字符', trigger: 'blur' }
+        ],
+        isPrint1: [
+          { required: true, message: '请选择指定预热房', trigger: 'change' }
+        ],
+        isPrint2: [
+          { required: true, message: '请选择指定灭菌柜', trigger: 'change' }
+        ],
+        productName: [
+          { required: true, message: '请输入产品名称', trigger: 'blur' },
+          {
+            min: 1,
+            max: 100,
+            message: '长度在 1 到 100 个字符',
+            trigger: 'blur'
+          }
+        ],
+        productCode: [
+          { required: true, message: '请输入产品编码', trigger: 'blur' },
           { min: 1, max: 50, message: '长度在 1 到 50 个字符', trigger: 'blur' }
         ]
       },
@@ -4614,14 +4781,14 @@ export default {
           // 如果属于当前订单，将托盘信息添加到上货区队列
           const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
           const newTray = {
-            trayCode: this.floor1UpLineTrayInfo,
+            trayCode: this.floor1UpLineTrayInfo, // 托盘码
             trayTime: currentTime,
-            batchId: this.currentOrder.batchId || '',
+            batchId: this.currentOrder.batchId || '', // 批次id
             infoId: this.currentOrder.id || '',
-            orderId: this.currentOrder.orderId || '',
-            isPrint1: this.currentOrder.isPrint1 || '',
-            isPrint2: this.currentOrder.isPrint2 || '',
-            isPrint3: this.currentOrder.isPrint3 || '',
+            orderId: this.currentOrder.orderId || '', // 订单id
+            isPrint1: this.currentOrder.isPrint1 || '', // 指定预热房
+            isPrint2: this.currentOrder.isPrint2 || '', // 指定灭菌柜
+            isPrint3: this.currentOrder.isPrint3 || '', // 指定出口
             inPut: this.currentOrder.inPut || '',
             productName: this.currentOrder.productName || '',
             productCode: this.currentOrder.productCode || '',
@@ -5216,7 +5383,10 @@ export default {
   methods: {
     changeQueueExpanded() {
       this.isQueueExpanded = !this.isQueueExpanded;
-      // 队列数据已在前端，无需重新查询
+      // 当展开面板时，刷新当前选中队列的托盘信息
+      if (this.isQueueExpanded && this.selectedQueueIndex !== -1) {
+        this.showTrays(this.selectedQueueIndex);
+      }
     },
     queryQueueList() {
       HttpUtil.post('/queue_info/queryQueueList', {})
@@ -5631,7 +5801,12 @@ export default {
             id: tray.trayCode || '',
             name: tray.trayCode ? `托盘 ${tray.trayCode}` : '未知托盘',
             time: tray.trayTime || '',
-            batchId: tray.batchId || '--'
+            batchId: tray.batchId || '--',
+            orderId: tray.orderId || '--',
+            isPrint1: tray.isPrint1 || '--',
+            isPrint2: tray.isPrint2 || '--',
+            hasSentPreheatCommand:
+              tray.hasSentPreheatCommand === true ? '是' : '否'
           }))
           .filter((tray) => tray.id); // 过滤掉没有 id 的托盘
       } catch (error) {
@@ -6048,11 +6223,110 @@ export default {
       }
     },
     showAddTrayDialog() {
+      // 检查是否为缓存区
+      const isCacheQueue =
+        this.selectedQueue && this.selectedQueue.queueName === '缓存区';
+
+      if (isCacheQueue && !this.currentOrder) {
+        this.$message.error('添加缓存区托盘时，必须当前有运行订单');
+        return;
+      }
+
       this.addTrayDialogVisible = true;
-      this.newTrayForm = {
-        trayCode: '',
-        batchId: ''
-      };
+      this.isCacheQueueAdd = isCacheQueue;
+
+      // 根据队列类型初始化表单
+      if (isCacheQueue && this.currentOrder) {
+        // 缓存区托盘：自动获取当前订单信息，用户只需填写托盘码
+        this.newTrayForm = {
+          trayCode: '',
+          batchId: this.currentOrder.batchId || '',
+          orderId: this.currentOrder.orderId || '',
+          isPrint1: this.currentOrder.isPrint1 || '',
+          isPrint2: this.currentOrder.isPrint2 || '',
+          productName: this.currentOrder.productName || '',
+          productCode: this.currentOrder.productCode || ''
+        };
+
+        // 缓存区托盘只需要验证托盘码
+        this.trayFormRules = {
+          trayCode: [
+            { required: true, message: '请输入托盘编号', trigger: 'blur' },
+            {
+              min: 1,
+              max: 50,
+              message: '长度在 1 到 50 个字符',
+              trigger: 'blur'
+            }
+          ]
+        };
+      } else {
+        // 非缓存区托盘：用户需要填写所有信息
+        this.newTrayForm = {
+          trayCode: '',
+          batchId: '',
+          orderId: '',
+          isPrint1: '',
+          isPrint2: '',
+          productName: '',
+          productCode: ''
+        };
+
+        // 非缓存区托盘需要验证所有字段
+        this.trayFormRules = {
+          trayCode: [
+            { required: true, message: '请输入托盘编号', trigger: 'blur' },
+            {
+              min: 1,
+              max: 50,
+              message: '长度在 1 到 50 个字符',
+              trigger: 'blur'
+            }
+          ],
+          batchId: [
+            { required: true, message: '请输入批次号', trigger: 'blur' },
+            {
+              min: 1,
+              max: 50,
+              message: '长度在 1 到 50 个字符',
+              trigger: 'blur'
+            }
+          ],
+          orderId: [
+            { required: true, message: '请输入订单号', trigger: 'blur' },
+            {
+              min: 1,
+              max: 50,
+              message: '长度在 1 到 50 个字符',
+              trigger: 'blur'
+            }
+          ],
+          isPrint1: [
+            { required: true, message: '请选择指定预热房', trigger: 'change' }
+          ],
+          isPrint2: [
+            { required: true, message: '请选择指定灭菌柜', trigger: 'change' }
+          ],
+          productName: [
+            { required: true, message: '请输入产品名称', trigger: 'blur' },
+            {
+              min: 1,
+              max: 100,
+              message: '长度在 1 到 100 个字符',
+              trigger: 'blur'
+            }
+          ],
+          productCode: [
+            { required: true, message: '请输入产品编码', trigger: 'blur' },
+            {
+              min: 1,
+              max: 50,
+              message: '长度在 1 到 50 个字符',
+              trigger: 'blur'
+            }
+          ]
+        };
+      }
     },
     async submitAddTray() {
       if (!this.selectedQueue) return;
@@ -6063,10 +6337,25 @@ export default {
 
         this.isSubmitting = true;
         const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
+
+        // 检查是否为缓存区
+        const isCacheQueue = this.selectedQueue.queueName === '缓存区';
+
+        // 构建托盘信息
         const newTray = {
-          trayCode: this.newTrayForm.trayCode,
-          trayTime: currentTime,
-          batchId: this.newTrayForm.batchId
+          trayCode: this.newTrayForm.trayCode, // 托盘码，用户填写
+          trayTime: currentTime, // 系统生成
+          batchId: this.newTrayForm.batchId, // 批次id
+          orderId: this.newTrayForm.orderId, // 订单id
+          isPrint1: this.newTrayForm.isPrint1, // 指定预热房
+          isPrint2: this.newTrayForm.isPrint2, // 指定灭菌柜
+          productName: this.newTrayForm.productName, // 产品名称
+          productCode: this.newTrayForm.productCode, // 产品编码
+          hasSentPreheatCommand: false, // 系统生成，默认false
+          trayOrderCount:
+            isCacheQueue && this.currentOrder
+              ? this.currentOrder.qrCode.split(',').length
+              : 1 // 获取当前运行订单的托盘列表计算
         };
 
         // 确保trayInfo是数组
@@ -6084,12 +6373,15 @@ export default {
         this.showTrays(this.selectedQueueIndex);
 
         // 添加新托盘日志
-        this.addLog(
-          `新托盘 ${newTray.trayCode} 已添加到 ${this.selectedQueue.queueName}，批次号：${newTray.batchId}`
-        );
+        const logMessage = isCacheQueue
+          ? `新托盘 ${newTray.trayCode} 已添加到 ${this.selectedQueue.queueName}，批次号：${newTray.batchId}，订单号：${newTray.orderId}`
+          : `新托盘 ${newTray.trayCode} 已添加到 ${this.selectedQueue.queueName}，批次号：${newTray.batchId}，订单号：${newTray.orderId}，产品：${newTray.productName}`;
+
+        this.addLog(logMessage);
 
         this.$message.success('托盘添加成功');
         this.addTrayDialogVisible = false;
+        this.isCacheQueueAdd = false;
       } catch (error) {
         if (error !== 'cancel') {
           this.$message.error('添加托盘失败，请重试');
@@ -6097,6 +6389,12 @@ export default {
       } finally {
         this.isSubmitting = false;
       }
+    },
+    cancelAddTray() {
+      this.addTrayDialogVisible = false;
+      this.isCacheQueueAdd = false;
+      // 重置表单
+      this.$refs.newTrayForm && this.$refs.newTrayForm.resetFields();
     },
 
     // 点击队列标识
@@ -7775,7 +8073,6 @@ export default {
                 transition: all 0.3s ease;
                 border: 1px solid rgba(255, 255, 255, 0.15);
                 position: relative;
-                padding-right: 50px;
 
                 .tray-info {
                   display: flex;
@@ -7786,34 +8083,51 @@ export default {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    gap: 10px;
+                    gap: 8px;
+                    font-size: 12px;
+
                     .tray-name {
-                      font-weight: 500;
+                      font-weight: 700;
                       color: rgba(255, 255, 255, 0.9);
-                      font-size: 14px;
+                      font-size: 12px;
+                      flex-shrink: 0;
                     }
 
                     .tray-batch {
-                      font-size: 12px;
+                      font-size: 11px;
                       color: #0ac5a8;
                       background: rgba(10, 197, 168, 0.1);
-                      padding: 2px 8px;
-                      border-radius: 4px;
+                      padding: 2px 6px;
+                      border-radius: 3px;
                       white-space: nowrap;
+                      flex-shrink: 0;
+                      margin-left: auto;
+                    }
+
+                    span {
+                      font-size: 11px;
+                      color: rgba(255, 255, 255, 0.7);
+                      white-space: nowrap;
+                    }
+
+                    &.status-row {
+                      justify-content: flex-start;
+                      gap: 15px;
                     }
                   }
                   .tray-time {
-                    font-size: 12px;
+                    font-size: 11px;
                     color: rgba(255, 255, 255, 0.5);
                   }
                 }
                 .el-button {
                   position: absolute;
-                  right: 10px;
-                  top: 50%;
-                  transform: translateY(-50%);
+                  right: 0px;
+                  top: 0px;
                   opacity: 0;
                   transition: opacity 0.3s ease;
+                  z-index: 10;
+                  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
                 }
               }
               .tray-item:hover {
