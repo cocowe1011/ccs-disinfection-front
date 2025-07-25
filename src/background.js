@@ -163,6 +163,8 @@ app.on('ready', () => {
   // 项目启动时自动启动WebSocket服务器
   try {
     alarmWebSocketServer = new AlarmWebSocketServer(8081);
+    // 设置主窗口引用
+    alarmWebSocketServer.setMainWindow(mainWindow);
     logger.info('WebSocket服务器自动启动成功，端口: 8081');
   } catch (error) {
     logger.error('WebSocket服务器自动启动失败:', error);
@@ -238,6 +240,16 @@ app.on('ready', () => {
       event.reply('websocket-clients-list', clients);
     } else {
       event.reply('websocket-clients-list', []);
+    }
+  });
+
+  // 发送扫码结果给移动端
+  ipcMain.on('send-scan-result-to-mobile', (event, data) => {
+    if (alarmWebSocketServer) {
+      alarmWebSocketServer.sendScanResult(data.clientId, data.result);
+      logger.info(
+        `发送扫码结果给移动端: ${data.result.success ? '成功' : '失败'}`
+      );
     }
   });
   // cancelWriteToPLC - 取消PLC某个变量的写入

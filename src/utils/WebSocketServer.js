@@ -6,8 +6,14 @@ class AlarmWebSocketServer {
     this.wss = null;
     this.clients = new Map(); // 存储连接的客户端信息
     this.isRunning = false;
+    this.mainWindow = null; // 存储主窗口引用，用于IPC通信
 
     this.init();
+  }
+
+  // 设置主窗口引用
+  setMainWindow(mainWindow) {
+    this.mainWindow = mainWindow;
   }
 
   init() {
@@ -113,9 +119,78 @@ class AlarmWebSocketServer {
         this.sendToClient(clientId, { type: 'pong' });
         break;
 
+      case 'scan_code':
+        // 处理扫码消息
+        this.handleScanCodeMessage(clientId, data);
+        break;
+
       default:
         console.log(`收到客户端 ${clientId} 未知消息类型:`, data.type);
     }
+  }
+
+  // 处理扫码消息
+  handleScanCodeMessage(clientId, data) {
+    console.log(`收到客户端 ${clientId} 扫码消息:`, data);
+
+    const { location, trayCode } = data;
+
+    if (!this.mainWindow) {
+      console.error('主窗口引用未设置，无法处理扫码消息');
+      this.sendToClient(clientId, {
+        type: 'scan_response',
+        success: false,
+        message: '服务器内部错误'
+      });
+      return;
+    }
+
+    // 根据扫码地点调用对应的处理方法
+    const methodMap = {
+      一楼接货站台: 'yiloujiehuozhantai',
+      一楼上货区: 'yiloushanghuosaoma',
+      二楼A接货: 'jiehuo2A',
+      二楼B接货: 'jiehuo2B',
+      三楼A接货: 'jiehuo3A',
+      三楼B接货: 'jiehuo3B',
+      下货扫码处: 'xiahuosaoma'
+    };
+
+    const methodName = methodMap[location];
+    if (!methodName) {
+      console.error(`未知的扫码地点: ${location}`);
+      this.sendToClient(clientId, {
+        type: 'scan_response',
+        success: false,
+        message: '未知的扫码地点'
+      });
+      return;
+    }
+
+    // 通过IPC发送消息到渲染进程
+    this.mainWindow.webContents.send('mobile-scan-code', {
+      method: methodName,
+      trayCode: trayCode,
+      source: 'PDA',
+      clientId: clientId
+    });
+
+    // 发送确认消息给客户端
+    this.sendToClient(clientId, {
+      type: 'scan_response',
+      success: true,
+      message: '扫码消息已发送到PC端处理'
+    });
+  }
+
+  // 发送扫码处理结果给移动端
+  sendScanResult(clientId, result) {
+    this.sendToClient(clientId, {
+      type: 'scan_result',
+      success: result.success,
+      message: result.message,
+      data: result.data
+    });
   }
 
   // 推送报警日志到所有移动端
