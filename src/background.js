@@ -15,6 +15,9 @@ import logger from 'electron-log';
 // 设置日志文件的保存路径
 logger.transports.file.file = app.getPath('userData') + '/app.log';
 
+// 导入WebSocket服务器
+const AlarmWebSocketServer = require('@/utils/WebSocketServer');
+
 // 初始化日志记录器
 logger.transports.file.level = 'info';
 logger.transports.console.level = 'info';
@@ -137,6 +140,10 @@ app.on('before-quit', () => {
 global.sharedObject = {
   userInfo: {}
 };
+
+// WebSocket服务器实例
+let alarmWebSocketServer = null;
+
 let mainWindow = null;
 app.on('ready', () => {
   // Create the browser window.
@@ -152,6 +159,14 @@ app.on('ready', () => {
     },
     icon: './build/icons/icon.ico'
   });
+
+  // 项目启动时自动启动WebSocket服务器
+  try {
+    alarmWebSocketServer = new AlarmWebSocketServer(8081);
+    logger.info('WebSocket服务器自动启动成功，端口: 8081');
+  } catch (error) {
+    logger.error('WebSocket服务器自动启动失败:', error);
+  }
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
@@ -197,6 +212,33 @@ app.on('ready', () => {
   // writeSingleValueToPLC - 单独给PLC某个变量写值，通过批量写入数组实现
   ipcMain.on('writeSingleValueToPLC', (event, arg1, arg2) => {
     writeSingleValueToPLC(arg1, arg2);
+  });
+
+  // ============ WebSocket服务器IPC处理 ============
+
+  // 获取WebSocket服务器状态
+  ipcMain.on('get-websocket-status', (event) => {
+    if (alarmWebSocketServer) {
+      event.reply('websocket-status-update', alarmWebSocketServer.getStatus());
+    }
+  });
+
+  // 推送报警到移动端
+  ipcMain.on('push-alarm-to-mobile', (event, alarmData) => {
+    if (alarmWebSocketServer) {
+      const success = alarmWebSocketServer.pushAlarmToMobile(alarmData);
+      logger.info(`推送报警: ${success ? '成功' : '失败'}`);
+    }
+  });
+
+  // 获取连接的客户端列表
+  ipcMain.on('get-websocket-clients', (event) => {
+    if (alarmWebSocketServer) {
+      const clients = alarmWebSocketServer.getConnectedClients();
+      event.reply('websocket-clients-list', clients);
+    } else {
+      event.reply('websocket-clients-list', []);
+    }
   });
   // cancelWriteToPLC - 取消PLC某个变量的写入
   ipcMain.on('cancelWriteToPLC', (event, arg1) => {
