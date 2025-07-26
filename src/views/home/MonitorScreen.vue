@@ -4773,8 +4773,8 @@ export default {
           this.floor1InLineTrayInfo === '' ||
           this.floor1InLineTrayInfo.toLowerCase() === 'noread'
         ) {
-          // 2、如果异常，直接给PLC发送一楼接货口禁用命令DBW512：1
-          ipcRenderer.send('writeValuesToPLC', 'DBW512', 1);
+          // 2、如果异常，直接给PLC发送一楼接货口禁用命令DBW512：0
+          ipcRenderer.send('writeValuesToPLC', 'DBW512', 0);
           // 发送进货异常报警DBW580.bit0
           ipcRenderer.send('writeSingleValueToPLC', 'DBW580', 10);
           setTimeout(() => {
@@ -5095,8 +5095,8 @@ export default {
           this.floor2ALineTrayInfo === '' ||
           this.floor2ALineTrayInfo.toLowerCase() === 'noread'
         ) {
-          // 2、如果异常，直接给PLC发送二楼A接货口禁用命令DBW514：1
-          ipcRenderer.send('writeValuesToPLC', 'DBW514', 1);
+          // 2、如果异常，直接给PLC发送二楼A接货口禁用命令DBW514：0
+          ipcRenderer.send('writeValuesToPLC', 'DBW514', 0);
           // 发送进货异常报警DB101.DBW584
           ipcRenderer.send('writeSingleValueToPLC', 'DBW584', 10);
           setTimeout(() => {
@@ -5118,8 +5118,8 @@ export default {
           this.floor2BLineTrayInfo === '' ||
           this.floor2BLineTrayInfo.toLowerCase() === 'noread'
         ) {
-          // 2、如果异常，直接给PLC发送二楼B接货口禁用命令DBW516：1
-          ipcRenderer.send('writeValuesToPLC', 'DBW516', 1);
+          // 2、如果异常，直接给PLC发送二楼B接货口禁用命令DBW516：0
+          ipcRenderer.send('writeValuesToPLC', 'DBW516', 0);
           // 发送进货异常报警DB101.DBW586
           ipcRenderer.send('writeSingleValueToPLC', 'DBW586', 10);
           setTimeout(() => {
@@ -5141,8 +5141,8 @@ export default {
           this.floor3ALineTrayInfo === '' ||
           this.floor3ALineTrayInfo.toLowerCase() === 'noread'
         ) {
-          // 2、如果异常，直接给PLC发送三楼A接货口禁用命令DBW518：1
-          ipcRenderer.send('writeValuesToPLC', 'DBW518', 1);
+          // 2、如果异常，直接给PLC发送三楼A接货口禁用命令DBW518：0
+          ipcRenderer.send('writeValuesToPLC', 'DBW518', 0);
           // 发送进货异常报警DB101.DBW588
           ipcRenderer.send('writeSingleValueToPLC', 'DBW588', 10);
           setTimeout(() => {
@@ -5164,8 +5164,8 @@ export default {
           this.floor3BLineTrayInfo === '' ||
           this.floor3BLineTrayInfo.toLowerCase() === 'noread'
         ) {
-          // 2、如果异常，直接给PLC发送三楼B接货口禁用命令DBW520：1
-          ipcRenderer.send('writeValuesToPLC', 'DBW520', 1);
+          // 2、如果异常，直接给PLC发送三楼B接货口禁用命令DBW520：0
+          ipcRenderer.send('writeValuesToPLC', 'DBW520', 0);
           // 发送进货异常报警DB101.DBW590
           ipcRenderer.send('writeSingleValueToPLC', 'DBW590', 10);
           setTimeout(() => {
@@ -6321,13 +6321,13 @@ export default {
 
       // 先禁用所有接货口
       allAddresses.forEach((address) => {
-        ipcRenderer.send('writeValuesToPLC', address, 1); // 1表示禁用
+        ipcRenderer.send('writeValuesToPLC', address, 0); // 0表示禁用
       });
 
       // 启用指定楼层的接货口
       if (plcAddresses[floor]) {
         plcAddresses[floor].forEach((address) => {
-          ipcRenderer.send('writeValuesToPLC', address, 0); // 0表示启用
+          ipcRenderer.send('writeValuesToPLC', address, 1); // 1表示启用
         });
         this.addLog(
           `已启用${this.getInputText(floor)}接货口，禁用其他楼层接货口`
@@ -6657,7 +6657,7 @@ export default {
       // 3、如果正常，先判断当前有没有正在执行的订单
       if (!this.currentOrder) {
         // 没有正在执行的订单，禁用接货口
-        ipcRenderer.send('writeValuesToPLC', 'DBW512', 1);
+        ipcRenderer.send('writeValuesToPLC', 'DBW512', 0);
         // 发送进货异常报警DBW580.bit0
         ipcRenderer.send('writeSingleValueToPLC', 'DBW580', 10);
         setTimeout(() => {
@@ -6672,8 +6672,8 @@ export default {
         this.currentOrder.qrCode &&
         this.currentOrder.qrCode.includes(trayCode)
       ) {
-        // 如果属于当前订单，给PLC发送一楼接货口启用命令DBW512：0
-        ipcRenderer.send('writeValuesToPLC', 'DBW512', 0);
+        // 如果属于当前订单，给PLC发送一楼接货口启用命令DBW512：1
+        ipcRenderer.send('writeValuesToPLC', 'DBW512', 1);
         // 使用新的单次写入方法，写入DBW580值为11，1秒内发送3次
         ipcRenderer.send('writeSingleValueToPLC', 'DBW580', 11);
         setTimeout(() => {
@@ -6683,8 +6683,8 @@ export default {
           `${source}：托盘${trayCode}属于当前订单，已启用一楼接货口，给PLC发送DBW580值为11`
         );
       } else {
-        // 如果不属于当前订单，直接给PLC发送一楼接货口禁用命令DBW512：1
-        ipcRenderer.send('writeValuesToPLC', 'DBW512', 1);
+        // 如果不属于当前订单，直接给PLC发送一楼接货口禁用命令DBW512：0
+        ipcRenderer.send('writeValuesToPLC', 'DBW512', 0);
         // 发送进货异常报警DBW580.bit0
         ipcRenderer.send('writeSingleValueToPLC', 'DBW580', 10);
         setTimeout(() => {
@@ -6787,7 +6787,7 @@ export default {
       // 3、如果正常，先判断当前有没有正在执行的订单
       if (!this.currentOrder) {
         // 没有正在执行的订单，禁用接货口
-        ipcRenderer.send('writeValuesToPLC', 'DBW514', 1);
+        ipcRenderer.send('writeValuesToPLC', 'DBW514', 0);
         // 发送进货异常报警DB101.DBW584
         ipcRenderer.send('writeSingleValueToPLC', 'DBW584', 10);
         setTimeout(() => {
@@ -6802,8 +6802,8 @@ export default {
         this.currentOrder.qrCode &&
         this.currentOrder.qrCode.includes(trayCode)
       ) {
-        // 如果属于当前订单，给PLC发送二楼A接货口启用命令DBW514：0
-        ipcRenderer.send('writeValuesToPLC', 'DBW514', 0);
+        // 如果属于当前订单，给PLC发送二楼A接货口启用命令DBW514：1
+        ipcRenderer.send('writeValuesToPLC', 'DBW514', 1);
         // 使用新的单次写入方法，写入DB101.DBW584值为11，1秒内发送3次
         ipcRenderer.send('writeSingleValueToPLC', 'DBW584', 11);
         setTimeout(() => {
@@ -6813,8 +6813,8 @@ export default {
           `${source}：托盘${trayCode}属于当前订单，已启用二楼A接货口，给PLC发送DBW584值为11`
         );
       } else {
-        // 如果不属于当前订单，直接给PLC发送二楼A接货口禁用命令DBW514：1
-        ipcRenderer.send('writeValuesToPLC', 'DBW514', 1);
+        // 如果不属于当前订单，直接给PLC发送二楼A接货口禁用命令DBW514：0
+        ipcRenderer.send('writeValuesToPLC', 'DBW514', 0);
         // 发送进货异常报警DB101.DBW584
         ipcRenderer.send('writeSingleValueToPLC', 'DBW584', 10);
         setTimeout(() => {
@@ -6830,8 +6830,8 @@ export default {
     jiehuo2B(trayCode, source) {
       // 3、如果正常，先判断当前有没有正在执行的订单
       if (!this.currentOrder) {
-        // 没有正在执行的订单，禁用接货口
-        ipcRenderer.send('writeValuesToPLC', 'DBW516', 1);
+        // 没有正在执行的订单，禁用接货口0
+        ipcRenderer.send('writeValuesToPLC', 'DBW516', 0);
         // 发送进货异常报警DB101.DBW586
         ipcRenderer.send('writeSingleValueToPLC', 'DBW586', 10);
         setTimeout(() => {
@@ -6846,8 +6846,8 @@ export default {
         this.currentOrder.qrCode &&
         this.currentOrder.qrCode.includes(trayCode)
       ) {
-        // 如果属于当前订单，给PLC发送二楼B接货口启用命令DBW516：0
-        ipcRenderer.send('writeValuesToPLC', 'DBW516', 0);
+        // 如果属于当前订单，给PLC发送二楼B接货口启用命令DBW516：1
+        ipcRenderer.send('writeValuesToPLC', 'DBW516', 1);
         // 使用新的单次写入方法，写入DB101.DBW586值为11，1秒内发送3次
         ipcRenderer.send('writeSingleValueToPLC', 'DBW586', 11);
         setTimeout(() => {
@@ -6857,8 +6857,8 @@ export default {
           `${source}：托盘${trayCode}属于当前订单，已启用二楼B接货口，给PLC发送DBW586值为11`
         );
       } else {
-        // 如果不属于当前订单，直接给PLC发送二楼B接货口禁用命令DBW516：1
-        ipcRenderer.send('writeValuesToPLC', 'DBW516', 1);
+        // 如果不属于当前订单，直接给PLC发送二楼B接货口禁用命令DBW516：0
+        ipcRenderer.send('writeValuesToPLC', 'DBW516', 0);
         // 发送进货异常报警DB101.DBW586
         ipcRenderer.send('writeSingleValueToPLC', 'DBW586', 10);
         setTimeout(() => {
@@ -6874,8 +6874,8 @@ export default {
     jiehuo3A(trayCode, source) {
       // 3、如果正常，先判断当前有没有正在执行的订单
       if (!this.currentOrder) {
-        // 没有正在执行的订单，禁用接货口
-        ipcRenderer.send('writeValuesToPLC', 'DBW518', 1);
+        // 没有正在执行的订单，禁用接货口0
+        ipcRenderer.send('writeValuesToPLC', 'DBW518', 0);
         // 发送进货异常报警DB101.DBW588
         ipcRenderer.send('writeSingleValueToPLC', 'DBW588', 10);
         setTimeout(() => {
@@ -6890,8 +6890,8 @@ export default {
         this.currentOrder.qrCode &&
         this.currentOrder.qrCode.includes(trayCode)
       ) {
-        // 如果属于当前订单，给PLC发送三楼A接货口启用命令DBW518：0
-        ipcRenderer.send('writeValuesToPLC', 'DBW518', 0);
+        // 如果属于当前订单，给PLC发送三楼A接货口启用命令DBW518：1
+        ipcRenderer.send('writeValuesToPLC', 'DBW518', 1);
         // 使用新的单次写入方法，写入DB101.DBW588值为11，1秒内发送3次
         ipcRenderer.send('writeSingleValueToPLC', 'DBW588', 11);
         setTimeout(() => {
@@ -6901,8 +6901,8 @@ export default {
           `${source}：托盘${trayCode}属于当前订单，已启用三楼A接货口，给PLC发送DBW588值为11`
         );
       } else {
-        // 如果不属于当前订单，直接给PLC发送三楼A接货口禁用命令DBW518：1
-        ipcRenderer.send('writeValuesToPLC', 'DBW518', 1);
+        // 如果不属于当前订单，直接给PLC发送三楼A接货口禁用命令DBW518：0
+        ipcRenderer.send('writeValuesToPLC', 'DBW518', 0);
         // 发送进货异常报警DB101.DBW588
         ipcRenderer.send('writeSingleValueToPLC', 'DBW588', 10);
         setTimeout(() => {
@@ -6918,8 +6918,8 @@ export default {
     jiehuo3B(trayCode, source) {
       // 3、如果正常，先判断当前有没有正在执行的订单
       if (!this.currentOrder) {
-        // 没有正在执行的订单，禁用接货口
-        ipcRenderer.send('writeValuesToPLC', 'DBW520', 1);
+        // 没有正在执行的订单，禁用接货口0
+        ipcRenderer.send('writeValuesToPLC', 'DBW520', 0);
         // 发送进货异常报警DB101.DBW590
         ipcRenderer.send('writeSingleValueToPLC', 'DBW590', 10);
         setTimeout(() => {
@@ -6934,8 +6934,8 @@ export default {
         this.currentOrder.qrCode &&
         this.currentOrder.qrCode.includes(trayCode)
       ) {
-        // 如果属于当前订单，给PLC发送三楼B接货口启用命令DBW520：0
-        ipcRenderer.send('writeValuesToPLC', 'DBW520', 0);
+        // 如果属于当前订单，给PLC发送三楼B接货口启用命令DBW520：1
+        ipcRenderer.send('writeValuesToPLC', 'DBW520', 1);
         // 使用新的单次写入方法，写入DB101.DBW590值为11，1秒内发送3次
         ipcRenderer.send('writeSingleValueToPLC', 'DBW590', 11);
         setTimeout(() => {
@@ -6945,8 +6945,8 @@ export default {
           `${source}：托盘${trayCode}属于当前订单，已启用三楼B接货口，给PLC发送DBW590值为11`
         );
       } else {
-        // 如果不属于当前订单，直接给PLC发送三楼B接货口禁用命令DBW520：1
-        ipcRenderer.send('writeValuesToPLC', 'DBW520', 1);
+        // 如果不属于当前订单，直接给PLC发送三楼B接货口禁用命令DBW520：0
+        ipcRenderer.send('writeValuesToPLC', 'DBW520', 0);
         // 发送进货异常报警DB101.DBW590
         ipcRenderer.send('writeSingleValueToPLC', 'DBW590', 10);
         setTimeout(() => {
