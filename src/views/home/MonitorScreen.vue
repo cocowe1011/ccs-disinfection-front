@@ -4507,7 +4507,7 @@ export default {
       this.gLinePhotoelectricSignal.bit0 = getBit(word32, 8);
       this.gLinePhotoelectricSignal.bit1 = getBit(word32, 9);
       this.gLinePhotoelectricSignal.bit2 = getBit(word32, 10);
-      this.gLinePhotoelectricSignal.bit3 = getBit(word28, 11);
+      this.gLinePhotoelectricSignal.bit3 = getBit(word32, 11);
       this.gLinePhotoelectricSignal.bit4 = getBit(word32, 12);
       this.gLinePhotoelectricSignal.bit5 = getBit(word32, 13);
       this.gLinePhotoelectricSignal.bit6 = getBit(word32, 14);
