@@ -5319,11 +5319,6 @@ export default {
           });
       }
     },
-    markAsRead(log) {
-      if (log.type === 'alarm') {
-        log.unread = false;
-      }
-    },
     // 根据队列名称获取PLC数量
     getQueueCountFromPLC(queueName) {
       switch (queueName) {
@@ -6213,7 +6208,7 @@ export default {
         id: this.logId++,
         type,
         message,
-        timestamp: moment().format('YYYY-MM-DD HH:mm:ss'),
+        timestamp: new Date().getTime(),
         unread: type === 'alarm'
       };
       // 只要是日志就往运行日志中添加
