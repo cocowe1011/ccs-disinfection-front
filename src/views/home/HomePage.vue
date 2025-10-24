@@ -443,8 +443,6 @@ export default {
     &-down {
       width: 100%;
       height: calc(100% - 55px);
-      padding: 5px;
-      box-sizing: border-box;
     }
   }
   ::v-deep {

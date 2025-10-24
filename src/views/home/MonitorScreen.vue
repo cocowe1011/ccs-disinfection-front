@@ -85,12 +85,21 @@
           <div class="section-header">
             <div class="section-title">
               订单信息列表
-              <div
-                class="refresh-btn"
-                @click="refreshOrders"
-                :class="{ 'is-loading': isRefreshing }"
-              >
-                <i class="el-icon-refresh"></i>
+              <div class="title-actions">
+                <div
+                  class="refresh-btn"
+                  @click="refreshOrders"
+                  :class="{ 'is-loading': isRefreshing }"
+                >
+                  <i class="el-icon-refresh"></i>
+                </div>
+                <div
+                  class="add-order-btn"
+                  @click="showAddOrderDialog"
+                  title="新建订单"
+                >
+                  <i class="el-icon-plus"></i>
+                </div>
               </div>
             </div>
             <div class="order-actions">
@@ -120,6 +129,13 @@
                     : 'complete'
                 "
               >
+                <!-- 订单类型标识 -->
+                <div
+                  class="order-type-badge"
+                  :class="order.isManual === '1' ? 'manual' : 'mse'"
+                >
+                  {{ order.isManual === '1' ? '手动' : 'MSE' }}
+                </div>
                 <el-button
                   v-if="order.orderStatus === '0'"
                   type="danger"
@@ -344,7 +360,7 @@
                   decoding="async"
                 />
                 <!-- 模式选择卡片 -->
-                <div class="mode-control-card" data-x="10" data-y="10">
+                <div class="mode-control-card" data-x="-35" data-y="5">
                   <div class="mode-card-content">
                     <div class="mode-card-header">
                       <i class="el-icon-setting"></i>
@@ -364,7 +380,7 @@
                             value="mse"
                           ></el-option>
                           <el-option
-                            label="无码模式"
+                            label="WCS控制-无码模式"
                             value="nocode"
                           ></el-option>
                         </el-select>
@@ -375,15 +391,13 @@
                         class="nocode-config-row"
                       >
                         <div class="config-item">
-                          <span class="config-label">上货数量：</span>
-                          <el-input-number
+                          <span class="config-label">上货数：</span>
+                          <el-input
                             v-model="nocodeTargetCount"
-                            :min="1"
-                            :max="100"
                             size="mini"
                             :disabled="isModeExecuting"
                             style="width: 100px"
-                          ></el-input-number>
+                          ></el-input>
                         </div>
                         <div class="config-item">
                           <span class="config-label">预热房：</span>
@@ -430,9 +444,8 @@
                             type="danger"
                             size="mini"
                             @click="handleModeCancel"
-                            style="flex: 1"
+                            style="width: 60px"
                           >
-                            <i class="el-icon-close"></i>
                             取消
                           </el-button>
                         </div>
@@ -456,6 +469,38 @@
                     <span class="queue-marker-name">{{ marker.name }}</span>
                   </div>
                 </div>
+                <!-- 预热房状态卡片(A2-G2) - 只在预热完成时显示 -->
+                <div
+                  v-for="marker in queueMarkers.filter((m) =>
+                    isPreheatingQueue(m.name)
+                  )"
+                  :key="'preheat-status-' + marker.id"
+                  v-show="checkPreheatingCompleted(marker.name)"
+                  class="status-card completed"
+                  :data-x="marker.x"
+                  :data-y="marker.y + 180"
+                >
+                  <div class="status-card-title">预热完成</div>
+                  <div class="status-card-destination">
+                    目的地: {{ getPreheatingDestination(marker.name) }}
+                  </div>
+                </div>
+                <!-- 灭菌柜状态卡片(A3-G3) - 只在灭菌完成时显示 -->
+                <div
+                  v-for="marker in queueMarkers.filter((m) =>
+                    isSterilizationQueue(m.name)
+                  )"
+                  :key="'sterilize-status-' + marker.id"
+                  v-show="checkSterilizationCompleted(marker.name)"
+                  class="status-card completed"
+                  :data-x="marker.x"
+                  :data-y="marker.y - 150"
+                >
+                  <div class="status-card-title">灭菌完成</div>
+                  <div class="status-card-destination">
+                    目的地: {{ getSterilizationDestination(marker.name) }}
+                  </div>
+                </div>
                 <!-- 修改小车元素 -->
                 <div
                   v-for="cart in carts"
@@ -473,7 +518,7 @@
                   <div
                     class="data-panel"
                     :class="['position-right', { 'always-show': true }]"
-                    style="width: 120px"
+                    style="width: 150px"
                   >
                     <div class="data-panel-header">缓存区扫码信息</div>
                     <div class="data-panel-content">
@@ -571,6 +616,19 @@
                             >
                           </span>
                         </div>
+                      </div>
+                      <!-- 无码模式下显示复选框 -->
+                      <div
+                        v-if="controlMode === 'nocode' && isModeExecuting"
+                        class="data-panel-row nocode-checkbox-row"
+                      >
+                        <span class="data-panel-label">允许上货：</span>
+                        <el-checkbox
+                          v-model="nocodeFloor1Enabled"
+                          @change="handleNocodeFloor1Change"
+                          size="mini"
+                        >
+                        </el-checkbox>
                       </div>
                     </div>
                   </div>
@@ -2511,7 +2569,7 @@
                 </div>
 
                 <!-- 灭菌房F门状态 -->
-                <div class="door-status-marker" data-x="478" data-y="730">
+                <div class="door-status-marker" data-x="480" data-y="730">
                   <div class="door-status-label">灭菌房F前门</div>
                   <div
                     class="door-status-indicator"
@@ -2533,7 +2591,7 @@
                 </div>
 
                 <!-- 灭菌房G门状态 -->
-                <div class="door-status-marker" data-x="323" data-y="730">
+                <div class="door-status-marker" data-x="328" data-y="730">
                   <div class="door-status-label">灭菌房G前门</div>
                   <div
                     class="door-status-indicator"
@@ -2543,7 +2601,7 @@
                     }"
                   ></div>
                 </div>
-                <div class="door-status-marker" data-x="328" data-y="310">
+                <div class="door-status-marker" data-x="330" data-y="310">
                   <div class="door-status-label">灭菌房G后门</div>
                   <div
                     class="door-status-indicator"
@@ -2569,7 +2627,10 @@
                           v-model="disinfectionRoomSelectedFrom"
                           placeholder="预"
                           size="mini"
-                          :disabled="isDisinfectionExecuting"
+                          :disabled="
+                            isDisinfectionExecuting ||
+                            (controlMode === 'mse' && isModeExecuting)
+                          "
                         >
                           <el-option label="A" value="A"></el-option>
                           <el-option label="B" value="B"></el-option>
@@ -2587,7 +2648,10 @@
                           v-model="disinfectionRoomSelectedTo"
                           placeholder="灭"
                           size="mini"
-                          :disabled="isDisinfectionExecuting"
+                          :disabled="
+                            isDisinfectionExecuting ||
+                            (controlMode === 'mse' && isModeExecuting)
+                          "
                         >
                           <el-option label="A" value="A"></el-option>
                           <el-option label="B" value="B"></el-option>
@@ -2603,7 +2667,10 @@
                         size="mini"
                         style="width: 100%"
                         @click="handleDisinfectionRoomExecute"
-                        :disabled="isDisinfectionExecuting"
+                        :disabled="
+                          isDisinfectionExecuting ||
+                          (controlMode === 'mse' && isModeExecuting)
+                        "
                         >执行</el-button
                       >
                       <span
@@ -2616,6 +2683,7 @@
                         type="danger"
                         size="mini"
                         @click="cancelDisinfectionExecute"
+                        :disabled="controlMode === 'mse' && isModeExecuting"
                       >
                         取消
                       </el-button>
@@ -2630,7 +2698,10 @@
                         v-model="outboundSelectedQueue"
                         placeholder="选择"
                         size="mini"
-                        :disabled="isOutboundExecuting"
+                        :disabled="
+                          isOutboundExecuting ||
+                          (controlMode === 'mse' && isModeExecuting)
+                        "
                       >
                         <el-option label="A" value="A"></el-option>
                         <el-option label="B" value="B"></el-option>
@@ -2645,7 +2716,9 @@
                         size="mini"
                         @click="handleOutboundExecute"
                         :disabled="
-                          isOutboundExecuting || !outboundSelectedQueue
+                          isOutboundExecuting ||
+                          !outboundSelectedQueue ||
+                          (controlMode === 'mse' && isModeExecuting)
                         "
                         :loading="isOutboundExecuting"
                       >
@@ -2667,6 +2740,7 @@
                         v-model="destinationSelected"
                         placeholder="选择"
                         size="mini"
+                        :disabled="controlMode === 'mse' && isModeExecuting"
                       >
                         <el-option label="一楼" value="1"></el-option>
                         <el-option label="解析" value="2"></el-option>
@@ -2729,6 +2803,19 @@
                             >
                           </span>
                         </div>
+                        <!-- 无码模式下显示复选框 -->
+                        <div
+                          v-if="controlMode === 'nocode' && isModeExecuting"
+                          class="data-panel-row nocode-checkbox-row"
+                        >
+                          <span class="data-panel-label">允许上货：</span>
+                          <el-checkbox
+                            v-model="nocodeFloor2AEnabled"
+                            @change="handleNocodeFloor2AChange"
+                            size="mini"
+                          >
+                          </el-checkbox>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2765,6 +2852,19 @@
                               >运行订单信息包含</span
                             >
                           </span>
+                        </div>
+                        <!-- 无码模式下显示复选框 -->
+                        <div
+                          v-if="controlMode === 'nocode' && isModeExecuting"
+                          class="data-panel-row nocode-checkbox-row"
+                        >
+                          <span class="data-panel-label">允许上货：</span>
+                          <el-checkbox
+                            v-model="nocodeFloor2BEnabled"
+                            @change="handleNocodeFloor2BChange"
+                            size="mini"
+                          >
+                          </el-checkbox>
                         </div>
                       </div>
                     </div>
@@ -2915,6 +3015,19 @@
                             >
                           </span>
                         </div>
+                        <!-- 无码模式下显示复选框 -->
+                        <div
+                          v-if="controlMode === 'nocode' && isModeExecuting"
+                          class="data-panel-row nocode-checkbox-row"
+                        >
+                          <span class="data-panel-label">允许上货：</span>
+                          <el-checkbox
+                            v-model="nocodeFloor3AEnabled"
+                            @change="handleNocodeFloor3AChange"
+                            size="mini"
+                          >
+                          </el-checkbox>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2951,6 +3064,19 @@
                               >运行订单信息包含</span
                             >
                           </span>
+                        </div>
+                        <!-- 无码模式下显示复选框 -->
+                        <div
+                          v-if="controlMode === 'nocode' && isModeExecuting"
+                          class="data-panel-row nocode-checkbox-row"
+                        >
+                          <span class="data-panel-label">允许上货：</span>
+                          <el-checkbox
+                            v-model="nocodeFloor3BEnabled"
+                            @change="handleNocodeFloor3BChange"
+                            size="mini"
+                          >
+                          </el-checkbox>
                         </div>
                       </div>
                     </div>
@@ -3373,22 +3499,6 @@
                 >
                   下线扫码处光电
                 </el-button>
-                <el-button
-                  type="primary"
-                  size="small"
-                  @click="triggerPhotoelectricSignal('bit7')"
-                  :loading="photoelectricLoading.bit7"
-                >
-                  一楼出货站台光电
-                </el-button>
-                <el-button
-                  type="success"
-                  size="small"
-                  @click="testScanPhotoelectricBit6"
-                  :loading="photoelectricLoading.bit6"
-                >
-                  测试下货扫码处光电bit6
-                </el-button>
               </div>
             </div>
           </div>
@@ -3404,6 +3514,56 @@
                   :loading="isRequestDestinationLoading"
                 >
                   触发预热房前缓存线请求目的地
+                </el-button>
+              </div>
+            </div>
+          </div>
+          <!-- 添加预热完成信号测试 -->
+          <div class="test-section">
+            <span class="test-label">预热完成信号测试:</span>
+            <div class="signal-test-container">
+              <div class="signal-test-buttons">
+                <el-button
+                  v-for="room in ['A', 'B', 'C', 'D', 'E', 'F', 'G']"
+                  :key="'preheat-' + room"
+                  type="success"
+                  size="small"
+                  @click="togglePreheatingComplete(room)"
+                >
+                  预热房{{ room }}完成
+                </el-button>
+              </div>
+            </div>
+          </div>
+          <!-- 添加灭菌完成信号测试 -->
+          <div class="test-section">
+            <span class="test-label">灭菌完成信号测试:</span>
+            <div class="signal-test-container">
+              <div class="signal-test-buttons">
+                <el-button
+                  v-for="room in ['A', 'B', 'C', 'D', 'E', 'F', 'G']"
+                  :key="'sterilize-' + room"
+                  type="warning"
+                  size="small"
+                  @click="toggleSterilizationComplete(room)"
+                >
+                  灭菌柜{{ room }}完成
+                </el-button>
+              </div>
+            </div>
+          </div>
+          <!-- 添加预热→灭菌完成信号测试 -->
+          <div class="test-section">
+            <span class="test-label">预热→灭菌完成信号测试:</span>
+            <div class="signal-test-container">
+              <div class="signal-test-buttons">
+                <el-button
+                  type="danger"
+                  size="small"
+                  @click="triggerPreheatingCompletedSignal"
+                  :loading="isPreheatingCompletedLoading"
+                >
+                  触发预热→灭菌完成信号
                 </el-button>
               </div>
             </div>
@@ -3597,6 +3757,150 @@
                     size="small"
                     @click="
                       aLineQuantity.a2 = Math.max(0, aLineQuantity.a2 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">B2队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ bLineQuantity.b2 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="bLineQuantity.b2++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      bLineQuantity.b2 = Math.max(0, bLineQuantity.b2 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">C2队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ cLineQuantity.c2 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="cLineQuantity.c2++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      cLineQuantity.c2 = Math.max(0, cLineQuantity.c2 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">D2队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ dLineQuantity.d2 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="dLineQuantity.d2++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      dLineQuantity.d2 = Math.max(0, dLineQuantity.d2 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">E2队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ eLineQuantity.e2 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="eLineQuantity.e2++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      eLineQuantity.e2 = Math.max(0, eLineQuantity.e2 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">F2队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ fLineQuantity.f2 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="fLineQuantity.f2++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      fLineQuantity.f2 = Math.max(0, fLineQuantity.f2 - 1)
+                    "
+                    style="margin-left: 5px"
+                  >
+                    -
+                  </el-button>
+                </div>
+              </div>
+              <div class="queue-quantity-group">
+                <div class="queue-quantity-label">G2队列数量:</div>
+                <div class="queue-quantity-controls">
+                  <span class="quantity-display">{{ gLineQuantity.g2 }}</span>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="gLineQuantity.g2++"
+                    style="margin-left: 5px"
+                  >
+                    +
+                  </el-button>
+                  <el-button
+                    type="danger"
+                    size="small"
+                    @click="
+                      gLineQuantity.g2 = Math.max(0, gLineQuantity.g2 - 1)
                     "
                     style="margin-left: 5px"
                   >
@@ -4079,6 +4383,189 @@
         </el-table-column>
       </el-table>
     </el-dialog>
+
+    <!-- 新建订单弹窗 -->
+    <el-dialog
+      title="新建订单"
+      :visible.sync="addOrderDialogVisible"
+      width="1200px"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      append-to-body
+      class="add-order-dialog"
+    >
+      <div class="form-container">
+        <el-form
+          ref="newOrderForm"
+          :model="newOrderForm"
+          :rules="orderFormRules"
+          label-width="150px"
+          size="small"
+        >
+          <div class="form-row">
+            <el-form-item label="生产总订单号" prop="orderId" class="form-item">
+              <el-input
+                v-model="newOrderForm.orderId"
+                placeholder="请输入生产总订单号"
+                maxlength="50"
+              />
+            </el-form-item>
+
+            <el-form-item
+              label="生产单批次订单ID"
+              prop="batchId"
+              class="form-item"
+            >
+              <el-input
+                type="number"
+                v-model="newOrderForm.batchId"
+                placeholder="请输入批次订单ID"
+                style="width: 100%"
+              />
+            </el-form-item>
+
+            <el-form-item label="产品编号" prop="productCode" class="form-item">
+              <el-input
+                v-model="newOrderForm.productCode"
+                placeholder="请输入产品编号"
+                maxlength="50"
+              />
+            </el-form-item>
+          </div>
+
+          <div class="form-row">
+            <el-form-item label="产品名称" prop="productName" class="form-item">
+              <el-input
+                v-model="newOrderForm.productName"
+                placeholder="请输入产品名称"
+                maxlength="100"
+              />
+            </el-form-item>
+
+            <el-form-item label="指定预热房" prop="isPrint1" class="form-item">
+              <el-select
+                v-model="newOrderForm.isPrint1"
+                placeholder="请选择预热房"
+                style="width: 100%"
+              >
+                <el-option label="A" value="A" />
+                <el-option label="B" value="B" />
+                <el-option label="C" value="C" />
+                <el-option label="D" value="D" />
+                <el-option label="E" value="E" />
+                <el-option label="F" value="F" />
+                <el-option label="G" value="G" />
+              </el-select>
+            </el-form-item>
+
+            <el-form-item label="指定灭菌柜" prop="isPrint2" class="form-item">
+              <el-select
+                v-model="newOrderForm.isPrint2"
+                placeholder="请选择灭菌柜"
+                style="width: 100%"
+              >
+                <el-option label="A" value="A" />
+                <el-option label="B" value="B" />
+                <el-option label="C" value="C" />
+                <el-option label="D" value="D" />
+                <el-option label="E" value="E" />
+                <el-option label="F" value="F" />
+                <el-option label="G" value="G" />
+              </el-select>
+            </el-form-item>
+          </div>
+
+          <div class="form-row">
+            <el-form-item label="指定输出" prop="isPrint3" class="form-item">
+              <el-select
+                v-model="newOrderForm.isPrint3"
+                placeholder="请选择输出"
+                style="width: 100%"
+              >
+                <el-option label="不解析" value="0" />
+                <el-option label="解析库" value="1" />
+                <el-option label="立体库" value="2" />
+              </el-select>
+            </el-form-item>
+
+            <el-form-item label="进货口指定" prop="inPut" class="form-item">
+              <el-select
+                v-model="newOrderForm.inPut"
+                placeholder="请选择进货口"
+                style="width: 100%"
+              >
+                <el-option label="一楼外部进货" value="1" />
+                <el-option label="二楼进货" value="2" />
+                <el-option label="三楼进货" value="3" />
+                <el-option label="不解析出口" value="4" />
+              </el-select>
+            </el-form-item>
+
+            <el-form-item label="规格" prop="spec" class="form-item">
+              <el-input
+                v-model="newOrderForm.spec"
+                placeholder="请输入规格"
+                maxlength="100"
+              />
+            </el-form-item>
+          </div>
+
+          <el-form-item label="托盘码" prop="qrCode" class="tray-codes-section">
+            <div class="tray-codes-container">
+              <div class="tray-input-section">
+                <el-input
+                  v-model="newOrderForm.currentTrayCode"
+                  placeholder="请输入托盘码"
+                  maxlength="50"
+                  @keyup.enter="addTrayCode"
+                />
+                <el-button
+                  type="primary"
+                  size="small"
+                  icon="el-icon-plus"
+                  @click="addTrayCode"
+                  :disabled="!newOrderForm.currentTrayCode.trim()"
+                >
+                  添加
+                </el-button>
+              </div>
+
+              <div
+                class="tray-codes-display"
+                v-if="newOrderForm.trayCodes.length > 0"
+              >
+                <div class="tray-codes-list">
+                  <div
+                    v-for="(code, index) in newOrderForm.trayCodes"
+                    :key="index"
+                    class="tray-code-tag"
+                  >
+                    <span class="tray-code-text">{{ code }}</span>
+                    <el-button
+                      type="text"
+                      icon="el-icon-close"
+                      @click="removeTrayCode(index)"
+                      class="remove-btn"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="cancelAddOrder">取消</el-button>
+        <el-button
+          type="primary"
+          @click="submitAddOrder"
+          :loading="isSubmittingOrder"
+        >
+          确定
+        </el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -4259,6 +4746,57 @@ export default {
       pageSize: 10,
       totalHistoryOrders: 0,
       addTrayDialogVisible: false,
+      // 新建订单相关
+      addOrderDialogVisible: false,
+      isSubmittingOrder: false,
+      newOrderForm: {
+        orderId: '',
+        batchId: null,
+        productCode: '',
+        productName: '',
+        isPrint1: '',
+        isPrint2: '',
+        isPrint3: '',
+        inPut: '',
+        spec: '',
+        isManual: '1', // 默认手动
+        currentTrayCode: '', // 当前输入的托盘码
+        trayCodes: [] // 已添加的托盘码列表
+      },
+      orderFormRules: {
+        orderId: [
+          { required: true, message: '请输入生产总订单号', trigger: 'blur' },
+          { min: 1, max: 50, message: '长度在 1 到 50 个字符', trigger: 'blur' }
+        ],
+        batchId: [
+          { required: true, message: '请输入生产单批次订单ID', trigger: 'blur' }
+        ],
+        productCode: [
+          { required: true, message: '请输入产品编号', trigger: 'blur' },
+          { min: 1, max: 50, message: '长度在 1 到 50 个字符', trigger: 'blur' }
+        ],
+        productName: [
+          { required: true, message: '请输入产品名称', trigger: 'blur' },
+          {
+            min: 1,
+            max: 100,
+            message: '长度在 1 到 100 个字符',
+            trigger: 'blur'
+          }
+        ],
+        isPrint1: [
+          { required: true, message: '请选择指定预热房', trigger: 'change' }
+        ],
+        isPrint2: [
+          { required: true, message: '请选择指定灭菌柜', trigger: 'change' }
+        ],
+        isPrint3: [
+          { required: true, message: '请选择指定输出', trigger: 'change' }
+        ],
+        inPut: [
+          { required: true, message: '请选择进货口指定', trigger: 'change' }
+        ]
+      },
       isSubmitting: false,
       isCacheQueueAdd: false,
       isRequestDestinationLoading: false,
@@ -4712,6 +5250,8 @@ export default {
         bit6: false,
         bit7: false
       },
+      // 预热→灭菌完成信号测试加载状态
+      isPreheatingCompletedLoading: false,
       // 当前订单已上货托盘计数器
       currentOrderScannedCount: 0,
       // 灭菌出发地
@@ -4738,6 +5278,13 @@ export default {
       nocodeScanCount: 0, // 缓存区扫码计数
       nocodeDestination: 'A1', // 预热房目的地（A1~G1）
       nocodeOrderId: '', // 无码模式临时唯一orderId
+
+      // 无码模式下各接货口启用状态控制
+      nocodeFloor1Enabled: false, // 一楼接货口启用状态
+      nocodeFloor2AEnabled: false, // 二楼A接货口启用状态
+      nocodeFloor2BEnabled: false, // 二楼B接货口启用状态
+      nocodeFloor3AEnabled: false, // 三楼A接货口启用状态
+      nocodeFloor3BEnabled: false, // 三楼B接货口启用状态
 
       // 新增PLC点位变量
       // 预热状态-读取PLC (DBW362)
@@ -5330,6 +5877,50 @@ export default {
         this.addLog('预热→灭菌完成信号触发，执行状态已完成');
       }
     },
+    // MES模式下监听各个预热柜完成信号
+    'preheatingStatus.bit0'(newVal, oldVal) {
+      this.handlePreheatingComplete('A', 0, newVal, oldVal);
+    },
+    'preheatingStatus.bit1'(newVal, oldVal) {
+      this.handlePreheatingComplete('B', 1, newVal, oldVal);
+    },
+    'preheatingStatus.bit2'(newVal, oldVal) {
+      this.handlePreheatingComplete('C', 2, newVal, oldVal);
+    },
+    'preheatingStatus.bit3'(newVal, oldVal) {
+      this.handlePreheatingComplete('D', 3, newVal, oldVal);
+    },
+    'preheatingStatus.bit4'(newVal, oldVal) {
+      this.handlePreheatingComplete('E', 4, newVal, oldVal);
+    },
+    'preheatingStatus.bit5'(newVal, oldVal) {
+      this.handlePreheatingComplete('F', 5, newVal, oldVal);
+    },
+    'preheatingStatus.bit6'(newVal, oldVal) {
+      this.handlePreheatingComplete('G', 6, newVal, oldVal);
+    },
+    // MES模式下监听各个灭菌柜完成信号
+    'sterilizationStatus.bit0'(newVal, oldVal) {
+      this.handleSterilizationComplete('A', 0, newVal, oldVal);
+    },
+    'sterilizationStatus.bit1'(newVal, oldVal) {
+      this.handleSterilizationComplete('B', 1, newVal, oldVal);
+    },
+    'sterilizationStatus.bit2'(newVal, oldVal) {
+      this.handleSterilizationComplete('C', 2, newVal, oldVal);
+    },
+    'sterilizationStatus.bit3'(newVal, oldVal) {
+      this.handleSterilizationComplete('D', 3, newVal, oldVal);
+    },
+    'sterilizationStatus.bit4'(newVal, oldVal) {
+      this.handleSterilizationComplete('E', 4, newVal, oldVal);
+    },
+    'sterilizationStatus.bit5'(newVal, oldVal) {
+      this.handleSterilizationComplete('F', 5, newVal, oldVal);
+    },
+    'sterilizationStatus.bit6'(newVal, oldVal) {
+      this.handleSterilizationComplete('G', 6, newVal, oldVal);
+    },
     // 一楼接货站台"有载信号"/光电占位
     'scanPhotoelectricSignal.bit0'(newVal) {
       // 当值变为1时执行逻辑
@@ -5880,6 +6471,63 @@ export default {
     },
     // --------------------------------模式控制相关方法结束--------------------------------
 
+    // --------------------------------无码模式接货口控制方法--------------------------------
+    // 处理一楼接货口复选框状态变化
+    handleNocodeFloor1Change(checked) {
+      if (checked) {
+        ipcRenderer.send('writeValuesToPLC', 'DBW512', 1);
+        this.addLog('【无码模式】一楼接货口已启用，给PLC发送DBW512值为1');
+      } else {
+        ipcRenderer.send('writeValuesToPLC', 'DBW512', 0);
+        this.addLog('【无码模式】一楼接货口已禁用，给PLC发送DBW512值为0');
+      }
+    },
+
+    // 处理二楼A接货口复选框状态变化
+    handleNocodeFloor2AChange(checked) {
+      if (checked) {
+        ipcRenderer.send('writeValuesToPLC', 'DBW514', 1);
+        this.addLog('【无码模式】二楼A接货口已启用，给PLC发送DBW514值为1');
+      } else {
+        ipcRenderer.send('writeValuesToPLC', 'DBW514', 0);
+        this.addLog('【无码模式】二楼A接货口已禁用，给PLC发送DBW514值为0');
+      }
+    },
+
+    // 处理二楼B接货口复选框状态变化
+    handleNocodeFloor2BChange(checked) {
+      if (checked) {
+        ipcRenderer.send('writeValuesToPLC', 'DBW516', 1);
+        this.addLog('【无码模式】二楼B接货口已启用，给PLC发送DBW516值为1');
+      } else {
+        ipcRenderer.send('writeValuesToPLC', 'DBW516', 0);
+        this.addLog('【无码模式】二楼B接货口已禁用，给PLC发送DBW516值为0');
+      }
+    },
+
+    // 处理三楼A接货口复选框状态变化
+    handleNocodeFloor3AChange(checked) {
+      if (checked) {
+        ipcRenderer.send('writeValuesToPLC', 'DBW518', 1);
+        this.addLog('【无码模式】三楼A接货口已启用，给PLC发送DBW518值为1');
+      } else {
+        ipcRenderer.send('writeValuesToPLC', 'DBW518', 0);
+        this.addLog('【无码模式】三楼A接货口已禁用，给PLC发送DBW518值为0');
+      }
+    },
+
+    // 处理三楼B接货口复选框状态变化
+    handleNocodeFloor3BChange(checked) {
+      if (checked) {
+        ipcRenderer.send('writeValuesToPLC', 'DBW520', 1);
+        this.addLog('【无码模式】三楼B接货口已启用，给PLC发送DBW520值为1');
+      } else {
+        ipcRenderer.send('writeValuesToPLC', 'DBW520', 0);
+        this.addLog('【无码模式】三楼B接货口已禁用，给PLC发送DBW520值为0');
+      }
+    },
+    // --------------------------------无码模式接货口控制方法结束--------------------------------
+
     changeQueueExpanded() {
       this.isQueueExpanded = !this.isQueueExpanded;
       // 当展开面板时，刷新当前选中队列的托盘信息
@@ -6217,7 +6865,7 @@ export default {
         if (!imageWrapper) return;
 
         const markers = imageWrapper.querySelectorAll(
-          '.marker, .marker-with-panel, .queue-marker, .motor-marker, .preheating-room-marker, .mode-control-card, .door-status-marker'
+          '.marker, .marker-with-panel, .queue-marker, .motor-marker, .preheating-room-marker, .mode-control-card, .door-status-marker, .status-card'
         );
         const carts = imageWrapper.querySelectorAll('.cart-container');
         const wrapperRect = imageWrapper.getBoundingClientRect();
@@ -6700,6 +7348,45 @@ export default {
         this.isRequestDestinationLoading = false;
       }, 1000);
     },
+    // 切换预热完成信号测试
+    togglePreheatingComplete(room) {
+      const bitIndex = 'ABCDEFG'.indexOf(room);
+      const bitKey = `bit${bitIndex}`;
+
+      // 取反当前状态
+      this.preheatingStatus[bitKey] =
+        this.preheatingStatus[bitKey] === '1' ? '0' : '1';
+      const status = this.preheatingStatus[bitKey] === '1' ? '开启' : '关闭';
+      this.addLog(`测试：预热房${room}完成信号${status}`);
+    },
+    // 切换灭菌完成信号测试
+    toggleSterilizationComplete(room) {
+      const bitIndex = 'ABCDEFG'.indexOf(room);
+      const bitKey = `bit${bitIndex}`;
+
+      // 取反当前状态
+      this.sterilizationStatus[bitKey] =
+        this.sterilizationStatus[bitKey] === '1' ? '0' : '1';
+      const status = this.sterilizationStatus[bitKey] === '1' ? '开启' : '关闭';
+      this.addLog(`测试：灭菌柜${room}完成信号${status}`);
+    },
+    // 触发预热→灭菌完成信号测试
+    triggerPreheatingCompletedSignal() {
+      if (this.isPreheatingCompletedLoading) return;
+
+      this.isPreheatingCompletedLoading = true;
+
+      // 设置预热→灭菌完成信号为1
+      this.isPreheatingCompleted = 1;
+      this.addLog('触发预热→灭菌完成信号测试');
+
+      // 1秒后恢复为0并关闭loading
+      setTimeout(() => {
+        this.isPreheatingCompleted = 0;
+        this.isPreheatingCompletedLoading = false;
+        this.addLog('预热→灭菌完成信号已恢复为0');
+      }, 1000);
+    },
 
     // 更新数据库队列信息
     updateQueueInfo(id) {
@@ -6923,6 +7610,122 @@ export default {
       this.$refs.newTrayForm && this.$refs.newTrayForm.resetFields();
     },
 
+    // --------------------------------新建订单相关方法--------------------------------
+    // 显示新建订单弹窗
+    showAddOrderDialog() {
+      this.addOrderDialogVisible = true;
+      // 重置表单
+      this.newOrderForm = {
+        orderId: '',
+        batchId: null,
+        productCode: '',
+        productName: '',
+        isPrint1: '',
+        isPrint2: '',
+        isPrint3: '',
+        inPut: '',
+        spec: '',
+        isManual: '1', // 默认手动
+        currentTrayCode: '', // 当前输入的托盘码
+        trayCodes: [] // 已添加的托盘码列表
+      };
+    },
+
+    // 添加托盘码
+    addTrayCode() {
+      const code = this.newOrderForm.currentTrayCode.trim();
+      if (!code) {
+        this.$message.warning('请输入托盘码');
+        return;
+      }
+
+      // 检查是否已存在
+      if (this.newOrderForm.trayCodes.includes(code)) {
+        this.$message.warning('该托盘码已存在');
+        return;
+      }
+
+      // 添加到列表
+      this.newOrderForm.trayCodes.push(code);
+      // 清空输入框
+      this.newOrderForm.currentTrayCode = '';
+    },
+
+    // 删除托盘码
+    removeTrayCode(index) {
+      this.newOrderForm.trayCodes.splice(index, 1);
+    },
+
+    // 提交新建订单
+    async submitAddOrder() {
+      try {
+        // 表单验证
+        await this.$refs.newOrderForm.validate();
+
+        // 验证至少有一个托盘码
+        if (this.newOrderForm.trayCodes.length === 0) {
+          this.$message.error('请至少添加一个托盘码');
+          return;
+        }
+
+        this.isSubmittingOrder = true;
+
+        // 构建订单数据
+        const orderData = {
+          orderId: this.newOrderForm.orderId,
+          batchId: this.newOrderForm.batchId,
+          productCode: this.newOrderForm.productCode,
+          productName: this.newOrderForm.productName,
+          isPrint1: this.newOrderForm.isPrint1,
+          isPrint2: this.newOrderForm.isPrint2,
+          isPrint3: this.newOrderForm.isPrint3,
+          inPut: this.newOrderForm.inPut,
+          spec: this.newOrderForm.spec || '',
+          isManual: '1', // 新建订单都是手动添加
+          qrCode: this.newOrderForm.trayCodes.join(','), // 托盘码用逗号分隔
+          orderStatus: '0', // 待执行
+          invalidFlag: '0' // 未作废
+        };
+
+        // 调用保存接口
+        await HttpUtil.post('/order_info/save', orderData)
+          .then((res) => {
+            if (res.code === '200' || res.data >= 1) {
+              this.$message.success('订单创建成功');
+              this.addLog(
+                `新建订单 ${orderData.orderId} 创建成功，产品：${orderData.productName}，托盘数：${this.newOrderForm.trayCodes.length}`
+              );
+
+              // 关闭弹窗
+              this.addOrderDialogVisible = false;
+
+              // 刷新订单列表
+              this.refreshOrders();
+            } else {
+              this.$message.error('创建订单失败：' + (res.message || '请重试'));
+            }
+          })
+          .catch((err) => {
+            this.$message.error('创建订单失败：' + err);
+          })
+          .finally(() => {
+            this.isSubmittingOrder = false;
+          });
+      } catch (error) {
+        if (error !== 'cancel') {
+          this.$message.error('表单验证失败，请检查输入');
+        }
+        this.isSubmittingOrder = false;
+      }
+    },
+
+    // 取消新建订单
+    cancelAddOrder() {
+      this.addOrderDialogVisible = false;
+      // 重置表单
+      this.$refs.newOrderForm && this.$refs.newOrderForm.resetFields();
+    },
+
     // 点击队列标识
     handleQueueMarkerClick(queueId) {
       // 展开队列面板
@@ -7110,6 +7913,14 @@ export default {
         });
     },
     handleDisinfectionRoomExecute() {
+      // 判断 起始和终点都不为空
+      if (
+        !this.disinfectionRoomSelectedFrom ||
+        !this.disinfectionRoomSelectedTo
+      ) {
+        this.$message.warning('请选择预热房和灭菌柜');
+        return;
+      }
       // 预热房编号映射
       const fromMap = { A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, '': 0 };
       const toMap = { A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, '': 0 };
@@ -7221,6 +8032,164 @@ export default {
         );
       }, 1000);
     },
+    // MES模式下处理预热完成信号
+    async handlePreheatingComplete(preheatingRoom, bitIndex, newVal, oldVal) {
+      // 只有在MES模式下且信号从0变为1时才处理
+      if (this.controlMode !== 'mse' || newVal !== '1' || oldVal === '1') {
+        return;
+      }
+
+      this.addLog(`【MES模式】检测到预热房${preheatingRoom}完成信号`);
+
+      // 获取对应A2-G2队列索引（8~14）
+      const queueIndex = 8 + bitIndex;
+      const queue = this.queues[queueIndex];
+
+      // 检查队列中是否有托盘
+      if (!queue || !queue.trayInfo || queue.trayInfo.length === 0) {
+        this.addLog(
+          `【MES模式】预热房${preheatingRoom}对应队列${queue.queueName}中无托盘，跳过自动执行`
+        );
+        return;
+      }
+
+      // 获取队列第一个托盘
+      const firstTray = queue.trayInfo[0];
+      const orderId = firstTray.orderId;
+
+      this.addLog(
+        `【MES模式】预热房${preheatingRoom}队列第一个托盘订单号：${orderId}，开始查询最新订单信息`
+      );
+
+      try {
+        // 查询最新订单信息
+        const res = await HttpUtil.post('/order_info/queryOrderList', {});
+        if (res.code === '200' && res.data) {
+          // 查找匹配的订单
+          const matchedOrder = res.data.find(
+            (order) => order.orderId === orderId
+          );
+
+          if (matchedOrder) {
+            this.addLog(
+              `【MES模式】查询到订单信息：${matchedOrder.orderId}，指定灭菌柜：${matchedOrder.isPrint2}`
+            );
+
+            // 自动设置预热房到灭菌柜的选择
+            this.disinfectionRoomSelectedFrom = preheatingRoom;
+            this.disinfectionRoomSelectedTo = matchedOrder.isPrint2
+              ? matchedOrder.isPrint2.charAt(0)
+              : '';
+
+            // 延迟100ms后自动执行
+            setTimeout(() => {
+              this.addLog(
+                `【MES模式】自动执行：预热房${this.disinfectionRoomSelectedFrom}到灭菌柜${this.disinfectionRoomSelectedTo}`
+              );
+              this.handleDisinfectionRoomExecute();
+            }, 100);
+          } else {
+            this.addLog(
+              `【MES模式】未找到匹配的订单：${orderId}，跳过自动执行`,
+              'alarm'
+            );
+          }
+        } else {
+          this.addLog('【MES模式】查询订单失败，跳过自动执行', 'alarm');
+        }
+      } catch (error) {
+        this.addLog(`【MES模式】查询订单异常：${error}，跳过自动执行`, 'alarm');
+      }
+    },
+    // MES模式下处理灭菌完成信号
+    async handleSterilizationComplete(
+      sterilizationRoom,
+      bitIndex,
+      newVal,
+      oldVal
+    ) {
+      // 只有在MES模式下且信号从0变为1时才处理
+      if (this.controlMode !== 'mse' || newVal !== '1' || oldVal === '1') {
+        return;
+      }
+
+      this.addLog(`【MES模式】检测到灭菌柜${sterilizationRoom}完成信号`);
+
+      // 获取对应A3-G3队列索引（15~21）
+      const queueIndex = 15 + bitIndex;
+      const queue = this.queues[queueIndex];
+
+      // 检查队列中是否有托盘
+      if (!queue || !queue.trayInfo || queue.trayInfo.length === 0) {
+        this.addLog(
+          `【MES模式】灭菌柜${sterilizationRoom}对应队列${queue.queueName}中无托盘，跳过自动执行`
+        );
+        return;
+      }
+
+      // 获取队列第一个托盘
+      const firstTray = queue.trayInfo[0];
+      const orderId = firstTray.orderId;
+
+      this.addLog(
+        `【MES模式】灭菌柜${sterilizationRoom}队列第一个托盘订单号：${orderId}，开始查询最新订单信息`
+      );
+
+      try {
+        // 查询最新订单信息
+        const res = await HttpUtil.post('/order_info/queryOrderList', {});
+        if (res.code === '200' && res.data) {
+          // 查找匹配的订单
+          const matchedOrder = res.data.find(
+            (order) => order.orderId === orderId
+          );
+
+          if (matchedOrder) {
+            this.addLog(
+              `【MES模式】查询到订单信息：${matchedOrder.orderId}，指定出口：${matchedOrder.isPrint3}`
+            );
+
+            // 自动设置出库选择
+            this.outboundSelectedQueue = sterilizationRoom;
+
+            // 延迟100ms后自动执行出库
+            setTimeout(() => {
+              this.addLog(
+                `【MES模式】自动执行出库：队列${this.outboundSelectedQueue}`
+              );
+              this.handleOutboundExecute();
+            }, 100);
+
+            // 根据订单的isPrint3字段设置目的地
+            // isPrint3: 0-不解析, 1-解析库, 2-立体库
+            // destinationSelected: 1-一楼, 2-解析, 3-立库
+            let destination = '1'; // 默认一楼
+            if (matchedOrder.isPrint3 === '1') {
+              destination = '2'; // 解析库
+            } else if (matchedOrder.isPrint3 === '2') {
+              destination = '3'; // 立体库
+            }
+
+            // 自动设置目的地
+            this.destinationSelected = destination;
+            this.addLog(
+              `【MES模式】自动设置目的地：${this.getDestinationText(
+                destination
+              )}`
+            );
+          } else {
+            this.addLog(
+              `【MES模式】未找到匹配的订单：${orderId}，跳过自动执行`,
+              'alarm'
+            );
+          }
+        } else {
+          this.addLog('【MES模式】查询订单失败，跳过自动执行', 'alarm');
+        }
+      } catch (error) {
+        this.addLog(`【MES模式】查询订单异常：${error}，跳过自动执行`, 'alarm');
+      }
+    },
     // 处理下货扫码逻辑
     handleDownLoadScan() {
       this.addLog('检测到下货扫码处光电信号，开始处理下货扫码逻辑');
@@ -7252,18 +8221,70 @@ export default {
       };
       return destinationMap[value] || '未知目的地';
     },
-    // 测试按钮：触发scanPhotoelectricSignal.bit6
-    testScanPhotoelectricBit6() {
-      this.addLog('测试按钮触发：下货扫码处光电信号bit6');
+    // 判断是否为预热房队列（A2-G2）
+    isPreheatingQueue(queueName) {
+      return /^[A-G]2$/.test(queueName);
+    },
+    // 判断是否为灭菌柜队列（A3-G3）
+    isSterilizationQueue(queueName) {
+      return /^[A-G]3$/.test(queueName);
+    },
+    // 判断预热是否完成
+    checkPreheatingCompleted(queueName) {
+      const room = queueName[0];
+      const bitIndex = 'ABCDEFG'.indexOf(room);
+      if (bitIndex === -1) return false;
+      const bitKey = `bit${bitIndex}`;
+      return this.preheatingStatus[bitKey] === '1';
+    },
+    // 判断灭菌是否完成
+    checkSterilizationCompleted(queueName) {
+      const room = queueName[0];
+      const bitIndex = 'ABCDEFG'.indexOf(room);
+      if (bitIndex === -1) return false;
+      const bitKey = `bit${bitIndex}`;
+      return this.sterilizationStatus[bitKey] === '1';
+    },
+    // 获取预热房目的地
+    getPreheatingDestination(queueName) {
+      const room = queueName[0];
+      const bitIndex = 'ABCDEFG'.indexOf(room);
+      if (bitIndex === -1) return '--';
 
-      // 设置bit6为1
-      this.scanPhotoelectricSignal.bit6 = '1';
+      // 获取队列索引（A2-G2对应索引8-14）
+      const queueIndex = 8 + bitIndex;
+      const queue = this.queues[queueIndex];
 
-      // 1秒后恢复为0
-      setTimeout(() => {
-        this.scanPhotoelectricSignal.bit6 = '0';
-        this.addLog('下货扫码处光电信号bit6已恢复为0');
-      }, 1000);
+      // 获取队列第一个托盘的目的地（灭菌柜）
+      if (queue && queue.trayInfo && queue.trayInfo.length > 0) {
+        const firstTray = queue.trayInfo[0];
+        return firstTray.isPrint2 || '--';
+      }
+      return '--';
+    },
+    // 获取灭菌柜目的地
+    getSterilizationDestination(queueName) {
+      const room = queueName[0];
+      const bitIndex = 'ABCDEFG'.indexOf(room);
+      if (bitIndex === -1) return '--';
+
+      // 获取队列索引（A3-G3对应索引15-21）
+      const queueIndex = 15 + bitIndex;
+      const queue = this.queues[queueIndex];
+
+      // 获取队列第一个托盘的目的地（一楼、解析、立库）
+      if (queue && queue.trayInfo && queue.trayInfo.length > 0) {
+        const firstTray = queue.trayInfo[0];
+        // isPrint3: 0-不解析(一楼), 1-解析库, 2-立体库
+        if (firstTray.isPrint3 === '0' || firstTray.isPrint3 === 0) {
+          return '一楼';
+        } else if (firstTray.isPrint3 === '1' || firstTray.isPrint3 === 1) {
+          return '解析';
+        } else if (firstTray.isPrint3 === '2' || firstTray.isPrint3 === 2) {
+          return '立库';
+        }
+      }
+      return '--';
     },
 
     // ============ WebSocket相关方法 ============
@@ -7401,7 +8422,7 @@ export default {
         }
 
         // 无码模式：直接通行，不判断订单包含，并增加计数
-        ipcRenderer.send('writeValuesToPLC', 'DBW512', 1);
+        // 注意：DBW512等接货口控制命令由复选框单独控制，这里不再发送
         ipcRenderer.send('writeSingleValueToPLC', 'DBW580', 11);
         setTimeout(() => {
           ipcRenderer.send('cancelWriteToPLC', 'DBW580');
@@ -7621,7 +8642,7 @@ export default {
         }
 
         // 无码模式：直接通行，不判断订单包含，并增加计数
-        ipcRenderer.send('writeValuesToPLC', 'DBW514', 1);
+        // 注意：DBW514等接货口控制命令由复选框单独控制，这里不再发送
         ipcRenderer.send('writeSingleValueToPLC', 'DBW584', 11);
         setTimeout(() => {
           ipcRenderer.send('cancelWriteToPLC', 'DBW584');
@@ -7698,7 +8719,7 @@ export default {
         }
 
         // 无码模式：直接通行，不判断订单包含，并增加计数
-        ipcRenderer.send('writeValuesToPLC', 'DBW516', 1);
+        // 注意：DBW516等接货口控制命令由复选框单独控制，这里不再发送
         ipcRenderer.send('writeSingleValueToPLC', 'DBW586', 11);
         setTimeout(() => {
           ipcRenderer.send('cancelWriteToPLC', 'DBW586');
@@ -7775,7 +8796,7 @@ export default {
         }
 
         // 无码模式：直接通行，不判断订单包含，并增加计数
-        ipcRenderer.send('writeValuesToPLC', 'DBW518', 1);
+        // 注意：DBW518等接货口控制命令由复选框单独控制，这里不再发送
         ipcRenderer.send('writeSingleValueToPLC', 'DBW588', 11);
         setTimeout(() => {
           ipcRenderer.send('cancelWriteToPLC', 'DBW588');
@@ -7852,7 +8873,7 @@ export default {
         }
 
         // 无码模式：直接通行，不判断订单包含，并增加计数
-        ipcRenderer.send('writeValuesToPLC', 'DBW520', 1);
+        // 注意：DBW520等接货口控制命令由复选框单独控制，这里不再发送
         ipcRenderer.send('writeSingleValueToPLC', 'DBW590', 11);
         setTimeout(() => {
           ipcRenderer.send('cancelWriteToPLC', 'DBW590');
@@ -8009,7 +9030,7 @@ export default {
   position: relative;
   display: flex;
   flex-direction: column;
-  background: radial-gradient(circle, #1a2035, #0f1620);
+  background: radial-gradient(circle, #83b3de, #ffffff);
   padding: 0;
   font-family: 'Roboto', sans-serif;
   overflow: hidden;
@@ -8061,15 +9082,15 @@ export default {
       width: 420px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      padding: 8px;
+      gap: 5px;
+      padding: 5px;
       box-sizing: border-box;
       flex-shrink: 0;
       overflow: hidden;
       .plc-info-section,
       .operation-panel,
       .order-list-section {
-        background: rgba(30, 42, 56, 0.8);
+        background: #052438;
         padding: 10px;
         border-radius: 15px;
         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
@@ -8153,6 +9174,12 @@ export default {
         overflow: hidden;
         .section-header {
           .section-title {
+            .title-actions {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+            }
+
             .refresh-btn {
               display: flex;
               align-items: center;
@@ -8183,6 +9210,32 @@ export default {
 
             .refresh-btn.is-loading i {
               animation: rotate 1s linear infinite;
+            }
+
+            .add-order-btn {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 28px;
+              height: 28px;
+              border-radius: 4px;
+              cursor: pointer;
+              transition: all 0.3s ease;
+              background: rgba(64, 158, 255, 0.2);
+              border: 1px solid rgba(64, 158, 255, 0.3);
+              i {
+                font-size: 16px;
+                color: #409eff;
+                transition: all 0.3s ease;
+              }
+            }
+
+            .add-order-btn:hover {
+              background: rgba(64, 158, 255, 0.3);
+              border-color: rgba(64, 158, 255, 0.5);
+              i {
+                color: #fff;
+              }
             }
           }
           .order-actions {
@@ -8235,6 +9288,7 @@ export default {
               );
               border-radius: 6px;
               padding: 12px 15px;
+              position: relative;
               transition: all 0.3s ease;
               position: relative;
               height: 120px; /* 增加高度以适应新增的信息 */
@@ -8417,6 +9471,49 @@ export default {
             .order-item.completed::before {
               background: #67c23a;
             }
+
+            /* 订单类型标识样式 */
+            .order-type-badge {
+              position: absolute;
+              top: 0;
+              right: 0;
+              padding: 4px 12px;
+              font-size: 11px;
+              font-weight: bold;
+              color: #fff;
+              border-bottom-left-radius: 6px;
+              border-top-right-radius: 6px;
+              z-index: 10;
+              background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 5px,
+                rgba(255, 255, 255, 0.1) 5px,
+                rgba(255, 255, 255, 0.1) 10px
+              );
+            }
+
+            .order-type-badge.manual {
+              background-color: #e6a23c;
+              background-image: repeating-linear-gradient(
+                45deg,
+                #e6a23c,
+                #e6a23c 5px,
+                #d89b34 5px,
+                #d89b34 10px
+              );
+            }
+
+            .order-type-badge.mse {
+              background-color: #409eff;
+              background-image: repeating-linear-gradient(
+                45deg,
+                #409eff,
+                #409eff 5px,
+                #3a8eeb 5px,
+                #3a8eeb 10px
+              );
+            }
           }
           /* 添加空状态样式 */
           .empty-state {
@@ -8464,7 +9561,7 @@ export default {
         }
       }
       .log-section {
-        background: rgba(30, 42, 56, 0.8);
+        background: #052438;
         padding: 10px;
         border-radius: 15px;
         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
@@ -8659,13 +9756,13 @@ export default {
     .main-content {
       flex: 1;
       display: flex;
-      padding: 8px 8px 8px 0px;
+      padding: 5px 5px 5px 0px;
       box-sizing: border-box;
       overflow: hidden;
       height: 100%;
       .floor-container {
         display: flex;
-        gap: 10px;
+        gap: 5px;
         height: 100%;
         width: 100%;
         min-height: 0;
@@ -8965,7 +10062,32 @@ export default {
                     gap: 4px;
                     margin-bottom: 8px;
                     padding-bottom: 8px;
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                  }
+                  /* 无码模式复选框样式 */
+                  .nocode-checkbox-row {
+                    display: flex;
+                    justify-content: space-between;
+                    color: rgba(255, 255, 255, 0.9);
+                    margin-bottom: 8px;
+                    padding-bottom: 8px;
+                  }
+                  .nocode-checkbox-row :deep(.el-checkbox) {
+                    color: rgba(255, 255, 255, 0.9);
+                  }
+                  .nocode-checkbox-row :deep(.el-checkbox__label) {
+                    color: rgba(255, 255, 255, 0.9);
+                    font-size: 12px;
+                  }
+                  .nocode-checkbox-row
+                    :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+                    background-color: #0ac5a8;
+                    border-color: #0ac5a8;
+                  }
+                  .nocode-checkbox-row
+                    :deep(
+                      .el-checkbox__input.is-checked + .el-checkbox__label
+                    ) {
+                    color: #0ac5a8;
                   }
                   .data-panel-label {
                     margin-bottom: 2px;
@@ -9022,8 +10144,6 @@ export default {
                 padding: 0 8px;
               }
               .preheating-room-marker :deep(.el-button) {
-                background-color: rgba(255, 255, 255, 0.2);
-                border-color: rgba(255, 255, 255, 0.3);
                 font-size: 11px;
                 height: 24px;
                 width: 100%;
@@ -9034,7 +10154,7 @@ export default {
         }
         .floor-left {
           flex: 1;
-          background: rgba(30, 42, 56, 0.8);
+          background: #07293e;
           padding: 10px;
           border-radius: 15px;
           box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
@@ -9060,12 +10180,11 @@ export default {
                 z-index: 100;
 
                 .mode-card-content {
-                  background: rgba(30, 42, 56, 0.95);
+                  background: rgba(30, 42, 56);
                   border: 1px solid rgba(10, 197, 168, 0.5);
                   border-radius: 8px;
                   padding: 8px;
-                  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-                  width: 200px;
+                  width: 130px;
 
                   .mode-card-header {
                     font-size: 14px;
@@ -9107,7 +10226,6 @@ export default {
                         display: flex;
                         align-items: center;
                         justify-content: space-between;
-                        gap: 8px;
 
                         .config-label {
                           color: #bbb;
@@ -9193,6 +10311,31 @@ export default {
                 border-color: rgba(64, 158, 255, 0.6);
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
               }
+              /* 状态卡片样式 - 只在完成时显示，直接使用完成样式 */
+              .status-card {
+                position: absolute;
+                transform: translate(-50%, -50%);
+                background-color: #00cc44;
+                padding: 3px 6px;
+                border-radius: 4px;
+                border: 1px solid #00aa33;
+                width: 40px;
+                text-align: center;
+                transition: all 0.3s ease;
+                pointer-events: none;
+              }
+              .status-card-title {
+                font-size: 10px;
+                font-weight: bold;
+                color: #ffffff;
+                margin-bottom: 1px;
+              }
+              .status-card-destination {
+                font-size: 8px;
+                color: #ffffff;
+                font-weight: bold;
+                white-space: nowrap;
+              }
               /* 添加小车样式 */
               .cart-container {
                 position: absolute;
@@ -9215,13 +10358,13 @@ export default {
         .floor-right {
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 5px;
           min-height: 0;
           height: 100%;
           .floor-right-top,
           .floor-right-bottom {
             flex: 1;
-            background: rgba(30, 42, 56, 0.8);
+            background: #07293e;
             padding: 10px;
             border-radius: 15px;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
@@ -9804,6 +10947,22 @@ export default {
   gap: 8px;
 }
 
+/* 完成信号测试面板样式 */
+.signal-test-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.signal-test-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
 .photoelectric-buttons .el-button {
   background: rgba(10, 197, 168, 0.2);
   border: 1px solid rgba(10, 197, 168, 0.3);
@@ -9979,6 +11138,83 @@ export default {
     background: #fff;
     border-radius: 4px;
     border: 1px solid #dcdfe6;
+  }
+}
+
+/* 新建订单弹窗样式 */
+.add-order-dialog {
+  .form-container {
+    max-height: 70vh;
+    overflow-y: auto;
+    padding-right: 10px;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+
+    .form-item {
+      flex: 1;
+      margin-bottom: 0;
+    }
+  }
+
+  .tray-codes-section {
+    .tray-codes-container {
+      .tray-input-section {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        align-items: center;
+
+        .el-input {
+          flex: 1;
+        }
+      }
+
+      .tray-codes-display {
+        .tray-codes-list {
+          max-height: 150px;
+          overflow-y: auto;
+          border: 1px solid #dcdfe6;
+          border-radius: 4px;
+          padding: 10px;
+          background-color: #fafafa;
+
+          .tray-code-tag {
+            display: inline-flex;
+            align-items: center;
+            background-color: #409eff;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin: 2px;
+            font-size: 12px;
+            position: relative;
+
+            .tray-code-text {
+              margin-right: 8px;
+            }
+
+            .remove-btn {
+              color: white;
+              padding: 0;
+              margin: 0;
+              font-size: 12px;
+              width: 16px;
+              height: 16px;
+              min-height: 16px;
+              line-height: 1;
+
+              &:hover {
+                color: #ff4757;
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }
 </style>
