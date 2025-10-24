@@ -120,6 +120,16 @@
                     : 'complete'
                 "
               >
+                <el-button
+                  v-if="order.orderStatus === '0'"
+                  type="danger"
+                  size="mini"
+                  @click="deleteOrder(order)"
+                  :loading="order.isDeleting"
+                  icon="el-icon-delete"
+                  class="delete-btn"
+                  circle
+                ></el-button>
                 <div class="order-main">
                   <div class="order-header">
                     <span class="order-id">{{ order.orderId }}</span>
@@ -333,6 +343,103 @@
                   loading="eager"
                   decoding="async"
                 />
+                <!-- 模式选择卡片 -->
+                <div class="mode-control-card" data-x="10" data-y="10">
+                  <div class="mode-card-content">
+                    <div class="mode-card-header">
+                      <i class="el-icon-setting"></i>
+                      控制模式
+                    </div>
+                    <div class="mode-card-body">
+                      <div class="mode-select-row">
+                        <el-select
+                          v-model="controlMode"
+                          size="mini"
+                          :disabled="isModeExecuting"
+                          placeholder="请选择模式"
+                          style="width: 100%"
+                        >
+                          <el-option
+                            label="MSE控制模式"
+                            value="mse"
+                          ></el-option>
+                          <el-option
+                            label="无码模式"
+                            value="nocode"
+                          ></el-option>
+                        </el-select>
+                      </div>
+                      <!-- 无码模式配置 -->
+                      <div
+                        v-if="controlMode === 'nocode'"
+                        class="nocode-config-row"
+                      >
+                        <div class="config-item">
+                          <span class="config-label">上货数量：</span>
+                          <el-input-number
+                            v-model="nocodeTargetCount"
+                            :min="1"
+                            :max="100"
+                            size="mini"
+                            :disabled="isModeExecuting"
+                            style="width: 100px"
+                          ></el-input-number>
+                        </div>
+                        <div class="config-item">
+                          <span class="config-label">预热房：</span>
+                          <el-select
+                            v-model="nocodeDestination"
+                            size="mini"
+                            :disabled="isModeExecuting"
+                            style="width: 100px"
+                          >
+                            <el-option label="A1" value="A1"></el-option>
+                            <el-option label="B1" value="B1"></el-option>
+                            <el-option label="C1" value="C1"></el-option>
+                            <el-option label="D1" value="D1"></el-option>
+                            <el-option label="E1" value="E1"></el-option>
+                            <el-option label="F1" value="F1"></el-option>
+                            <el-option label="G1" value="G1"></el-option>
+                          </el-select>
+                        </div>
+                        <div v-if="isModeExecuting" class="nocode-progress">
+                          <span
+                            >进度：{{ nocodeScanCount }}/{{
+                              nocodeTargetCount
+                            }}</span
+                          >
+                        </div>
+                      </div>
+                      <div class="mode-actions-row">
+                        <el-button
+                          v-if="!isModeExecuting"
+                          type="primary"
+                          size="mini"
+                          @click="handleModeSet"
+                          style="flex: 1"
+                        >
+                          <i class="el-icon-check"></i>
+                          设定
+                        </el-button>
+                        <div v-else class="executing-state">
+                          <div class="executing-info">
+                            <i class="el-icon-loading"></i>
+                            <span>执行中</span>
+                          </div>
+                          <el-button
+                            type="danger"
+                            size="mini"
+                            @click="handleModeCancel"
+                            style="flex: 1"
+                          >
+                            <i class="el-icon-close"></i>
+                            取消
+                          </el-button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <!-- 修改队列标识 -->
                 <div
                   v-for="marker in queueMarkers"
@@ -372,21 +479,27 @@
                     <div class="data-panel-content">
                       <div class="data-panel-row">
                         <span class="data-panel-label">批次：</span>
-                        <span>{{
-                          currentOrder ? currentOrder.orderId : '--'
-                        }}</span>
+                        <span>{{ nocodeBatchId }}</span>
                       </div>
                       <div class="data-panel-row">
                         <span class="data-panel-label">扫码：</span>
                         <span>{{ floor1UpLineTrayInfo || '--' }}</span>
                       </div>
                       <div class="data-panel-row">
+                        <span class="data-panel-label">名称：</span>
+                        <span>{{
+                          currentOrder ? currentOrder.productName : '--'
+                        }}</span>
+                      </div>
+                      <div class="data-panel-row">
+                        <span class="data-panel-label">规格：</span>
+                        <span>{{
+                          currentOrder ? currentOrder.spec : '--'
+                        }}</span>
+                      </div>
+                      <div class="data-panel-row">
                         <span class="data-panel-label">托盘数：</span>
-                        <span
-                          >{{ currentOrderTrayCount }}/{{
-                            currentOrderScannedCount
-                          }}</span
-                        >
+                        <span>{{ nocodeTrayCount }}</span>
                       </div>
                       <div
                         class="data-panel-row"
@@ -2131,6 +2244,316 @@
                 >
                   <div class="marker-label">3014</div>
                 </div>
+                <!-- 预热房门状态显示 -->
+                <!-- 预热房A门状态 -->
+                <div class="door-status-marker" data-x="1215" data-y="1675">
+                  <div class="door-status-label">预热房A前门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': preheatingDoorStatus.bit0 === '1',
+                      'door-closed': preheatingDoorStatus.bit0 === '0'
+                    }"
+                  ></div>
+                </div>
+                <div class="door-status-marker" data-x="1212" data-y="810">
+                  <div class="door-status-label">预热房A后门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': preheatingDoorStatus.bit1 === '1',
+                      'door-closed': preheatingDoorStatus.bit1 === '0'
+                    }"
+                  ></div>
+                </div>
+
+                <!-- 预热房B门状态 -->
+                <div class="door-status-marker" data-x="1085" data-y="1675">
+                  <div class="door-status-label">预热房B前门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': preheatingDoorStatus.bit2 === '1',
+                      'door-closed': preheatingDoorStatus.bit2 === '0'
+                    }"
+                  ></div>
+                </div>
+                <div class="door-status-marker" data-x="1082" data-y="810">
+                  <div class="door-status-label">预热房B后门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': preheatingDoorStatus.bit3 === '1',
+                      'door-closed': preheatingDoorStatus.bit3 === '0'
+                    }"
+                  ></div>
+                </div>
+
+                <!-- 预热房C门状态 -->
+                <div class="door-status-marker" data-x="905" data-y="1675">
+                  <div class="door-status-label">预热房C前门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': preheatingDoorStatus.bit4 === '1',
+                      'door-closed': preheatingDoorStatus.bit4 === '0'
+                    }"
+                  ></div>
+                </div>
+                <div class="door-status-marker" data-x="905" data-y="810">
+                  <div class="door-status-label">预热房C后门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': preheatingDoorStatus.bit5 === '1',
+                      'door-closed': preheatingDoorStatus.bit5 === '0'
+                    }"
+                  ></div>
+                </div>
+
+                <!-- 预热房D门状态 -->
+                <div class="door-status-marker" data-x="778" data-y="1675">
+                  <div class="door-status-label">预热房D前门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': preheatingDoorStatus.bit6 === '1',
+                      'door-closed': preheatingDoorStatus.bit6 === '0'
+                    }"
+                  ></div>
+                </div>
+                <div class="door-status-marker" data-x="778" data-y="810">
+                  <div class="door-status-label">预热房D后门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': preheatingDoorStatus.bit7 === '1',
+                      'door-closed': preheatingDoorStatus.bit7 === '0'
+                    }"
+                  ></div>
+                </div>
+
+                <!-- 预热房E门状态 -->
+                <div class="door-status-marker" data-x="610" data-y="1675">
+                  <div class="door-status-label">预热房E前门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': preheatingDoorStatus.bit8 === '1',
+                      'door-closed': preheatingDoorStatus.bit8 === '0'
+                    }"
+                  ></div>
+                </div>
+                <div class="door-status-marker" data-x="613" data-y="810">
+                  <div class="door-status-label">预热房E后门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': preheatingDoorStatus.bit9 === '1',
+                      'door-closed': preheatingDoorStatus.bit9 === '0'
+                    }"
+                  ></div>
+                </div>
+
+                <!-- 预热房F门状态 -->
+                <div class="door-status-marker" data-x="478" data-y="1675">
+                  <div class="door-status-label">预热房F前门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': preheatingDoorStatus.bit10 === '1',
+                      'door-closed': preheatingDoorStatus.bit10 === '0'
+                    }"
+                  ></div>
+                </div>
+                <div class="door-status-marker" data-x="483" data-y="810">
+                  <div class="door-status-label">预热房F后门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': preheatingDoorStatus.bit11 === '1',
+                      'door-closed': preheatingDoorStatus.bit11 === '0'
+                    }"
+                  ></div>
+                </div>
+
+                <!-- 预热房G门状态 -->
+                <div class="door-status-marker" data-x="323" data-y="1675">
+                  <div class="door-status-label">预热房G前门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': preheatingDoorStatus.bit12 === '1',
+                      'door-closed': preheatingDoorStatus.bit12 === '0'
+                    }"
+                  ></div>
+                </div>
+                <div class="door-status-marker" data-x="328" data-y="810">
+                  <div class="door-status-label">预热房G后门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': preheatingDoorStatus.bit13 === '1',
+                      'door-closed': preheatingDoorStatus.bit13 === '0'
+                    }"
+                  ></div>
+                </div>
+
+                <!-- 灭菌房门状态显示 -->
+                <!-- 灭菌房A门状态 -->
+                <div class="door-status-marker" data-x="1215" data-y="730">
+                  <div class="door-status-label">灭菌房A前门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': sterilizationDoorStatus.bit0 === '1',
+                      'door-closed': sterilizationDoorStatus.bit0 === '0'
+                    }"
+                  ></div>
+                </div>
+                <div class="door-status-marker" data-x="1212" data-y="310">
+                  <div class="door-status-label">灭菌房A后门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': sterilizationDoorStatus.bit1 === '1',
+                      'door-closed': sterilizationDoorStatus.bit1 === '0'
+                    }"
+                  ></div>
+                </div>
+
+                <!-- 灭菌房B门状态 -->
+                <div class="door-status-marker" data-x="1085" data-y="730">
+                  <div class="door-status-label">灭菌房B前门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': sterilizationDoorStatus.bit2 === '1',
+                      'door-closed': sterilizationDoorStatus.bit2 === '0'
+                    }"
+                  ></div>
+                </div>
+                <div class="door-status-marker" data-x="1082" data-y="310">
+                  <div class="door-status-label">灭菌房B后门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': sterilizationDoorStatus.bit3 === '1',
+                      'door-closed': sterilizationDoorStatus.bit3 === '0'
+                    }"
+                  ></div>
+                </div>
+
+                <!-- 灭菌房C门状态 -->
+                <div class="door-status-marker" data-x="905" data-y="730">
+                  <div class="door-status-label">灭菌房C前门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': sterilizationDoorStatus.bit4 === '1',
+                      'door-closed': sterilizationDoorStatus.bit4 === '0'
+                    }"
+                  ></div>
+                </div>
+                <div class="door-status-marker" data-x="905" data-y="310">
+                  <div class="door-status-label">灭菌房C后门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': sterilizationDoorStatus.bit5 === '1',
+                      'door-closed': sterilizationDoorStatus.bit5 === '0'
+                    }"
+                  ></div>
+                </div>
+
+                <!-- 灭菌房D门状态 -->
+                <div class="door-status-marker" data-x="778" data-y="730">
+                  <div class="door-status-label">灭菌房D前门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': sterilizationDoorStatus.bit6 === '1',
+                      'door-closed': sterilizationDoorStatus.bit6 === '0'
+                    }"
+                  ></div>
+                </div>
+                <div class="door-status-marker" data-x="778" data-y="310">
+                  <div class="door-status-label">灭菌房D后门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': sterilizationDoorStatus.bit7 === '1',
+                      'door-closed': sterilizationDoorStatus.bit7 === '0'
+                    }"
+                  ></div>
+                </div>
+
+                <!-- 灭菌房E门状态 -->
+                <div class="door-status-marker" data-x="610" data-y="730">
+                  <div class="door-status-label">灭菌房E前门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': sterilizationDoorStatus.bit8 === '1',
+                      'door-closed': sterilizationDoorStatus.bit8 === '0'
+                    }"
+                  ></div>
+                </div>
+                <div class="door-status-marker" data-x="610" data-y="310">
+                  <div class="door-status-label">灭菌房E后门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': sterilizationDoorStatus.bit9 === '1',
+                      'door-closed': sterilizationDoorStatus.bit9 === '0'
+                    }"
+                  ></div>
+                </div>
+
+                <!-- 灭菌房F门状态 -->
+                <div class="door-status-marker" data-x="478" data-y="730">
+                  <div class="door-status-label">灭菌房F前门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': sterilizationDoorStatus.bit10 === '1',
+                      'door-closed': sterilizationDoorStatus.bit10 === '0'
+                    }"
+                  ></div>
+                </div>
+                <div class="door-status-marker" data-x="483" data-y="310">
+                  <div class="door-status-label">灭菌房F后门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': sterilizationDoorStatus.bit11 === '1',
+                      'door-closed': sterilizationDoorStatus.bit11 === '0'
+                    }"
+                  ></div>
+                </div>
+
+                <!-- 灭菌房G门状态 -->
+                <div class="door-status-marker" data-x="323" data-y="730">
+                  <div class="door-status-label">灭菌房G前门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': sterilizationDoorStatus.bit12 === '1',
+                      'door-closed': sterilizationDoorStatus.bit12 === '0'
+                    }"
+                  ></div>
+                </div>
+                <div class="door-status-marker" data-x="328" data-y="310">
+                  <div class="door-status-label">灭菌房G后门</div>
+                  <div
+                    class="door-status-indicator"
+                    :class="{
+                      'door-open': sterilizationDoorStatus.bit13 === '1',
+                      'door-closed': sterilizationDoorStatus.bit13 === '0'
+                    }"
+                  ></div>
+                </div>
+
                 <!-- 测试-手动发送PLC命令 -->
                 <div
                   class="preheating-room-marker"
@@ -2199,7 +2622,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="preheating-room-marker" data-x="150" data-y="450">
+                <div class="preheating-room-marker" data-x="1400" data-y="590">
                   <div class="preheating-room-content">
                     <div class="preheating-room-header">出库选择</div>
                     <div class="preheating-room-body">
@@ -2245,9 +2668,9 @@
                         placeholder="选择"
                         size="mini"
                       >
-                        <el-option label="一楼下货口" value="1"></el-option>
-                        <el-option label="二楼A解析出口" value="2"></el-option>
-                        <el-option label="二楼B解析出口" value="3"></el-option>
+                        <el-option label="一楼" value="1"></el-option>
+                        <el-option label="解析" value="2"></el-option>
+                        <el-option label="立库" value="3"></el-option>
                       </el-select>
                     </div>
                   </div>
@@ -2716,6 +3139,14 @@
                             tray.orderId
                           }}</span
                         >
+                      </div>
+                      <div class="tray-info-row">
+                        <span class="data-panel-label">名称：</span>
+                        <span>{{ tray.productName || '--' }}</span>
+                      </div>
+                      <div class="tray-info-row">
+                        <span class="data-panel-label">规格：</span>
+                        <span>{{ tray.spec || '--' }}</span>
                       </div>
                       <div class="tray-info-row status-row">
                         <span>预热房：{{ tray.isPrint1 }}</span>
@@ -3899,13 +4330,13 @@ export default {
         { id: 13, name: 'E2', queueId: 13, x: 612, y: 980 },
         { id: 14, name: 'F2', queueId: 14, x: 485, y: 980 },
         { id: 15, name: 'G2', queueId: 15, x: 328, y: 980 },
-        { id: 16, name: 'A3', queueId: 16, x: 1214, y: 680 },
-        { id: 17, name: 'B3', queueId: 17, x: 1082, y: 680 },
-        { id: 18, name: 'C3', queueId: 18, x: 905, y: 680 },
-        { id: 19, name: 'D3', queueId: 19, x: 778, y: 680 },
-        { id: 20, name: 'E3', queueId: 20, x: 612, y: 680 },
-        { id: 21, name: 'F3', queueId: 21, x: 484, y: 680 },
-        { id: 22, name: 'G3', queueId: 22, x: 333, y: 680 },
+        { id: 16, name: 'A3', queueId: 16, x: 1214, y: 650 },
+        { id: 17, name: 'B3', queueId: 17, x: 1082, y: 650 },
+        { id: 18, name: 'C3', queueId: 18, x: 905, y: 650 },
+        { id: 19, name: 'D3', queueId: 19, x: 778, y: 650 },
+        { id: 20, name: 'E3', queueId: 20, x: 612, y: 650 },
+        { id: 21, name: 'F3', queueId: 21, x: 484, y: 650 },
+        { id: 22, name: 'G3', queueId: 22, x: 333, y: 650 },
         { id: 23, name: '下货区', queueId: 23, x: 1580, y: 220 }
       ],
       logId: 1000, // 添加一个日志ID计数器
@@ -4295,7 +4726,74 @@ export default {
       // 目的地选择
       destinationSelected: '',
       // 预热→灭菌完成信号
-      isPreheatingCompleted: 0
+      isPreheatingCompleted: 0,
+      // --------------------------------模式控制相关--------------------------------
+      // 控制模式选择：'mse' - MSE控制模式（普通模式），'nocode' - 无码模式
+      controlMode: 'mse',
+      // 模式执行状态
+      isModeExecuting: false,
+      // 无码模式配置
+      nocodeTargetCount: 16, // 目标上货数量
+      nocodeCurrentCount: 0, // 当前上货计数（上货口计数）
+      nocodeScanCount: 0, // 缓存区扫码计数
+      nocodeDestination: 'A1', // 预热房目的地（A1~G1）
+      nocodeOrderId: '', // 无码模式临时唯一orderId
+
+      // 新增PLC点位变量
+      // 预热状态-读取PLC (DBW362)
+      preheatingStatus: {
+        bit0: '0', // A预热完成
+        bit1: '0', // B预热完成
+        bit2: '0', // C预热完成
+        bit3: '0', // D预热完成
+        bit4: '0', // E预热完成
+        bit5: '0', // F预热完成
+        bit6: '0' // G预热完成
+      },
+      // 灭菌状态-读取PLC (DBW364)
+      sterilizationStatus: {
+        bit0: '0', // A灭菌完成
+        bit1: '0', // B灭菌完成
+        bit2: '0', // C灭菌完成
+        bit3: '0', // D灭菌完成
+        bit4: '0', // E灭菌完成
+        bit5: '0', // F灭菌完成
+        bit6: '0' // G灭菌完成
+      },
+      // 预热门状态-读取PLC (DBW366)
+      preheatingDoorStatus: {
+        bit0: '0', // A前门开到位
+        bit1: '0', // A后门开到位
+        bit2: '0', // B前门开到位
+        bit3: '0', // B后门开到位
+        bit4: '0', // C前门开到位
+        bit5: '0', // C后门开到位
+        bit6: '0', // D前门开到位
+        bit7: '0', // D后门开到位
+        bit8: '0', // E前门开到位
+        bit9: '0', // E后门开到位
+        bit10: '0', // F前门开到位
+        bit11: '0', // F后门开到位
+        bit12: '0', // G前门开到位
+        bit13: '0' // G后门开到位
+      },
+      // 灭菌门状态-读取PLC (DBW368)
+      sterilizationDoorStatus: {
+        bit0: '0', // A前门开到位
+        bit1: '0', // A后门开到位
+        bit2: '0', // B前门开到位
+        bit3: '0', // B后门开到位
+        bit4: '0', // C前门开到位
+        bit5: '0', // C后门开到位
+        bit6: '0', // D前门开到位
+        bit7: '0', // D后门开到位
+        bit8: '0', // E前门开到位
+        bit9: '0', // E后门开到位
+        bit10: '0', // F前门开到位
+        bit11: '0', // F后门开到位
+        bit12: '0', // G前门开到位
+        bit13: '0' // G后门开到位
+      }
     };
   },
   computed: {
@@ -4327,6 +4825,20 @@ export default {
         return 0;
       }
       return this.currentOrder.qrCode.split(',').length;
+    },
+    // 无码模式下的批次显示
+    nocodeBatchId() {
+      if (this.isModeExecuting && this.controlMode === 'nocode') {
+        return this.nocodeOrderId || '--';
+      }
+      return this.currentOrder ? this.currentOrder.orderId : '--';
+    },
+    // 无码模式下的托盘数显示
+    nocodeTrayCount() {
+      if (this.isModeExecuting && this.controlMode === 'nocode') {
+        return `${this.nocodeScanCount}/${this.nocodeTargetCount}`;
+      }
+      return `${this.currentOrderTrayCount}/${this.currentOrderScannedCount}`;
     }
   },
   mounted() {
@@ -4688,6 +5200,61 @@ export default {
       this.cartPositionValues.cart1 = Number(values.DBW80 ?? 0);
       this.cartPositionValues.cart2 = Number(values.DBW84 ?? 0);
       this.cartPositionValues.cart3 = Number(values.DBW88 ?? 0);
+
+      // 新增PLC点位赋值
+      // 预热状态-读取PLC (DBW362)
+      let word362 = this.convertToWord(values.DBW362);
+      this.preheatingStatus.bit0 = getBit(word362, 8); // A预热完成
+      this.preheatingStatus.bit1 = getBit(word362, 9); // B预热完成
+      this.preheatingStatus.bit2 = getBit(word362, 10); // C预热完成
+      this.preheatingStatus.bit3 = getBit(word362, 11); // D预热完成
+      this.preheatingStatus.bit4 = getBit(word362, 12); // E预热完成
+      this.preheatingStatus.bit5 = getBit(word362, 13); // F预热完成
+      this.preheatingStatus.bit6 = getBit(word362, 14); // G预热完成
+
+      // 灭菌状态-读取PLC (DBW364)
+      let word364 = this.convertToWord(values.DBW364);
+      this.sterilizationStatus.bit0 = getBit(word364, 8); // A灭菌完成
+      this.sterilizationStatus.bit1 = getBit(word364, 9); // B灭菌完成
+      this.sterilizationStatus.bit2 = getBit(word364, 10); // C灭菌完成
+      this.sterilizationStatus.bit3 = getBit(word364, 11); // D灭菌完成
+      this.sterilizationStatus.bit4 = getBit(word364, 12); // E灭菌完成
+      this.sterilizationStatus.bit5 = getBit(word364, 13); // F灭菌完成
+      this.sterilizationStatus.bit6 = getBit(word364, 14); // G灭菌完成
+
+      // 预热门状态-读取PLC (DBW366)
+      let word366 = this.convertToWord(values.DBW366);
+      this.preheatingDoorStatus.bit0 = getBit(word366, 8); // A前门开到位
+      this.preheatingDoorStatus.bit1 = getBit(word366, 9); // A后门开到位
+      this.preheatingDoorStatus.bit2 = getBit(word366, 10); // B前门开到位
+      this.preheatingDoorStatus.bit3 = getBit(word366, 11); // B后门开到位
+      this.preheatingDoorStatus.bit4 = getBit(word366, 12); // C前门开到位
+      this.preheatingDoorStatus.bit5 = getBit(word366, 13); // C后门开到位
+      this.preheatingDoorStatus.bit6 = getBit(word366, 14); // D前门开到位
+      this.preheatingDoorStatus.bit7 = getBit(word366, 15); // D后门开到位
+      this.preheatingDoorStatus.bit8 = getBit(word366, 0); // E前门开到位
+      this.preheatingDoorStatus.bit9 = getBit(word366, 1); // E后门开到位
+      this.preheatingDoorStatus.bit10 = getBit(word366, 2); // F前门开到位
+      this.preheatingDoorStatus.bit11 = getBit(word366, 3); // F后门开到位
+      this.preheatingDoorStatus.bit12 = getBit(word366, 4); // G前门开到位
+      this.preheatingDoorStatus.bit13 = getBit(word366, 5); // G后门开到位
+
+      // 灭菌门状态-读取PLC (DBW368)
+      let word368 = this.convertToWord(values.DBW368);
+      this.sterilizationDoorStatus.bit0 = getBit(word368, 8); // A前门开到位
+      this.sterilizationDoorStatus.bit1 = getBit(word368, 9); // A后门开到位
+      this.sterilizationDoorStatus.bit2 = getBit(word368, 10); // B前门开到位
+      this.sterilizationDoorStatus.bit3 = getBit(word368, 11); // B后门开到位
+      this.sterilizationDoorStatus.bit4 = getBit(word368, 12); // C前门开到位
+      this.sterilizationDoorStatus.bit5 = getBit(word368, 13); // C后门开到位
+      this.sterilizationDoorStatus.bit6 = getBit(word368, 14); // D前门开到位
+      this.sterilizationDoorStatus.bit7 = getBit(word368, 15); // D后门开到位
+      this.sterilizationDoorStatus.bit8 = getBit(word368, 0); // E前门开到位
+      this.sterilizationDoorStatus.bit9 = getBit(word368, 1); // E后门开到位
+      this.sterilizationDoorStatus.bit10 = getBit(word368, 2); // F前门开到位
+      this.sterilizationDoorStatus.bit11 = getBit(word368, 3); // F后门开到位
+      this.sterilizationDoorStatus.bit12 = getBit(word368, 4); // G前门开到位
+      this.sterilizationDoorStatus.bit13 = getBit(word368, 5); // G后门开到位
     });
   },
   watch: {
@@ -4767,6 +5334,14 @@ export default {
     'scanPhotoelectricSignal.bit0'(newVal) {
       // 当值变为1时执行逻辑
       if (newVal === '1') {
+        // 检查是否在无码模式执行中
+        if (this.isModeExecuting && this.controlMode === 'nocode') {
+          // 无码模式：直接调用接货方法，不检查扫码
+          this.yiloujiehuozhantai(this.floor1InLineTrayInfo || 'NOCODE', 'PC');
+          return;
+        }
+
+        // 普通模式：检查扫码状态
         // 1、先判断条码状态是否不为空串 或者 不为NoRead
         if (
           !this.floor1InLineTrayInfo ||
@@ -4790,6 +5365,14 @@ export default {
     'scanPhotoelectricSignal.bit1'(newVal) {
       // 当值变为1时执行逻辑
       if (newVal === '1') {
+        // 检查是否在无码模式执行中
+        if (this.isModeExecuting && this.controlMode === 'nocode') {
+          // 无码模式：直接调用缓存区扫码方法，不检查扫码
+          this.yiloushanghuosaoma(this.floor1UpLineTrayInfo || 'NOCODE', 'PC');
+          return;
+        }
+
+        // 普通模式：检查扫码状态
         // 1、先判断条码状态是否不为空串 或者 不为NoRead
         if (
           !this.floor1UpLineTrayInfo ||
@@ -5089,6 +5672,14 @@ export default {
     'scanPhotoelectricSignal.bit2'(newVal) {
       // 当值变为1时执行逻辑
       if (newVal === '1') {
+        // 检查是否在无码模式执行中
+        if (this.isModeExecuting && this.controlMode === 'nocode') {
+          // 无码模式：直接调用接货方法，不检查扫码
+          this.jiehuo2A(this.floor2ALineTrayInfo || 'NOCODE', 'PC');
+          return;
+        }
+
+        // 普通模式：检查扫码状态
         // 1、先判断条码状态是否不为空串 或者 不为NoRead
         if (
           !this.floor2ALineTrayInfo ||
@@ -5112,6 +5703,14 @@ export default {
     'scanPhotoelectricSignal.bit3'(newVal) {
       // 当值变为1时执行逻辑
       if (newVal === '1') {
+        // 检查是否在无码模式执行中
+        if (this.isModeExecuting && this.controlMode === 'nocode') {
+          // 无码模式：直接调用接货方法，不检查扫码
+          this.jiehuo2B(this.floor2BLineTrayInfo || 'NOCODE', 'PC');
+          return;
+        }
+
+        // 普通模式：检查扫码状态
         // 1、先判断条码状态是否不为空串 或者 不为NoRead
         if (
           !this.floor2BLineTrayInfo ||
@@ -5135,6 +5734,14 @@ export default {
     'scanPhotoelectricSignal.bit4'(newVal) {
       // 当值变为1时执行逻辑
       if (newVal === '1') {
+        // 检查是否在无码模式执行中
+        if (this.isModeExecuting && this.controlMode === 'nocode') {
+          // 无码模式：直接调用接货方法，不检查扫码
+          this.jiehuo3A(this.floor3ALineTrayInfo || 'NOCODE', 'PC');
+          return;
+        }
+
+        // 普通模式：检查扫码状态
         // 1、先判断条码状态是否不为空串 或者 不为NoRead
         if (
           !this.floor3ALineTrayInfo ||
@@ -5158,6 +5765,14 @@ export default {
     'scanPhotoelectricSignal.bit5'(newVal) {
       // 当值变为1时执行逻辑
       if (newVal === '1') {
+        // 检查是否在无码模式执行中
+        if (this.isModeExecuting && this.controlMode === 'nocode') {
+          // 无码模式：直接调用接货方法，不检查扫码
+          this.jiehuo3B(this.floor3BLineTrayInfo || 'NOCODE', 'PC');
+          return;
+        }
+
+        // 普通模式：检查扫码状态
         // 1、先判断条码状态是否不为空串 或者 不为NoRead
         if (
           !this.floor3BLineTrayInfo ||
@@ -5182,10 +5797,89 @@ export default {
       if (newVal === '1') {
         this.handleDownLoadScan();
       }
+    },
+    // 监听无码模式缓存区扫码计数
+    nocodeScanCount(newVal) {
+      // 当缓存区扫码计数达到目标数量时，自动取消执行
+      if (
+        this.isModeExecuting &&
+        this.controlMode === 'nocode' &&
+        newVal >= this.nocodeTargetCount
+      ) {
+        this.addLog(
+          `【无码模式】缓存区扫码已完成目标数量（${newVal}/${this.nocodeTargetCount}），自动结束`
+        );
+        this.$message.success(`无码模式已完成！缓存区扫码 ${newVal} 个托盘`);
+        this.isModeExecuting = false;
+        // 重置计数器和清理临时orderId
+        this.nocodeCurrentCount = 0;
+        this.nocodeScanCount = 0;
+        this.nocodeOrderId = ''; // 清理临时orderId
+      }
     }
     // ---- 监听指定队列的 trayInfo 变化结束 ----
   },
   methods: {
+    // --------------------------------模式控制相关方法--------------------------------
+    // 处理模式设定
+    handleModeSet() {
+      // 如果是无码模式，先检查当前是否有订单执行中
+      if (this.controlMode === 'nocode') {
+        if (this.currentOrder) {
+          this.$message.warning('当前有订单正在执行中，无法启动无码模式');
+          this.addLog('启动无码模式失败：当前有订单正在执行中', 'alarm');
+          return;
+        }
+      }
+
+      this.isModeExecuting = true;
+
+      // 如果是无码模式，重置计数器并生成临时唯一orderId
+      if (this.controlMode === 'nocode') {
+        this.nocodeCurrentCount = 0;
+        this.nocodeScanCount = 0;
+        // 生成无码模式的临时唯一orderId
+        this.nocodeOrderId = `order_${Date.now()}`;
+        this.addLog(
+          `已启动无码模式，目标数量：${this.nocodeTargetCount}，预热房：${this.nocodeDestination}，临时订单ID：${this.nocodeOrderId}`
+        );
+        this.$message.success(
+          `无码模式已启动（目标：${this.nocodeTargetCount}，预热房：${this.nocodeDestination}）`
+        );
+      } else {
+        this.addLog('已启动MSE控制模式');
+        this.$message.success('MSE控制模式已启动');
+      }
+    },
+
+    // 处理模式取消
+    handleModeCancel() {
+      this.$confirm('确定要取消当前执行模式吗？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+        .then(() => {
+          this.isModeExecuting = false;
+
+          // 如果是无码模式，重置计数器和清理临时orderId
+          if (this.controlMode === 'nocode') {
+            this.nocodeCurrentCount = 0;
+            this.nocodeScanCount = 0;
+            this.nocodeOrderId = ''; // 清理临时orderId
+            this.addLog(
+              `已取消无码模式（上货口计数：${this.nocodeCurrentCount}/${this.nocodeTargetCount}，缓存区扫码计数：${this.nocodeScanCount}/${this.nocodeTargetCount}）`
+            );
+            this.$message.info('无码模式已取消');
+          } else {
+            this.addLog('已取消MSE控制模式');
+            this.$message.info('MSE控制模式已取消');
+          }
+        })
+        .catch(() => {});
+    },
+    // --------------------------------模式控制相关方法结束--------------------------------
+
     changeQueueExpanded() {
       this.isQueueExpanded = !this.isQueueExpanded;
       // 当展开面板时，刷新当前选中队列的托盘信息
@@ -5523,7 +6217,7 @@ export default {
         if (!imageWrapper) return;
 
         const markers = imageWrapper.querySelectorAll(
-          '.marker, .marker-with-panel, .queue-marker, .motor-marker, .preheating-room-marker'
+          '.marker, .marker-with-panel, .queue-marker, .motor-marker, .preheating-room-marker, .mode-control-card, .door-status-marker'
         );
         const carts = imageWrapper.querySelectorAll('.cart-container');
         const wrapperRect = imageWrapper.getBoundingClientRect();
@@ -5595,6 +6289,9 @@ export default {
             time: tray.trayTime || '',
             batchId: tray.batchId || '--',
             orderId: tray.orderId || '--',
+            productName: tray.productName || '--',
+            productCode: tray.productCode || '--',
+            spec: tray.spec || '--',
             isPrint1: tray.isPrint1 || '--',
             isPrint2: tray.isPrint2 || '--',
             hasSentPreheatCommand:
@@ -5837,6 +6534,43 @@ export default {
           })
           .finally(() => {
             order.isLoading = false;
+          });
+      } catch (err) {
+        // 用户取消操作，不做处理
+      }
+    },
+    async deleteOrder(order) {
+      try {
+        await this.$confirm('确认要删除该订单吗？删除后无法恢复。', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        });
+
+        // 设置删除加载状态
+        this.$set(order, 'isDeleting', true);
+        const param = {
+          id: order.id,
+          invalidFlag: 1
+        };
+
+        await HttpUtil.post('/order_info/update', param)
+          .then((res) => {
+            if (res.code === '200') {
+              this.$message.success('订单删除成功');
+              this.addLog(`订单 ${order.orderId} 已删除`);
+
+              // 重新查询订单列表
+              this.refreshOrders();
+            } else {
+              this.$message.error('删除订单失败，请重试');
+            }
+          })
+          .catch((err) => {
+            this.$message.error('删除订单失败，请重试');
+          })
+          .finally(() => {
+            this.$set(order, 'isDeleting', false);
           });
       } catch (err) {
         // 用户取消操作，不做处理
@@ -6208,7 +6942,7 @@ export default {
         id: this.logId++,
         type,
         message,
-        timestamp: new Date().getTime(),
+        timestamp: moment().format('YYYY-MM-DD HH:mm:ss'),
         unread: type === 'alarm'
       };
       // 只要是日志就往运行日志中添加
@@ -6649,6 +7383,39 @@ export default {
     },
     // trayCode条码号，source来源：'PC'/'PDA'
     yiloujiehuozhantai(trayCode, source) {
+      // 检查是否在无码模式执行中
+      if (this.isModeExecuting && this.controlMode === 'nocode') {
+        // 检查上货口计数是否已达到目标
+        if (this.nocodeCurrentCount >= this.nocodeTargetCount) {
+          // 已达到目标数量，禁止继续上货
+          ipcRenderer.send('writeValuesToPLC', 'DBW512', 0);
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW580', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW580');
+          }, 2000);
+          this.addLog(
+            `${source}：【无码模式】上货口计数已满（${this.nocodeCurrentCount}/${this.nocodeTargetCount}），禁止继续上货`,
+            'alarm'
+          );
+          return;
+        }
+
+        // 无码模式：直接通行，不判断订单包含，并增加计数
+        ipcRenderer.send('writeValuesToPLC', 'DBW512', 1);
+        ipcRenderer.send('writeSingleValueToPLC', 'DBW580', 11);
+        setTimeout(() => {
+          ipcRenderer.send('cancelWriteToPLC', 'DBW580');
+        }, 2000);
+
+        // 增加无码模式上货口计数
+        this.nocodeCurrentCount++;
+        this.addLog(
+          `${source}：【无码模式】托盘${trayCode}直接通行一楼接货口（上货口计数：${this.nocodeCurrentCount}/${this.nocodeTargetCount}）`
+        );
+        return;
+      }
+
+      // 普通模式（MSE控制模式）：按原有逻辑执行
       // 3、如果正常，先判断当前有没有正在执行的订单
       if (!this.currentOrder) {
         // 没有正在执行的订单，禁用接货口
@@ -6693,6 +7460,62 @@ export default {
     },
     // trayCode条码号，source来源：'PC'/'PDA'
     yiloushanghuosaoma(trayCode, source) {
+      // 检查是否在无码模式执行中
+      if (this.isModeExecuting && this.controlMode === 'nocode') {
+        // 无码模式：直接生成时间戳托盘号，直接入队，不判断任何条件
+        const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
+        const timestampTrayCode = `${Date.now()}`; // 生成时间戳托盘号
+
+        const newTray = {
+          trayCode: timestampTrayCode, // 使用时间戳托盘号
+          trayTime: currentTime,
+          batchId: 'no_tray_code', // 无码模式下批次id为no_tray_code
+          infoId: '',
+          orderId: this.nocodeOrderId, // 无码模式下使用生成的临时唯一orderId
+          isPrint1: this.nocodeDestination, // 使用设定的预热房目的地
+          isPrint2: '', // 无码模式下不指定灭菌柜
+          isPrint3: '', // 无码模式下不指定出口
+          inPut: '',
+          productName: '',
+          productCode: '',
+          spec: '', // 无码模式下规格为空
+          hasSentPreheatCommand: false,
+          trayOrderCount: this.nocodeTargetCount // 无码模式下根据设定目标值赋值
+        };
+
+        // 确保trayInfo是数组
+        if (!Array.isArray(this.queues[0].trayInfo)) {
+          this.queues[0].trayInfo = [];
+        }
+
+        // 无码模式：直接入队，不检查重复
+        this.addLog(
+          `${source}：【无码模式】缓存区直接通行，给PLC发送DBW582值为11`
+        );
+        ipcRenderer.send('writeSingleValueToPLC', 'DBW582', 11);
+        setTimeout(() => {
+          ipcRenderer.send('cancelWriteToPLC', 'DBW582');
+        }, 2000);
+
+        // 直接添加新托盘
+        this.queues[0].trayInfo.push(newTray);
+
+        // 增加缓存区扫码计数
+        this.nocodeScanCount++;
+        this.addLog(
+          `${source}：【无码模式】托盘${timestampTrayCode}已添加到上货区队列（缓存区扫码计数：${this.nocodeScanCount}/${this.nocodeTargetCount}）`
+        );
+
+        // 检查缓存区扫码计数是否达到目标
+        if (this.nocodeScanCount >= this.nocodeTargetCount) {
+          this.addLog(
+            `【无码模式】缓存区扫码计数已满（${this.nocodeScanCount}/${this.nocodeTargetCount}），准备结束无码模式`
+          );
+        }
+        return;
+      }
+
+      // 普通模式（MSE控制模式）：按原有逻辑执行
       // 3、如果正常，先判断当前有没有正在执行的订单
       if (!this.currentOrder) {
         // 缓存区扫码反馈异常DBW582
@@ -6726,6 +7549,7 @@ export default {
           inPut: this.currentOrder.inPut || '',
           productName: this.currentOrder.productName || '',
           productCode: this.currentOrder.productCode || '',
+          spec: this.currentOrder.spec || '', // 产品规格
           hasSentPreheatCommand: false, // 添加标识字段，表示是否已发送预热房命令
           // 订单托盘数量,计算方式： this.currentOrder.qrCode字段，每个托盘号使用英文逗号间隔。计算托盘数量。
           trayOrderCount: this.currentOrder.qrCode.split(',').length
@@ -6779,6 +7603,39 @@ export default {
     },
     // trayCode条码号，source来源：'PC'/'PDA'
     jiehuo2A(trayCode, source) {
+      // 检查是否在无码模式执行中
+      if (this.isModeExecuting && this.controlMode === 'nocode') {
+        // 检查上货口计数是否已达到目标
+        if (this.nocodeCurrentCount >= this.nocodeTargetCount) {
+          // 已达到目标数量，禁止继续上货
+          ipcRenderer.send('writeValuesToPLC', 'DBW514', 0);
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW584', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW584');
+          }, 2000);
+          this.addLog(
+            `${source}：【无码模式】上货口计数已满（${this.nocodeCurrentCount}/${this.nocodeTargetCount}），禁止继续上货`,
+            'alarm'
+          );
+          return;
+        }
+
+        // 无码模式：直接通行，不判断订单包含，并增加计数
+        ipcRenderer.send('writeValuesToPLC', 'DBW514', 1);
+        ipcRenderer.send('writeSingleValueToPLC', 'DBW584', 11);
+        setTimeout(() => {
+          ipcRenderer.send('cancelWriteToPLC', 'DBW584');
+        }, 2000);
+
+        // 增加无码模式上货口计数
+        this.nocodeCurrentCount++;
+        this.addLog(
+          `${source}：【无码模式】托盘${trayCode}直接通行二楼A接货口（上货口计数：${this.nocodeCurrentCount}/${this.nocodeTargetCount}）`
+        );
+        return;
+      }
+
+      // 普通模式（MSE控制模式）：按原有逻辑执行
       // 3、如果正常，先判断当前有没有正在执行的订单
       if (!this.currentOrder) {
         // 没有正在执行的订单，禁用接货口
@@ -6823,6 +7680,39 @@ export default {
     },
     // trayCode条码号，source来源：'PC'/'PDA'
     jiehuo2B(trayCode, source) {
+      // 检查是否在无码模式执行中
+      if (this.isModeExecuting && this.controlMode === 'nocode') {
+        // 检查上货口计数是否已达到目标
+        if (this.nocodeCurrentCount >= this.nocodeTargetCount) {
+          // 已达到目标数量，禁止继续上货
+          ipcRenderer.send('writeValuesToPLC', 'DBW516', 0);
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW586', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW586');
+          }, 2000);
+          this.addLog(
+            `${source}：【无码模式】上货口计数已满（${this.nocodeCurrentCount}/${this.nocodeTargetCount}），禁止继续上货`,
+            'alarm'
+          );
+          return;
+        }
+
+        // 无码模式：直接通行，不判断订单包含，并增加计数
+        ipcRenderer.send('writeValuesToPLC', 'DBW516', 1);
+        ipcRenderer.send('writeSingleValueToPLC', 'DBW586', 11);
+        setTimeout(() => {
+          ipcRenderer.send('cancelWriteToPLC', 'DBW586');
+        }, 2000);
+
+        // 增加无码模式上货口计数
+        this.nocodeCurrentCount++;
+        this.addLog(
+          `${source}：【无码模式】托盘${trayCode}直接通行二楼B接货口（上货口计数：${this.nocodeCurrentCount}/${this.nocodeTargetCount}）`
+        );
+        return;
+      }
+
+      // 普通模式（MSE控制模式）：按原有逻辑执行
       // 3、如果正常，先判断当前有没有正在执行的订单
       if (!this.currentOrder) {
         // 没有正在执行的订单，禁用接货口0
@@ -6867,6 +7757,39 @@ export default {
     },
     // trayCode条码号，source来源：'PC'/'PDA'
     jiehuo3A(trayCode, source) {
+      // 检查是否在无码模式执行中
+      if (this.isModeExecuting && this.controlMode === 'nocode') {
+        // 检查上货口计数是否已达到目标
+        if (this.nocodeCurrentCount >= this.nocodeTargetCount) {
+          // 已达到目标数量，禁止继续上货
+          ipcRenderer.send('writeValuesToPLC', 'DBW518', 0);
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW588', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW588');
+          }, 2000);
+          this.addLog(
+            `${source}：【无码模式】上货口计数已满（${this.nocodeCurrentCount}/${this.nocodeTargetCount}），禁止继续上货`,
+            'alarm'
+          );
+          return;
+        }
+
+        // 无码模式：直接通行，不判断订单包含，并增加计数
+        ipcRenderer.send('writeValuesToPLC', 'DBW518', 1);
+        ipcRenderer.send('writeSingleValueToPLC', 'DBW588', 11);
+        setTimeout(() => {
+          ipcRenderer.send('cancelWriteToPLC', 'DBW588');
+        }, 2000);
+
+        // 增加无码模式上货口计数
+        this.nocodeCurrentCount++;
+        this.addLog(
+          `${source}：【无码模式】托盘${trayCode}直接通行三楼A接货口（上货口计数：${this.nocodeCurrentCount}/${this.nocodeTargetCount}）`
+        );
+        return;
+      }
+
+      // 普通模式（MSE控制模式）：按原有逻辑执行
       // 3、如果正常，先判断当前有没有正在执行的订单
       if (!this.currentOrder) {
         // 没有正在执行的订单，禁用接货口0
@@ -6911,6 +7834,39 @@ export default {
     },
     // trayCode条码号，source来源：'PC'/'PDA'
     jiehuo3B(trayCode, source) {
+      // 检查是否在无码模式执行中
+      if (this.isModeExecuting && this.controlMode === 'nocode') {
+        // 检查上货口计数是否已达到目标
+        if (this.nocodeCurrentCount >= this.nocodeTargetCount) {
+          // 已达到目标数量，禁止继续上货
+          ipcRenderer.send('writeValuesToPLC', 'DBW520', 0);
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW590', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW590');
+          }, 2000);
+          this.addLog(
+            `${source}：【无码模式】上货口计数已满（${this.nocodeCurrentCount}/${this.nocodeTargetCount}），禁止继续上货`,
+            'alarm'
+          );
+          return;
+        }
+
+        // 无码模式：直接通行，不判断订单包含，并增加计数
+        ipcRenderer.send('writeValuesToPLC', 'DBW520', 1);
+        ipcRenderer.send('writeSingleValueToPLC', 'DBW590', 11);
+        setTimeout(() => {
+          ipcRenderer.send('cancelWriteToPLC', 'DBW590');
+        }, 2000);
+
+        // 增加无码模式上货口计数
+        this.nocodeCurrentCount++;
+        this.addLog(
+          `${source}：【无码模式】托盘${trayCode}直接通行三楼B接货口（上货口计数：${this.nocodeCurrentCount}/${this.nocodeTargetCount}）`
+        );
+        return;
+      }
+
+      // 普通模式（MSE控制模式）：按原有逻辑执行
       // 3、如果正常，先判断当前有没有正在执行的订单
       if (!this.currentOrder) {
         // 没有正在执行的订单，禁用接货口0
@@ -7288,6 +8244,19 @@ export default {
               overflow: hidden;
               cursor: pointer;
               box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+
+              .delete-btn {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                z-index: 10;
+              }
+
+              &:hover .delete-btn {
+                opacity: 1;
+              }
               .order-main {
                 flex: 1;
                 display: flex;
@@ -7776,6 +8745,57 @@ export default {
                 opacity: 1;
                 box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); /* 灰色辉光 */
               }
+
+              /* --- 门状态元素样式 --- */
+              .door-status-marker {
+                position: absolute;
+                width: 40px;
+                height: 20px;
+                transform: translate(-50%, -50%);
+                cursor: pointer;
+                z-index: 2;
+                pointer-events: auto;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+
+                .door-status-label {
+                  font-size: 10px;
+                  color: #fff;
+                  background: rgba(0, 0, 0, 0.7);
+                  padding: 2px 4px;
+                  border-radius: 2px;
+                  white-space: nowrap;
+                  opacity: 0;
+                  transition: opacity 0.3s;
+                  pointer-events: none;
+                  z-index: 10;
+                }
+
+                .door-status-indicator {
+                  width: 40px;
+                  height: 12px;
+                  border-radius: 6px;
+                  transition: all 0.3s ease;
+                  border: 1px solid rgba(255, 255, 255, 0.3);
+                }
+
+                .door-status-indicator.door-open {
+                  background: #67c23a; /* 绿色 - 门开启 */
+                  box-shadow: 0 0 8px rgba(103, 194, 58, 0.6);
+                }
+
+                .door-status-indicator.door-closed {
+                  background: #f56c6c; /* 红色 - 门关闭 */
+                  box-shadow: 0 0 8px rgba(245, 108, 108, 0.6);
+                }
+              }
+
+              /* hover时显示标签 */
+              .door-status-marker:hover .door-status-label {
+                opacity: 1;
+              }
               /* 始终显示标签的点位 */
               .marker-show-label .marker-label {
                 opacity: 1;
@@ -8034,6 +9054,109 @@ export default {
           }
           .floor-image-container {
             .image-wrapper {
+              // 模式选择卡片样式
+              .mode-control-card {
+                position: absolute;
+                z-index: 100;
+
+                .mode-card-content {
+                  background: rgba(30, 42, 56, 0.95);
+                  border: 1px solid rgba(10, 197, 168, 0.5);
+                  border-radius: 8px;
+                  padding: 8px;
+                  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+                  width: 200px;
+
+                  .mode-card-header {
+                    font-size: 14px;
+                    font-weight: bold;
+                    color: #0ac5a8;
+                    margin-bottom: 12px;
+                    text-align: center;
+                    border-bottom: 1px solid rgba(10, 197, 168, 0.3);
+                    padding-bottom: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 6px;
+
+                    i {
+                      font-size: 16px;
+                    }
+                  }
+
+                  .mode-card-body {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+
+                    .mode-select-row {
+                      width: 100%;
+                    }
+
+                    .nocode-config-row {
+                      display: flex;
+                      flex-direction: column;
+                      gap: 8px;
+                      padding: 8px;
+                      background: rgba(10, 197, 168, 0.1);
+                      border-radius: 4px;
+                      border: 1px solid rgba(10, 197, 168, 0.3);
+
+                      .config-item {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 8px;
+
+                        .config-label {
+                          color: #bbb;
+                          font-size: 12px;
+                          white-space: nowrap;
+                        }
+                      }
+
+                      .nocode-progress {
+                        text-align: center;
+                        color: #67c23a;
+                        font-size: 13px;
+                        font-weight: bold;
+                        padding: 4px 0;
+                        border-top: 1px solid rgba(10, 197, 168, 0.2);
+                        margin-top: 4px;
+                      }
+                    }
+
+                    .mode-actions-row {
+                      width: 100%;
+                      display: flex;
+                      align-items: center;
+                      gap: 8px;
+
+                      .executing-state {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        width: 100%;
+
+                        .executing-info {
+                          display: flex;
+                          align-items: center;
+                          gap: 4px;
+                          color: #67c23a;
+                          font-size: 12px;
+                          flex: 1;
+
+                          i {
+                            animation: rotate 1s linear infinite;
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+
               .queue-marker {
                 position: absolute;
                 transform: translate(-50%, -50%);

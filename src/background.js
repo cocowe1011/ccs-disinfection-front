@@ -855,6 +855,14 @@ function conPLC() {
           conn.addItems('DBW348');
           // 预热房前缓存线请求目的地
           conn.addItems('DBW360');
+          // 预热状态
+          conn.addItems('DBW362');
+          // 灭菌状态
+          conn.addItems('DBW364');
+          // 预热门状态
+          conn.addItems('DBW366');
+          // 灭菌门状态
+          conn.addItems('DBW368');
           setInterval(() => {
             conn.readAllItems(valuesReady);
           }, 200);
@@ -949,6 +957,10 @@ var variables = {
   DBW346: 'DB101,INT346', // 出库电机运行信号
   DBW348: 'DB101,INT348', // 预热→灭菌完成信号
   DBW360: 'DB101,INT360', // 预热房前缓存线请求目的地
+  DBW362: 'DB101,INT362', // 预热状态
+  DBW364: 'DB101,INT364', // 灭菌状态
+  DBW366: 'DB101,INT366', // 预热门状态
+  DBW368: 'DB101,INT368', // 灭菌门状态
   DBW500: 'DB101,INT500', // WCS看门狗心跳
   DBW502: 'DB101,INT502', // WCS-全线启动
   DBW504: 'DB101,INT504', // WCS-全线停止
