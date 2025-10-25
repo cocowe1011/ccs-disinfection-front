@@ -391,7 +391,7 @@
                         class="nocode-config-row"
                       >
                         <div class="config-item">
-                          <span class="config-label">上货数：</span>
+                          <span class="config-label">目标数：</span>
                           <el-input
                             v-model="nocodeTargetCount"
                             size="mini"
@@ -418,9 +418,9 @@
                         </div>
                         <div v-if="isModeExecuting" class="nocode-progress">
                           <span
-                            >进度：{{ nocodeScanCount }}/{{
-                              nocodeTargetCount
-                            }}</span
+                            >进度：{{
+                              getQueueCountFromPLC(nocodeDestination)
+                            }}/{{ nocodeTargetCount }}</span
                           >
                         </div>
                       </div>
@@ -5385,7 +5385,18 @@ export default {
     // 无码模式下的托盘数显示
     nocodeTrayCount() {
       if (this.isModeExecuting && this.controlMode === 'nocode') {
-        return `${this.nocodeScanCount}/${this.nocodeTargetCount}`;
+        // 计算预热房已有托盘数
+        const targetRoomIndex = 'ABCDEFG'.indexOf(this.nocodeDestination[0]);
+        const targetQueueIndex = 1 + targetRoomIndex;
+        const targetQueue = this.queues[targetQueueIndex];
+        const existingTrayCount = targetQueue.trayInfo
+          ? targetQueue.trayInfo.length
+          : 0;
+
+        // 计算总进度：预热房已有 + 缓存区新增
+        const totalProgress = existingTrayCount + this.nocodeScanCount;
+
+        return `${totalProgress}/${this.nocodeTargetCount}`;
       }
       return `${this.currentOrderTrayCount}/${this.currentOrderScannedCount}`;
     }
@@ -5819,30 +5830,44 @@ export default {
     // 监听A1队列数量变化
     'aLineQuantity.a1'(newVal, oldVal) {
       this.handleQueueQuantityChange('a1', newVal, oldVal);
+      // 无码模式自动停止判断
+      this.checkNocodeAutoStopByPlc('A1', newVal, oldVal);
     },
     // 监听B1队列数量变化
     'bLineQuantity.b1'(newVal, oldVal) {
       this.handleQueueQuantityChange('b1', newVal, oldVal);
+      // 无码模式自动停止判断
+      this.checkNocodeAutoStopByPlc('B1', newVal, oldVal);
     },
     // 监听C1队列数量变化
     'cLineQuantity.c1'(newVal, oldVal) {
       this.handleQueueQuantityChange('c1', newVal, oldVal);
+      // 无码模式自动停止判断
+      this.checkNocodeAutoStopByPlc('C1', newVal, oldVal);
     },
     // 监听D1队列数量变化
     'dLineQuantity.d1'(newVal, oldVal) {
       this.handleQueueQuantityChange('d1', newVal, oldVal);
+      // 无码模式自动停止判断
+      this.checkNocodeAutoStopByPlc('D1', newVal, oldVal);
     },
     // 监听E1队列数量变化
     'eLineQuantity.e1'(newVal, oldVal) {
       this.handleQueueQuantityChange('e1', newVal, oldVal);
+      // 无码模式自动停止判断
+      this.checkNocodeAutoStopByPlc('E1', newVal, oldVal);
     },
     // 监听F1队列数量变化
     'fLineQuantity.f1'(newVal, oldVal) {
       this.handleQueueQuantityChange('f1', newVal, oldVal);
+      // 无码模式自动停止判断
+      this.checkNocodeAutoStopByPlc('F1', newVal, oldVal);
     },
     // 监听G1队列数量变化
     'gLineQuantity.g1'(newVal, oldVal) {
       this.handleQueueQuantityChange('g1', newVal, oldVal);
+      // 无码模式自动停止判断
+      this.checkNocodeAutoStopByPlc('G1', newVal, oldVal);
     },
     // 监听A2队列数量变化
     'aLineQuantity.a2'(newVal, oldVal) {
@@ -6005,34 +6030,66 @@ export default {
           this.addLog('上货区所有托盘都已发送过预热房命令，本次请求不处理');
           return;
         }
-
         const currentOrderId = firstUnprocessedTray.orderId;
         const trayOrderCount = firstUnprocessedTray.trayOrderCount;
 
-        // 新逻辑：遍历所有队列，查找orderId与当前托盘相同且hasSentPreheatCommand为true的托盘数量
-        // 需要排除当前托盘本身，因为它还没有发送命令
-        let sentCount = 0;
-        this.queues.forEach((queue) => {
-          if (Array.isArray(queue.trayInfo)) {
-            sentCount += queue.trayInfo.filter(
-              (tray) =>
-                tray.orderId === currentOrderId &&
-                tray.hasSentPreheatCommand &&
-                tray.trayCode !== firstUnprocessedTray.trayCode
-            ).length;
-          }
-        });
-        // 判断是否为尾托盘：已发送命令的托盘数量 + 当前托盘 = 订单总托盘数量
-        const isLastTray = sentCount + 1 === Number(trayOrderCount);
+        // 无码模式下的尾托托盘判断逻辑
+        let isLastTray = false;
+        if (this.isModeExecuting && this.controlMode === 'nocode') {
+          // 无码模式：目标预热房+缓存区已发送预热命令的托盘数+1=设定数量
+          const targetRoomIndex = 'ABCDEFG'.indexOf(this.nocodeDestination[0]);
+          const targetQueueIndex = 1 + targetRoomIndex;
+          const targetQueue = this.queues[targetQueueIndex];
+          const targetRoomTrayCount = targetQueue.trayInfo
+            ? targetQueue.trayInfo.length
+            : 0;
 
-        // 输出一下当前发送命令的托盘的订单托盘数量和已发送托盘数量，以及本托盘是不是最后一个托盘
-        this.addLog(
-          `当前托盘：${
-            firstUnprocessedTray.trayCode
-          }，订单号：${currentOrderId}，订单托盘数量：${trayOrderCount}，已发送托盘数量：${sentCount}，本托盘${
-            isLastTray ? '是' : '不是'
-          }尾托盘`
-        );
+          // 计算缓存区中已发送预热命令的托盘数量
+          const cacheSentCount = this.queues[0].trayInfo
+            ? this.queues[0].trayInfo.filter(
+                (tray) => tray.hasSentPreheatCommand
+              ).length
+            : 0;
+
+          // 无码模式尾托判断：目标预热房托盘数 + 缓存区已发送命令托盘数 + 1 = 设定数量
+          isLastTray =
+            Number(targetRoomTrayCount + cacheSentCount + 1) ===
+            Number(this.nocodeTargetCount);
+
+          this.addLog(
+            `【无码模式】尾托判断：目标预热房${
+              this.nocodeDestination
+            }托盘数${targetRoomTrayCount} + 缓存区已发送命令托盘数${cacheSentCount} + 1 = ${
+              targetRoomTrayCount + cacheSentCount + 1
+            }，设定数量${this.nocodeTargetCount}，${
+              isLastTray ? '是' : '不是'
+            }尾托`
+          );
+        } else {
+          // 新逻辑：遍历所有队列，查找orderId与当前托盘相同且hasSentPreheatCommand为true的托盘数量
+          // 需要排除当前托盘本身，因为它还没有发送命令
+          let sentCount = 0;
+          this.queues.forEach((queue) => {
+            if (Array.isArray(queue.trayInfo)) {
+              sentCount += queue.trayInfo.filter(
+                (tray) =>
+                  tray.orderId === currentOrderId &&
+                  tray.hasSentPreheatCommand &&
+                  tray.trayCode !== firstUnprocessedTray.trayCode
+              ).length;
+            }
+          });
+          // 普通模式：已发送命令的托盘数量 + 当前托盘 = 订单总托盘数量
+          isLastTray = sentCount + 1 === Number(trayOrderCount);
+          // 输出一下当前发送命令的托盘的订单托盘数量和已发送托盘数量，以及本托盘是不是最后一个托盘
+          this.addLog(
+            `当前托盘：${
+              firstUnprocessedTray.trayCode
+            }，订单号：${currentOrderId}，订单托盘数量：${trayOrderCount}，已发送托盘数量：${sentCount}，本托盘${
+              isLastTray ? '是' : '不是'
+            }尾托盘`
+          );
+        }
 
         // 3、判断完是否为本订单最后一个托盘后，给PLC发送，对应预热房命令
         const isPrint1 = firstUnprocessedTray.isPrint1 || '';
@@ -6390,25 +6447,6 @@ export default {
       if (newVal === '1') {
         this.handleDownLoadScan();
       }
-    },
-    // 监听无码模式缓存区扫码计数
-    nocodeScanCount(newVal) {
-      // 当缓存区扫码计数达到目标数量时，自动取消执行
-      if (
-        this.isModeExecuting &&
-        this.controlMode === 'nocode' &&
-        newVal >= this.nocodeTargetCount
-      ) {
-        this.addLog(
-          `【无码模式】缓存区扫码已完成目标数量（${newVal}/${this.nocodeTargetCount}），自动结束`
-        );
-        this.$message.success(`无码模式已完成！缓存区扫码 ${newVal} 个托盘`);
-        this.isModeExecuting = false;
-        // 重置计数器和清理临时orderId
-        this.nocodeCurrentCount = 0;
-        this.nocodeScanCount = 0;
-        this.nocodeOrderId = ''; // 清理临时orderId
-      }
     }
     // ---- 监听指定队列的 trayInfo 变化结束 ----
   },
@@ -6423,21 +6461,87 @@ export default {
           this.addLog('启动无码模式失败：当前有订单正在执行中', 'alarm');
           return;
         }
+
+        // 获取目标预热房的队列索引
+        const targetRoomIndex = 'ABCDEFG'.indexOf(this.nocodeDestination[0]);
+        if (targetRoomIndex === -1) {
+          this.$message.error('无效的预热房选择');
+          this.addLog('启动无码模式失败：无效的预热房选择', 'alarm');
+          return;
+        }
+
+        // 获取目标预热房队列（A1-G1对应索引1-7）
+        const targetQueueIndex = 1 + targetRoomIndex;
+        const targetQueue = this.queues[targetQueueIndex];
+        const existingTrayCount = targetQueue.trayInfo
+          ? targetQueue.trayInfo.length
+          : 0;
+
+        // 检查设定数量是否小于目标预热房已有托盘数量
+        if (this.nocodeTargetCount < existingTrayCount) {
+          this.$message.error(
+            `设定数量（${this.nocodeTargetCount}）不能小于目标预热房已有托盘数量（${existingTrayCount}）`
+          );
+          this.addLog(
+            `启动无码模式失败：设定数量（${this.nocodeTargetCount}）小于目标预热房已有托盘数量（${existingTrayCount}）`,
+            'alarm'
+          );
+          return;
+        }
+
+        // 计算需要新增的托盘数量（目标数量 - 已有托盘数量）
+        const newTrayCount = this.nocodeTargetCount - existingTrayCount;
+
+        // 检查预热房队列数量和PLC数量一致性
+        const queueCount = targetQueue.trayInfo
+          ? targetQueue.trayInfo.length
+          : 0;
+        const plcCount = this.getQueueCountFromPLC(this.nocodeDestination);
+
+        if (queueCount !== plcCount) {
+          this.$message.error(
+            `预热房${this.nocodeDestination}队列数量（${queueCount}）与PLC数量（${plcCount}）不一致，请检查系统状态`
+          );
+          this.addLog(
+            `启动无码模式失败：预热房${this.nocodeDestination}队列数量（${queueCount}）与PLC数量（${plcCount}）不一致`,
+            'alarm'
+          );
+          return;
+        }
+
+        this.addLog(
+          `无码模式验证：目标预热房${this.nocodeDestination}已有托盘${existingTrayCount}个，设定目标数量${this.nocodeTargetCount}个，需要新增${newTrayCount}个托盘，队列与PLC数量一致（${queueCount}）`
+        );
       }
 
       this.isModeExecuting = true;
 
       // 如果是无码模式，重置计数器并生成临时唯一orderId
       if (this.controlMode === 'nocode') {
-        this.nocodeCurrentCount = 0;
+        // 获取目标预热房的队列索引
+        const targetRoomIndex = 'ABCDEFG'.indexOf(this.nocodeDestination[0]);
+        const targetQueueIndex = 1 + targetRoomIndex;
+        const targetQueue = this.queues[targetQueueIndex];
+        const existingTrayCount = targetQueue.trayInfo
+          ? targetQueue.trayInfo.length
+          : 0;
+
+        // 重置计数器，基于已有托盘数量开始
+        this.nocodeCurrentCount = existingTrayCount;
         this.nocodeScanCount = 0;
+
+        // 更新进度显示，基于已有托盘数量
+        this.addLog(
+          `无码模式进度初始化：预热房${this.nocodeDestination}已有托盘${existingTrayCount}个，目标数量${this.nocodeTargetCount}个，当前进度：${existingTrayCount}/${this.nocodeTargetCount}`
+        );
+
         // 生成无码模式的临时唯一orderId
         this.nocodeOrderId = `order_${Date.now()}`;
         this.addLog(
-          `已启动无码模式，目标数量：${this.nocodeTargetCount}，预热房：${this.nocodeDestination}，临时订单ID：${this.nocodeOrderId}`
+          `已启动无码模式，目标数量：${this.nocodeTargetCount}，预热房：${this.nocodeDestination}，已有托盘：${existingTrayCount}，临时订单ID：${this.nocodeOrderId}`
         );
         this.$message.success(
-          `无码模式已启动（目标：${this.nocodeTargetCount}，预热房：${this.nocodeDestination}）`
+          `无码模式已启动（目标：${this.nocodeTargetCount}，预热房：${this.nocodeDestination}，已有：${existingTrayCount}）`
         );
       } else {
         this.addLog('已启动MSE控制模式');
@@ -8295,6 +8399,38 @@ export default {
       return '--';
     },
 
+    // 检查无码模式自动停止条件（基于PLC数量变化）
+    checkNocodeAutoStopByPlc(queueName, newVal, oldVal) {
+      // 只有在无码模式执行中且PLC数量增加时才检查
+      if (
+        !this.isModeExecuting ||
+        this.controlMode !== 'nocode' ||
+        newVal <= oldVal
+      ) {
+        return;
+      }
+
+      // 检查是否是目标预热房
+      if (queueName !== this.nocodeDestination) {
+        return;
+      }
+
+      // 当目标预热房PLC数量达到设定上货数时自动停止
+      if (newVal >= this.nocodeTargetCount) {
+        this.addLog(
+          `【无码模式】目标预热房${queueName}PLC数量（${newVal}）已达到设定上货数（${this.nocodeTargetCount}），自动结束`
+        );
+        this.$message.success(
+          `无码模式已完成！目标预热房${queueName}PLC数量 ${newVal} 个，已达到设定上货数 ${this.nocodeTargetCount} 个`
+        );
+        this.isModeExecuting = false;
+        // 重置计数器和清理临时orderId
+        this.nocodeCurrentCount = 0;
+        this.nocodeScanCount = 0;
+        this.nocodeOrderId = ''; // 清理临时orderId
+      }
+    },
+
     // ============ WebSocket相关方法 ============
     // 初始化WebSocket连接（通过IPC与主进程通信）
     initWebSocketServer() {
@@ -8438,8 +8574,17 @@ export default {
 
         // 增加无码模式上货口计数
         this.nocodeCurrentCount++;
+
+        // 获取目标预热房已有托盘数量
+        const targetRoomIndex = 'ABCDEFG'.indexOf(this.nocodeDestination[0]);
+        const targetQueueIndex = 1 + targetRoomIndex;
+        const targetQueue = this.queues[targetQueueIndex];
+        const existingTrayCount = targetQueue.trayInfo
+          ? targetQueue.trayInfo.length
+          : 0;
+
         this.addLog(
-          `${source}：【无码模式】托盘${trayCode}直接通行一楼接货口（上货口计数：${this.nocodeCurrentCount}/${this.nocodeTargetCount}）`
+          `${source}：【无码模式】托盘${trayCode}直接通行一楼接货口（上货口计数：${this.nocodeCurrentCount}/${this.nocodeTargetCount}，预热房已有：${existingTrayCount}）`
         );
         return;
       }
@@ -8531,16 +8676,21 @@ export default {
 
         // 增加缓存区扫码计数
         this.nocodeScanCount++;
-        this.addLog(
-          `${source}：【无码模式】托盘${timestampTrayCode}已添加到上货区队列（缓存区扫码计数：${this.nocodeScanCount}/${this.nocodeTargetCount}）`
-        );
 
-        // 检查缓存区扫码计数是否达到目标
-        if (this.nocodeScanCount >= this.nocodeTargetCount) {
-          this.addLog(
-            `【无码模式】缓存区扫码计数已满（${this.nocodeScanCount}/${this.nocodeTargetCount}），准备结束无码模式`
-          );
-        }
+        // 计算预热房已有托盘数
+        const targetRoomIndex = 'ABCDEFG'.indexOf(this.nocodeDestination[0]);
+        const targetQueueIndex = 1 + targetRoomIndex;
+        const targetQueue = this.queues[targetQueueIndex];
+        const existingTrayCount = targetQueue.trayInfo
+          ? targetQueue.trayInfo.length
+          : 0;
+
+        // 计算总进度：预热房已有 + 缓存区新增
+        const totalProgress = existingTrayCount + this.nocodeScanCount;
+
+        this.addLog(
+          `${source}：【无码模式】托盘${timestampTrayCode}已添加到上货区队列（预热房${this.nocodeDestination}已有：${existingTrayCount}，缓存区新增：${this.nocodeScanCount}，总进度：${totalProgress}/${this.nocodeTargetCount}）`
+        );
         return;
       }
 
@@ -8658,8 +8808,17 @@ export default {
 
         // 增加无码模式上货口计数
         this.nocodeCurrentCount++;
+
+        // 获取目标预热房已有托盘数量
+        const targetRoomIndex = 'ABCDEFG'.indexOf(this.nocodeDestination[0]);
+        const targetQueueIndex = 1 + targetRoomIndex;
+        const targetQueue = this.queues[targetQueueIndex];
+        const existingTrayCount = targetQueue.trayInfo
+          ? targetQueue.trayInfo.length
+          : 0;
+
         this.addLog(
-          `${source}：【无码模式】托盘${trayCode}直接通行二楼A接货口（上货口计数：${this.nocodeCurrentCount}/${this.nocodeTargetCount}）`
+          `${source}：【无码模式】托盘${trayCode}直接通行二楼A接货口（上货口计数：${this.nocodeCurrentCount}/${this.nocodeTargetCount}，预热房已有：${existingTrayCount}）`
         );
         return;
       }
@@ -8735,8 +8894,17 @@ export default {
 
         // 增加无码模式上货口计数
         this.nocodeCurrentCount++;
+
+        // 获取目标预热房已有托盘数量
+        const targetRoomIndex = 'ABCDEFG'.indexOf(this.nocodeDestination[0]);
+        const targetQueueIndex = 1 + targetRoomIndex;
+        const targetQueue = this.queues[targetQueueIndex];
+        const existingTrayCount = targetQueue.trayInfo
+          ? targetQueue.trayInfo.length
+          : 0;
+
         this.addLog(
-          `${source}：【无码模式】托盘${trayCode}直接通行二楼B接货口（上货口计数：${this.nocodeCurrentCount}/${this.nocodeTargetCount}）`
+          `${source}：【无码模式】托盘${trayCode}直接通行二楼B接货口（上货口计数：${this.nocodeCurrentCount}/${this.nocodeTargetCount}，预热房已有：${existingTrayCount}）`
         );
         return;
       }
@@ -8812,8 +8980,17 @@ export default {
 
         // 增加无码模式上货口计数
         this.nocodeCurrentCount++;
+
+        // 获取目标预热房已有托盘数量
+        const targetRoomIndex = 'ABCDEFG'.indexOf(this.nocodeDestination[0]);
+        const targetQueueIndex = 1 + targetRoomIndex;
+        const targetQueue = this.queues[targetQueueIndex];
+        const existingTrayCount = targetQueue.trayInfo
+          ? targetQueue.trayInfo.length
+          : 0;
+
         this.addLog(
-          `${source}：【无码模式】托盘${trayCode}直接通行三楼A接货口（上货口计数：${this.nocodeCurrentCount}/${this.nocodeTargetCount}）`
+          `${source}：【无码模式】托盘${trayCode}直接通行三楼A接货口（上货口计数：${this.nocodeCurrentCount}/${this.nocodeTargetCount}，预热房已有：${existingTrayCount}）`
         );
         return;
       }
