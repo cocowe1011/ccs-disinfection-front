@@ -6023,7 +6023,7 @@ export default {
           }
         });
         // 判断是否为尾托盘：已发送命令的托盘数量 + 当前托盘 = 订单总托盘数量
-        const isLastTray = sentCount + 1 === trayOrderCount;
+        const isLastTray = sentCount + 1 === Number(trayOrderCount);
 
         // 输出一下当前发送命令的托盘的订单托盘数量和已发送托盘数量，以及本托盘是不是最后一个托盘
         this.addLog(
