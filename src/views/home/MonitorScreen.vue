@@ -8062,8 +8062,11 @@ export default {
       );
 
       try {
+        const params = {
+          id: firstTray.infoId
+        };
         // 查询最新订单信息
-        const res = await HttpUtil.post('/order_info/queryOrderList', {});
+        const res = await HttpUtil.post('/order_info/selectByList', params);
         if (res.code === '200' && res.data) {
           // 查找匹配的订单
           const matchedOrder = res.data.find(
@@ -8137,7 +8140,10 @@ export default {
 
       try {
         // 查询最新订单信息
-        const res = await HttpUtil.post('/order_info/queryOrderList', {});
+        const params = {
+          id: firstTray.infoId
+        };
+        const res = await HttpUtil.post('/order_info/selectByList', params);
         if (res.code === '200' && res.data) {
           // 查找匹配的订单
           const matchedOrder = res.data.find(
