@@ -2675,7 +2675,11 @@
                       >
                       <span
                         v-if="isDisinfectionExecuting"
-                        style="color: orange; margin-left: 10px"
+                        style="
+                          color: orange;
+                          margin-left: 10px;
+                          font-size: 12px;
+                        "
                         >执行中...</span
                       >
                       <el-button
@@ -2715,14 +2719,26 @@
                         type="primary"
                         size="mini"
                         @click="handleOutboundExecute"
-                        :disabled="
-                          isOutboundExecuting ||
-                          !outboundSelectedQueue ||
-                          (controlMode === 'mse' && isModeExecuting)
-                        "
-                        :loading="isOutboundExecuting"
+                        :disabled="controlMode === 'mse' && isModeExecuting"
+                        >执行</el-button
                       >
-                        执行
+                      <span
+                        v-if="isOutboundExecuting"
+                        style="
+                          color: orange;
+                          margin-left: 10px;
+                          font-size: 12px;
+                        "
+                        >执行中...</span
+                      >
+                      <el-button
+                        v-if="isOutboundExecuting"
+                        type="danger"
+                        size="mini"
+                        @click="cancelOutboundExecute"
+                        :disabled="controlMode === 'mse' && isModeExecuting"
+                      >
+                        取消
                       </el-button>
                     </div>
                   </div>
@@ -3280,6 +3296,14 @@
                         <span>预热房：{{ tray.isPrint1 }}</span>
                         <span>灭菌房：{{ tray.isPrint2 }}</span>
                         <span>预热命令：{{ tray.hasSentPreheatCommand }}</span>
+                      </div>
+                      <!-- 下货区队列的时间信息 -->
+                      <div
+                        v-if="selectedQueueIndex === 22 && tray.entryTime"
+                        class="tray-info-row status-row"
+                      >
+                        <span>进入：{{ tray.entryTime }}</span>
+                        <span>解绑：{{ tray.autoUnbindTime }}</span>
                       </div>
                       <span class="tray-time">{{ tray.time }}</span>
                     </div>
@@ -5406,6 +5430,7 @@ export default {
     this.refreshOrders();
     this.loadQueueInfoFromDatabase();
     this.initWebSocketServer();
+    this.startTrayCleanupTimer();
     ipcRenderer.on('receivedMsg', (event, values, values2) => {
       // 使用位运算优化赋值
       const getBit = (word, bitIndex) => ((word >> bitIndex) & 1).toString();
@@ -6299,24 +6324,38 @@ export default {
     },
     'aLineQuantity.a3'(newVal, oldVal) {
       this.handleDisinfectionQueueChange('A3', newVal, oldVal);
+      // 检查下货执行状态，当A3队列数量变成0时取消执行状态
+      this.checkOutboundExecuteStatus('A', newVal, oldVal);
     },
     'bLineQuantity.b3'(newVal, oldVal) {
       this.handleDisinfectionQueueChange('B3', newVal, oldVal);
+      // 检查下货执行状态，当B3队列数量变成0时取消执行状态
+      this.checkOutboundExecuteStatus('B', newVal, oldVal);
     },
     'cLineQuantity.c3'(newVal, oldVal) {
       this.handleDisinfectionQueueChange('C3', newVal, oldVal);
+      // 检查下货执行状态，当C3队列数量变成0时取消执行状态
+      this.checkOutboundExecuteStatus('C', newVal, oldVal);
     },
     'dLineQuantity.d3'(newVal, oldVal) {
       this.handleDisinfectionQueueChange('D3', newVal, oldVal);
+      // 检查下货执行状态，当D3队列数量变成0时取消执行状态
+      this.checkOutboundExecuteStatus('D', newVal, oldVal);
     },
     'eLineQuantity.e3'(newVal, oldVal) {
       this.handleDisinfectionQueueChange('E3', newVal, oldVal);
+      // 检查下货执行状态，当E3队列数量变成0时取消执行状态
+      this.checkOutboundExecuteStatus('E', newVal, oldVal);
     },
     'fLineQuantity.f3'(newVal, oldVal) {
       this.handleDisinfectionQueueChange('F3', newVal, oldVal);
+      // 检查下货执行状态，当F3队列数量变成0时取消执行状态
+      this.checkOutboundExecuteStatus('F', newVal, oldVal);
     },
     'gLineQuantity.g3'(newVal, oldVal) {
       this.handleDisinfectionQueueChange('G3', newVal, oldVal);
+      // 检查下货执行状态，当G3队列数量变成0时取消执行状态
+      this.checkOutboundExecuteStatus('G', newVal, oldVal);
     },
     // 二楼A接货站台"有载信号"/光电占位
     'scanPhotoelectricSignal.bit2'(newVal) {
@@ -7037,20 +7076,48 @@ export default {
           : [];
 
         this.nowTrays = trayInfo
-          .map((tray) => ({
-            id: tray.trayCode || '',
-            name: tray.trayCode ? `托盘 ${tray.trayCode}` : '未知托盘',
-            time: tray.trayTime || '',
-            batchId: tray.batchId || '--',
-            orderId: tray.orderId || '--',
-            productName: tray.productName || '--',
-            productCode: tray.productCode || '--',
-            spec: tray.spec || '--',
-            isPrint1: tray.isPrint1 || '--',
-            isPrint2: tray.isPrint2 || '--',
-            hasSentPreheatCommand:
-              tray.hasSentPreheatCommand === true ? '是' : '否'
-          }))
+          .map((tray) => {
+            const baseTray = {
+              id: tray.trayCode || '',
+              name: tray.trayCode ? `托盘 ${tray.trayCode}` : '未知托盘',
+              time: tray.trayTime || '',
+              batchId: tray.batchId || '--',
+              orderId: tray.orderId || '--',
+              productName: tray.productName || '--',
+              productCode: tray.productCode || '--',
+              spec: tray.spec || '--',
+              isPrint1: tray.isPrint1 || '--',
+              isPrint2: tray.isPrint2 || '--',
+              hasSentPreheatCommand:
+                tray.hasSentPreheatCommand === true ? '是' : '否'
+            };
+
+            // 如果是下货区队列（索引22），添加进入时间和预计自动解绑时间
+            if (index === 22 && tray.entryTime) {
+              const entryTime = new Date(tray.entryTime);
+              const autoUnbindTime = new Date(tray.entryTime + 10 * 60 * 1000); // 10分钟后自动解绑
+
+              baseTray.entryTime = entryTime.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+              });
+
+              baseTray.autoUnbindTime = autoUnbindTime.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+              });
+            }
+
+            return baseTray;
+          })
           .filter((tray) => tray.id); // 过滤掉没有 id 的托盘
       } catch (error) {
         console.error('处理托盘信息时出错:', error);
@@ -8130,13 +8197,30 @@ export default {
         `出库选择执行：队列${this.outboundSelectedQueue}，发送命令值：${commandValue}到PLC地址DBW530`
       );
 
-      // 1秒后重置执行状态
-      setTimeout(() => {
-        this.isOutboundExecuting = false;
-        this.$message.success(
-          `${this.outboundSelectedQueue}队列出库命令已发送`
-        );
-      }, 1000);
+      this.$message.success(
+        `${this.outboundSelectedQueue}队列出库命令已发送，等待出库完成`
+      );
+    },
+    // 取消下货执行
+    cancelOutboundExecute() {
+      this.isOutboundExecuting = false;
+      this.$message.info('已取消下货执行操作');
+      this.addLog('用户手动取消了下货执行操作');
+    },
+    // 检查下货执行状态，当队列数量变成0时自动取消执行状态
+    checkOutboundExecuteStatus(queueName, newVal, oldVal) {
+      // 只有在执行中且选择的队列与当前队列匹配时才检查
+      if (
+        this.isOutboundExecuting &&
+        this.outboundSelectedQueue === queueName
+      ) {
+        // 当队列数量变成0时，自动取消执行状态
+        if (newVal === 0 && oldVal > 0) {
+          this.isOutboundExecuting = false;
+          this.$message.success(`${queueName}队列出库完成，执行状态已自动取消`);
+          this.addLog(`${queueName}队列数量变成0，自动取消下货执行状态`);
+        }
+      }
     },
     // MES模式下处理预热完成信号
     async handlePreheatingComplete(preheatingRoom, bitIndex, newVal, oldVal) {
@@ -8306,7 +8390,89 @@ export default {
     handleDownLoadScan() {
       this.addLog('检测到下货扫码处光电信号，开始处理下货扫码逻辑');
 
-      // 1、读取下货扫码的条码
+      // 1、检查是否在无码模式执行中
+      if (this.isModeExecuting && this.controlMode === 'nocode') {
+        // 无码模式：直接给通行，并请求信号后直接出货当前正在出货执行的灭菌房队列的第一个托盘
+        this.addLog('【无码模式】下货通行，直接给通行信号');
+        // 发送通行信号
+        ipcRenderer.send('writeSingleValueToPLC', 'DBW592', 11);
+        setTimeout(() => {
+          ipcRenderer.send('cancelWriteToPLC', 'DBW592');
+        }, 2000);
+
+        // 查找当前正在进行出货执行的灭菌房队列的第一个托盘
+        let firstTray = null;
+        let sourceQueueIndex = -1;
+
+        // 检查是否有正在执行的出货操作
+        if (this.isOutboundExecuting && this.outboundSelectedQueue) {
+          // 根据选择的出货队列找到对应的队列索引
+          const queueIndexMap = {
+            A: 15,
+            B: 16,
+            C: 17,
+            D: 18,
+            E: 19,
+            F: 20,
+            G: 21
+          };
+          sourceQueueIndex = queueIndexMap[this.outboundSelectedQueue];
+
+          if (sourceQueueIndex !== undefined) {
+            const queue = this.queues[sourceQueueIndex];
+            if (
+              queue.trayInfo &&
+              Array.isArray(queue.trayInfo) &&
+              queue.trayInfo.length > 0
+            ) {
+              firstTray = queue.trayInfo[0];
+            }
+          }
+        }
+
+        if (firstTray) {
+          this.addLog(
+            `【无码模式】找到灭菌房队列${this.queues[sourceQueueIndex].queueName}第一个托盘：${firstTray.trayCode}，开始出货`
+          );
+
+          // 从源队列中移除第一个托盘
+          this.queues[sourceQueueIndex].trayInfo.splice(0, 1);
+
+          // 添加到下货区队列，并记录进入时间
+          const downLoadQueue = this.queues[22]; // 下货区队列索引为22
+          if (!downLoadQueue.trayInfo) {
+            downLoadQueue.trayInfo = [];
+          }
+
+          // 为托盘添加进入下货队列时间属性
+          const trayWithEntryTime = {
+            ...firstTray,
+            entryTime: new Date().getTime() // 记录进入下货队列的时间戳
+          };
+
+          downLoadQueue.trayInfo.push(trayWithEntryTime);
+
+          this.addLog(
+            `【无码模式】托盘${firstTray.trayCode}已从${this.queues[sourceQueueIndex].queueName}移动到下货区队列`
+          );
+        } else {
+          if (this.isOutboundExecuting && this.outboundSelectedQueue) {
+            this.addLog(
+              `【无码模式】当前正在执行的出货队列${this.outboundSelectedQueue}中无托盘，无法出货`,
+              'alarm'
+            );
+          } else {
+            this.addLog(
+              `【无码模式】当前没有正在执行的出货操作，无法出货`,
+              'alarm'
+            );
+          }
+        }
+
+        return;
+      }
+
+      // 2、普通模式：读取下货扫码的条码
       if (
         !this.floor1OutLineTrayInfo ||
         this.floor1OutLineTrayInfo === '' ||
@@ -9119,7 +9285,7 @@ export default {
     xiahuosaoma(scanCode, source) {
       this.addLog(`${source}：读取到下货条码：${scanCode}`);
 
-      // 2、通过下货条码的托盘码，查找A3-G3队列符合的托盘
+      // 1、通过下货条码的托盘码，查找A3-G3队列符合的托盘
       const targetQueues = [15, 16, 17, 18, 19, 20, 21]; // A3-G3队列索引
       let foundTray = null;
       let sourceQueueIndex = -1;
@@ -9199,11 +9365,64 @@ export default {
       if (!downLoadQueue.trayInfo) {
         downLoadQueue.trayInfo = [];
       }
-      downLoadQueue.trayInfo.push(foundTray);
+
+      // 为托盘添加进入下货队列时间属性
+      const trayWithEntryTime = {
+        ...foundTray,
+        entryTime: new Date().getTime() // 记录进入下货队列的时间戳
+      };
+
+      downLoadQueue.trayInfo.push(trayWithEntryTime);
 
       this.addLog(
         `${source}：托盘${scanCode}已从${this.queues[sourceQueueIndex].queueName}移动到下货区队列`
       );
+    },
+
+    // 启动托盘清理定时器
+    startTrayCleanupTimer() {
+      // 每10秒检查一次下货区队列中的托盘
+      setInterval(() => {
+        this.cleanupExpiredTrays();
+      }, 10 * 1000); // 10秒 = 10 * 1000 毫秒
+    },
+
+    // 清理超过10分钟的托盘
+    cleanupExpiredTrays() {
+      const downLoadQueue = this.queues[22]; // 下货区队列索引为22
+
+      if (!downLoadQueue.trayInfo || !Array.isArray(downLoadQueue.trayInfo)) {
+        return;
+      }
+
+      const currentTime = new Date().getTime();
+      const tenMinutesInMs = 10 * 60 * 1000; // 10分钟 = 10 * 60 * 1000 毫秒
+      // const tenMinutesInMs = 10000; // 10秒 = 10 * 1000 毫秒测试
+
+      // 找出需要删除的托盘索引（从后往前删除，避免索引变化）
+      const indicesToRemove = [];
+
+      downLoadQueue.trayInfo.forEach((tray, index) => {
+        if (tray.entryTime && currentTime - tray.entryTime > tenMinutesInMs) {
+          indicesToRemove.push(index);
+        }
+      });
+
+      // 从后往前删除，避免索引变化
+      indicesToRemove.reverse().forEach((index) => {
+        const removedTray = downLoadQueue.trayInfo.splice(index, 1)[0];
+        this.addLog(
+          `自动清理：托盘${removedTray.trayCode}在下货区队列中停留超过10分钟，已自动删除`,
+          'running'
+        );
+      });
+
+      if (indicesToRemove.length > 0) {
+        this.addLog(
+          `自动清理完成：共清理了${indicesToRemove.length}个超时托盘`,
+          'running'
+        );
+      }
     }
   }
 };
