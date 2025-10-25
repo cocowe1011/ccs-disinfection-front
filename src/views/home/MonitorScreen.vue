@@ -3266,13 +3266,15 @@
                           }}</span
                         >
                       </div>
-                      <div class="tray-info-row">
-                        <span class="data-panel-label">名称：</span>
-                        <span>{{ tray.productName || '--' }}</span>
-                      </div>
-                      <div class="tray-info-row">
-                        <span class="data-panel-label">规格：</span>
-                        <span>{{ tray.spec || '--' }}</span>
+                      <div class="tray-info-row name-spec-row">
+                        <div class="name-spec-item">
+                          <span class="data-panel-label">名称：</span>
+                          <span>{{ tray.productName || '--' }}</span>
+                        </div>
+                        <div class="name-spec-item">
+                          <span class="data-panel-label">规格：</span>
+                          <span>{{ tray.spec || '--' }}</span>
+                        </div>
                       </div>
                       <div class="tray-info-row status-row">
                         <span>预热房：{{ tray.isPrint1 }}</span>
@@ -10601,6 +10603,20 @@ export default {
                       white-space: nowrap;
                       flex-shrink: 0;
                       margin-left: auto;
+                    }
+
+                    // 名称和规格在同一行的样式
+                    &.name-spec-row {
+                      display: flex;
+                      gap: 12px;
+
+                      .name-spec-item {
+                        flex: 1;
+                        display: flex;
+                        align-items: center;
+                        gap: 4px;
+                        min-width: 0; // 允许内容收缩
+                      }
                     }
 
                     span {
