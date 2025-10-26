@@ -2766,6 +2766,7 @@
                         <el-checkbox
                           v-model="nocodeOutboundEnabled"
                           size="mini"
+                          @change="handleNocodeOutboundChange"
                         >
                           无码下货模式
                         </el-checkbox>
@@ -4200,7 +4201,9 @@
         <!-- 提示信息 -->
         <div
           class="form-tips"
-          v-if="isCacheQueueAdd"
+          v-if="
+            isCacheQueueAdd && !(isModeExecuting && controlMode === 'nocode')
+          "
           style="margin-bottom: 10px"
         >
           <el-alert
@@ -4211,7 +4214,24 @@
             show-icon
           />
         </div>
-        <div class="form-tips" v-else style="margin-bottom: 10px">
+        <div
+          class="form-tips"
+          v-if="isCacheQueueAdd && isModeExecuting && controlMode === 'nocode'"
+          style="margin-bottom: 10px"
+        >
+          <el-alert
+            title="无码模式缓存区托盘添加"
+            description="当前为无码模式下的缓存区托盘添加，请填写完整的托盘信息。"
+            type="warning"
+            :closable="false"
+            show-icon
+          />
+        </div>
+        <div
+          class="form-tips"
+          v-if="!isCacheQueueAdd"
+          style="margin-bottom: 10px"
+        >
           <el-alert
             title="非缓存区托盘添加"
             description="当前为非缓存区添加托盘，请填写完整的托盘信息。"
@@ -4233,7 +4253,13 @@
               placeholder="请输入托盘编号"
             ></el-input>
           </el-form-item>
-          <el-form-item label="批次号" prop="batchId" v-if="!isCacheQueueAdd">
+          <el-form-item
+            label="批次号"
+            prop="batchId"
+            v-if="
+              !isCacheQueueAdd || (isModeExecuting && controlMode === 'nocode')
+            "
+          >
             <el-input
               v-model="newTrayForm.batchId"
               placeholder="请输入批次号"
@@ -4246,7 +4272,13 @@
               disabled
             ></el-input>
           </el-form-item>
-          <el-form-item label="订单号" prop="orderId" v-if="!isCacheQueueAdd">
+          <el-form-item
+            label="订单号"
+            prop="orderId"
+            v-if="
+              !isCacheQueueAdd || (isModeExecuting && controlMode === 'nocode')
+            "
+          >
             <el-input
               v-model="newTrayForm.orderId"
               placeholder="请输入订单号"
@@ -4262,7 +4294,9 @@
           <el-form-item
             label="指定预热房"
             prop="isPrint1"
-            v-if="!isCacheQueueAdd"
+            v-if="
+              !isCacheQueueAdd || (isModeExecuting && controlMode === 'nocode')
+            "
           >
             <el-select
               v-model="newTrayForm.isPrint1"
@@ -4288,7 +4322,9 @@
           <el-form-item
             label="指定灭菌柜"
             prop="isPrint2"
-            v-if="!isCacheQueueAdd"
+            v-if="
+              !isCacheQueueAdd || (isModeExecuting && controlMode === 'nocode')
+            "
           >
             <el-select
               v-model="newTrayForm.isPrint2"
@@ -4314,7 +4350,9 @@
           <el-form-item
             label="产品名称"
             prop="productName"
-            v-if="!isCacheQueueAdd"
+            v-if="
+              !isCacheQueueAdd || (isModeExecuting && controlMode === 'nocode')
+            "
           >
             <el-input
               v-model="newTrayForm.productName"
@@ -4331,7 +4369,9 @@
           <el-form-item
             label="产品编码"
             prop="productCode"
-            v-if="!isCacheQueueAdd"
+            v-if="
+              !isCacheQueueAdd || (isModeExecuting && controlMode === 'nocode')
+            "
           >
             <el-input
               v-model="newTrayForm.productCode"
@@ -7608,7 +7648,12 @@ export default {
       const isCacheQueue =
         this.selectedQueue && this.selectedQueue.queueName === '缓存区';
 
-      if (isCacheQueue && !this.currentOrder) {
+      // 无码模式下不需要运行订单限制
+      if (
+        isCacheQueue &&
+        !this.currentOrder &&
+        !(this.isModeExecuting && this.controlMode === 'nocode')
+      ) {
         this.$message.error('添加缓存区托盘时，必须当前有运行订单');
         return;
       }
@@ -7617,8 +7662,12 @@ export default {
       this.isCacheQueueAdd = isCacheQueue;
 
       // 根据队列类型初始化表单
-      if (isCacheQueue && this.currentOrder) {
-        // 缓存区托盘：自动获取当前订单信息，用户只需填写托盘码
+      if (
+        isCacheQueue &&
+        this.currentOrder &&
+        !(this.isModeExecuting && this.controlMode === 'nocode')
+      ) {
+        // 缓存区托盘且有运行订单：自动获取当前订单信息，用户只需填写托盘码
         this.newTrayForm = {
           trayCode: '',
           batchId: this.currentOrder.batchId || '',
@@ -7739,6 +7788,22 @@ export default {
               : 1 // 获取当前运行订单的托盘列表计算
         };
 
+        // 无码模式下，如果没有运行订单，使用无码模式的默认值
+        if (
+          isCacheQueue &&
+          !this.currentOrder &&
+          this.isModeExecuting &&
+          this.controlMode === 'nocode'
+        ) {
+          newTray.batchId = this.nocodeOrderId || 'NOCODE_BATCH';
+          newTray.orderId = this.nocodeOrderId || 'NOCODE_ORDER';
+          newTray.isPrint1 = this.nocodeDestination || 'A1';
+          newTray.isPrint2 = '';
+          newTray.productName = '无码模式产品';
+          newTray.productCode = 'NOCODE_PRODUCT';
+          newTray.trayOrderCount = 1;
+        }
+
         // 确保trayInfo是数组
         if (!Array.isArray(this.selectedQueue.trayInfo)) {
           this.selectedQueue.trayInfo = [];
@@ -7755,7 +7820,13 @@ export default {
 
         // 添加新托盘日志
         const logMessage = isCacheQueue
-          ? `新托盘 ${newTray.trayCode} 已添加到 ${this.selectedQueue.queueName}，批次号：${newTray.batchId}，订单号：${newTray.orderId}`
+          ? `新托盘 ${newTray.trayCode} 已添加到 ${
+              this.selectedQueue.queueName
+            }，批次号：${newTray.batchId}，订单号：${newTray.orderId}${
+              this.isModeExecuting && this.controlMode === 'nocode'
+                ? '（无码模式）'
+                : ''
+            }`
           : `新托盘 ${newTray.trayCode} 已添加到 ${this.selectedQueue.queueName}，批次号：${newTray.batchId}，订单号：${newTray.orderId}，产品：${newTray.productName}`;
 
         this.addLog(logMessage);
@@ -8202,6 +8273,26 @@ export default {
       this.$message.info('已取消下货执行操作');
       this.addLog('用户手动取消了下货执行操作');
     },
+    // 处理无码下货模式复选框变化
+    handleNocodeOutboundChange(value) {
+      // 如果勾选无码下货模式，检查是否已选择目的地
+      if (value && !this.destinationSelected) {
+        this.$message.warning('请先选择目的地后再启用无码下货模式');
+        this.nocodeOutboundEnabled = false; // 取消勾选
+        this.addLog('无码下货模式启用失败：未选择目的地', 'alarm');
+        return;
+      }
+
+      if (value) {
+        this.addLog(
+          `无码下货模式已启用，目的地：${this.getDestinationText(
+            this.destinationSelected
+          )}`
+        );
+      } else {
+        this.addLog('无码下货模式已禁用');
+      }
+    },
     // 检查下货执行状态，当队列托盘数量变成0时自动取消执行状态
     checkOutboundExecuteStatus(queueName) {
       // 只有在执行中且选择的队列与当前队列匹配时才检查
@@ -8405,12 +8496,6 @@ export default {
       // 1、检查无码下货复选框是否勾选
       if (this.nocodeOutboundEnabled) {
         // 无码下货：直接给通行，并请求信号后直接出货当前正在出货执行的灭菌房队列的第一个托盘
-        this.addLog('【无码下货】下货通行，直接给通行信号');
-        // 发送通行信号
-        ipcRenderer.send('writeSingleValueToPLC', 'DBW592', 11);
-        setTimeout(() => {
-          ipcRenderer.send('cancelWriteToPLC', 'DBW592');
-        }, 2000);
 
         // 查找当前正在进行出货执行的灭菌房队列的第一个托盘
         let firstTray = null;
@@ -8445,6 +8530,34 @@ export default {
         if (firstTray) {
           this.addLog(
             `【无码下货】找到灭菌房队列${this.queues[sourceQueueIndex].queueName}第一个托盘：${firstTray.trayCode}，开始出货`
+          );
+
+          // 检查目的地选择
+          if (!this.destinationSelected) {
+            this.addLog(
+              '【无码下货】目的地未选择，无法发送目的地命令',
+              'alarm'
+            );
+            return;
+          }
+
+          // 发送目的地命令到PLC - 根据协议图片，使用DBW542地址
+          const destinationValue = this.destinationSelected;
+          ipcRenderer.send(
+            'writeSingleValueToPLC',
+            'DBW542',
+            parseInt(destinationValue)
+          );
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW592', 11);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW542');
+            ipcRenderer.send('cancelWriteToPLC', 'DBW592');
+          }, 2000);
+
+          this.addLog(
+            `【无码下货】下货通行，直接给通行信号，发送目的地命令：${this.getDestinationText(
+              destinationValue
+            )}，命令值：${destinationValue}到PLC地址DBW542，已给PLC发送DBW592扫码反馈通行11命令`
           );
 
           // 从源队列中移除第一个托盘
@@ -8817,6 +8930,31 @@ export default {
     yiloushanghuosaoma(trayCode, source) {
       // 检查是否在无码模式执行中
       if (this.isModeExecuting && this.controlMode === 'nocode') {
+        // 检查缓存区是否已满（总进度是否达到目标）
+        const targetRoomIndex = 'ABCDEFG'.indexOf(this.nocodeDestination[0]);
+        const targetQueueIndex = 1 + targetRoomIndex;
+        const targetQueue = this.queues[targetQueueIndex];
+        const existingTrayCount = targetQueue.trayInfo
+          ? targetQueue.trayInfo.length
+          : 0;
+
+        // 计算总进度：预热房已有 + 缓存区新增
+        const totalProgress = existingTrayCount + this.nocodeScanCount;
+
+        // 检查是否已达到目标数量
+        if (totalProgress >= this.nocodeTargetCount) {
+          // 缓存区已满，拒绝继续上货
+          ipcRenderer.send('writeSingleValueToPLC', 'DBW582', 10);
+          setTimeout(() => {
+            ipcRenderer.send('cancelWriteToPLC', 'DBW582');
+          }, 2000);
+          this.addLog(
+            `${source}：【无码模式】缓存区已满（总进度：${totalProgress}/${this.nocodeTargetCount}），拒绝继续上货`,
+            'alarm'
+          );
+          return;
+        }
+
         // 无码模式：直接生成时间戳托盘号，直接入队，不判断任何条件
         const currentTime = moment().format('YYYY-MM-DD HH:mm:ss');
         const timestampTrayCode = `${Date.now()}`; // 生成时间戳托盘号
@@ -8858,19 +8996,11 @@ export default {
         // 增加缓存区扫码计数
         this.nocodeScanCount++;
 
-        // 计算预热房已有托盘数
-        const targetRoomIndex = 'ABCDEFG'.indexOf(this.nocodeDestination[0]);
-        const targetQueueIndex = 1 + targetRoomIndex;
-        const targetQueue = this.queues[targetQueueIndex];
-        const existingTrayCount = targetQueue.trayInfo
-          ? targetQueue.trayInfo.length
-          : 0;
-
-        // 计算总进度：预热房已有 + 缓存区新增
-        const totalProgress = existingTrayCount + this.nocodeScanCount;
+        // 重新计算总进度
+        const newTotalProgress = existingTrayCount + this.nocodeScanCount;
 
         this.addLog(
-          `${source}：【无码模式】托盘${timestampTrayCode}已添加到上货区队列（预热房${this.nocodeDestination}已有：${existingTrayCount}，缓存区新增：${this.nocodeScanCount}，总进度：${totalProgress}/${this.nocodeTargetCount}）`
+          `${source}：【无码模式】托盘${timestampTrayCode}已添加到上货区队列（预热房${this.nocodeDestination}已有：${existingTrayCount}，缓存区新增：${this.nocodeScanCount}，总进度：${newTotalProgress}/${this.nocodeTargetCount}）`
         );
         return;
       }
