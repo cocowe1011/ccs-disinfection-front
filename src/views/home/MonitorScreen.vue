@@ -2762,6 +2762,14 @@
                         <el-option label="解析" value="2"></el-option>
                         <el-option label="立库" value="3"></el-option>
                       </el-select>
+                      <div class="nocode-outbound-checkbox">
+                        <el-checkbox
+                          v-model="nocodeOutboundEnabled"
+                          size="mini"
+                        >
+                          无码下货模式
+                        </el-checkbox>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -5311,6 +5319,7 @@ export default {
       nocodeFloor2BEnabled: false, // 二楼B接货口启用状态
       nocodeFloor3AEnabled: false, // 三楼A接货口启用状态
       nocodeFloor3BEnabled: false, // 三楼B接货口启用状态
+      nocodeOutboundEnabled: false, // 无码下货复选框状态
 
       // 新增PLC点位变量
       // 预热状态-读取PLC (DBW362)
@@ -6324,38 +6333,24 @@ export default {
     },
     'aLineQuantity.a3'(newVal, oldVal) {
       this.handleDisinfectionQueueChange('A3', newVal, oldVal);
-      // 检查下货执行状态，当A3队列数量变成0时取消执行状态
-      this.checkOutboundExecuteStatus('A', newVal, oldVal);
     },
     'bLineQuantity.b3'(newVal, oldVal) {
       this.handleDisinfectionQueueChange('B3', newVal, oldVal);
-      // 检查下货执行状态，当B3队列数量变成0时取消执行状态
-      this.checkOutboundExecuteStatus('B', newVal, oldVal);
     },
     'cLineQuantity.c3'(newVal, oldVal) {
       this.handleDisinfectionQueueChange('C3', newVal, oldVal);
-      // 检查下货执行状态，当C3队列数量变成0时取消执行状态
-      this.checkOutboundExecuteStatus('C', newVal, oldVal);
     },
     'dLineQuantity.d3'(newVal, oldVal) {
       this.handleDisinfectionQueueChange('D3', newVal, oldVal);
-      // 检查下货执行状态，当D3队列数量变成0时取消执行状态
-      this.checkOutboundExecuteStatus('D', newVal, oldVal);
     },
     'eLineQuantity.e3'(newVal, oldVal) {
       this.handleDisinfectionQueueChange('E3', newVal, oldVal);
-      // 检查下货执行状态，当E3队列数量变成0时取消执行状态
-      this.checkOutboundExecuteStatus('E', newVal, oldVal);
     },
     'fLineQuantity.f3'(newVal, oldVal) {
       this.handleDisinfectionQueueChange('F3', newVal, oldVal);
-      // 检查下货执行状态，当F3队列数量变成0时取消执行状态
-      this.checkOutboundExecuteStatus('F', newVal, oldVal);
     },
     'gLineQuantity.g3'(newVal, oldVal) {
       this.handleDisinfectionQueueChange('G3', newVal, oldVal);
-      // 检查下货执行状态，当G3队列数量变成0时取消执行状态
-      this.checkOutboundExecuteStatus('G', newVal, oldVal);
     },
     // 二楼A接货站台"有载信号"/光电占位
     'scanPhotoelectricSignal.bit2'(newVal) {
@@ -8207,18 +8202,35 @@ export default {
       this.$message.info('已取消下货执行操作');
       this.addLog('用户手动取消了下货执行操作');
     },
-    // 检查下货执行状态，当队列数量变成0时自动取消执行状态
-    checkOutboundExecuteStatus(queueName, newVal, oldVal) {
+    // 检查下货执行状态，当队列托盘数量变成0时自动取消执行状态
+    checkOutboundExecuteStatus(queueName) {
       // 只有在执行中且选择的队列与当前队列匹配时才检查
       if (
         this.isOutboundExecuting &&
         this.outboundSelectedQueue === queueName
       ) {
-        // 当队列数量变成0时，自动取消执行状态
-        if (newVal === 0 && oldVal > 0) {
-          this.isOutboundExecuting = false;
-          this.$message.success(`${queueName}队列出库完成，执行状态已自动取消`);
-          this.addLog(`${queueName}队列数量变成0，自动取消下货执行状态`);
+        // 获取灭菌房队列索引（A3-G3对应索引15-21）
+        const queueIndexMap = {
+          A: 15,
+          B: 16,
+          C: 17,
+          D: 18,
+          E: 19,
+          F: 20,
+          G: 21
+        };
+
+        const queueIndex = queueIndexMap[queueName];
+        if (queueIndex !== undefined) {
+          const queue = this.queues[queueIndex];
+          // 当队列托盘数量变成0时，自动取消执行状态
+          if (!queue.trayInfo || queue.trayInfo.length === 0) {
+            this.isOutboundExecuting = false;
+            this.$message.success(
+              `${queueName}队列出库完成，执行状态已自动取消`
+            );
+            this.addLog(`${queueName}队列托盘数量变成0，自动取消下货执行状态`);
+          }
         }
       }
     },
@@ -8390,10 +8402,10 @@ export default {
     handleDownLoadScan() {
       this.addLog('检测到下货扫码处光电信号，开始处理下货扫码逻辑');
 
-      // 1、检查是否在无码模式执行中
-      if (this.isModeExecuting && this.controlMode === 'nocode') {
-        // 无码模式：直接给通行，并请求信号后直接出货当前正在出货执行的灭菌房队列的第一个托盘
-        this.addLog('【无码模式】下货通行，直接给通行信号');
+      // 1、检查无码下货复选框是否勾选
+      if (this.nocodeOutboundEnabled) {
+        // 无码下货：直接给通行，并请求信号后直接出货当前正在出货执行的灭菌房队列的第一个托盘
+        this.addLog('【无码下货】下货通行，直接给通行信号');
         // 发送通行信号
         ipcRenderer.send('writeSingleValueToPLC', 'DBW592', 11);
         setTimeout(() => {
@@ -8432,11 +8444,14 @@ export default {
 
         if (firstTray) {
           this.addLog(
-            `【无码模式】找到灭菌房队列${this.queues[sourceQueueIndex].queueName}第一个托盘：${firstTray.trayCode}，开始出货`
+            `【无码下货】找到灭菌房队列${this.queues[sourceQueueIndex].queueName}第一个托盘：${firstTray.trayCode}，开始出货`
           );
 
           // 从源队列中移除第一个托盘
           this.queues[sourceQueueIndex].trayInfo.splice(0, 1);
+
+          // 检查出库执行状态，如果队列为空则取消执行状态
+          this.checkOutboundExecuteStatus(this.outboundSelectedQueue);
 
           // 添加到下货区队列，并记录进入时间
           const downLoadQueue = this.queues[22]; // 下货区队列索引为22
@@ -8453,17 +8468,17 @@ export default {
           downLoadQueue.trayInfo.push(trayWithEntryTime);
 
           this.addLog(
-            `【无码模式】托盘${firstTray.trayCode}已从${this.queues[sourceQueueIndex].queueName}移动到下货区队列`
+            `【无码下货】托盘${firstTray.trayCode}已从${this.queues[sourceQueueIndex].queueName}移动到下货区队列`
           );
         } else {
           if (this.isOutboundExecuting && this.outboundSelectedQueue) {
             this.addLog(
-              `【无码模式】当前正在执行的出货队列${this.outboundSelectedQueue}中无托盘，无法出货`,
+              `【无码下货】当前正在执行的出货队列${this.outboundSelectedQueue}中无托盘，无法出货`,
               'alarm'
             );
           } else {
             this.addLog(
-              `【无码模式】当前没有正在执行的出货操作，无法出货`,
+              `【无码下货】当前没有正在执行的出货操作，无法出货`,
               'alarm'
             );
           }
@@ -9360,6 +9375,9 @@ export default {
         ),
         1
       );
+
+      // 检查出库执行状态，如果当前执行的队列为空则取消执行状态
+      this.checkOutboundExecuteStatus(this.outboundSelectedQueue);
 
       // 添加到下货区队列
       if (!downLoadQueue.trayInfo) {
@@ -10552,6 +10570,20 @@ export default {
                 height: 24px;
                 width: 100%;
                 padding: 4px 8px;
+              }
+              .nocode-outbound-checkbox {
+                margin-top: 4px;
+                width: 100%;
+                display: flex;
+                justify-content: center;
+              }
+              .nocode-outbound-checkbox :deep(.el-checkbox) {
+                color: white;
+                font-size: 10px;
+              }
+              .nocode-outbound-checkbox :deep(.el-checkbox__label) {
+                color: white;
+                font-size: 10px;
               }
             }
           }
