@@ -5349,7 +5349,6 @@ export default {
       // 无码模式配置
       nocodeTargetCount: 16, // 目标上货数量
       nocodeCurrentCount: 0, // 当前上货计数（上货口计数）
-      nocodeScanCount: 0, // 缓存区扫码计数
       nocodeDestination: 'A1', // 预热房目的地（A1~G1）
       nocodeOrderId: '', // 无码模式临时唯一orderId
 
@@ -5466,8 +5465,11 @@ export default {
           ? targetQueue.trayInfo.length
           : 0;
 
-        // 计算总进度：预热房已有 + 缓存区新增
-        const totalProgress = existingTrayCount + this.nocodeScanCount;
+        // 计算总进度：预热房已有 + 缓冲区实际数量
+        const bufferTrayCount = this.queues[0].trayInfo
+          ? this.queues[0].trayInfo.length
+          : 0;
+        const totalProgress = existingTrayCount + bufferTrayCount;
 
         return `${totalProgress}/${this.nocodeTargetCount}`;
       }
@@ -6552,7 +6554,7 @@ export default {
           : 0;
 
         // 检查设定数量是否小于目标预热房已有托盘数量
-        if (this.nocodeTargetCount < existingTrayCount) {
+        if (this.nocodeTargetCount <= existingTrayCount) {
           this.$message.error(
             `设定数量（${this.nocodeTargetCount}）不能小于目标预热房已有托盘数量（${existingTrayCount}）`
           );
@@ -6602,7 +6604,6 @@ export default {
 
         // 重置计数器，基于已有托盘数量开始
         this.nocodeCurrentCount = existingTrayCount;
-        this.nocodeScanCount = 0;
 
         // 更新进度显示，基于已有托盘数量
         this.addLog(
@@ -6636,10 +6637,9 @@ export default {
           // 如果是无码模式，重置计数器和清理临时orderId
           if (this.controlMode === 'nocode') {
             this.nocodeCurrentCount = 0;
-            this.nocodeScanCount = 0;
             this.nocodeOrderId = ''; // 清理临时orderId
             this.addLog(
-              `已取消无码模式（上货口计数：${this.nocodeCurrentCount}/${this.nocodeTargetCount}，缓存区扫码计数：${this.nocodeScanCount}/${this.nocodeTargetCount}）`
+              `已取消无码模式（上货口计数：${this.nocodeCurrentCount}/${this.nocodeTargetCount}）`
             );
             this.$message.info('无码模式已取消');
           } else {
@@ -8720,7 +8720,6 @@ export default {
         this.isModeExecuting = false;
         // 重置计数器和清理临时orderId
         this.nocodeCurrentCount = 0;
-        this.nocodeScanCount = 0;
         this.nocodeOrderId = ''; // 清理临时orderId
       }
     },
@@ -8938,8 +8937,11 @@ export default {
           ? targetQueue.trayInfo.length
           : 0;
 
-        // 计算总进度：预热房已有 + 缓存区新增
-        const totalProgress = existingTrayCount + this.nocodeScanCount;
+        // 计算总进度：预热房已有 + 缓冲区实际数量
+        const bufferTrayCount = this.queues[0].trayInfo
+          ? this.queues[0].trayInfo.length
+          : 0;
+        const totalProgress = existingTrayCount + bufferTrayCount;
 
         // 检查是否已达到目标数量
         if (totalProgress >= this.nocodeTargetCount) {
@@ -8993,14 +8995,14 @@ export default {
         // 直接添加新托盘
         this.queues[0].trayInfo.push(newTray);
 
-        // 增加缓存区扫码计数
-        this.nocodeScanCount++;
-
         // 重新计算总进度
-        const newTotalProgress = existingTrayCount + this.nocodeScanCount;
+        const newBufferTrayCount = this.queues[0].trayInfo
+          ? this.queues[0].trayInfo.length
+          : 0;
+        const newTotalProgress = existingTrayCount + newBufferTrayCount;
 
         this.addLog(
-          `${source}：【无码模式】托盘${timestampTrayCode}已添加到上货区队列（预热房${this.nocodeDestination}已有：${existingTrayCount}，缓存区新增：${this.nocodeScanCount}，总进度：${newTotalProgress}/${this.nocodeTargetCount}）`
+          `${source}：【无码模式】托盘${timestampTrayCode}已添加到上货区队列（预热房${this.nocodeDestination}已有：${existingTrayCount}，缓冲区实际：${newBufferTrayCount}，总进度：${newTotalProgress}/${this.nocodeTargetCount}）`
         );
         return;
       }
