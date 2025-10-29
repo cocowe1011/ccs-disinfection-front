@@ -863,6 +863,82 @@ function conPLC() {
           conn.addItems('DBW366');
           // 灭菌门状态
           conn.addItems('DBW368');
+          // 报警信息
+          conn.addItems('DBW1000');
+          conn.addItems('DBW1002');
+          conn.addItems('DBW1004');
+          conn.addItems('DBW1006');
+          conn.addItems('DBW1008');
+          conn.addItems('DBW1010');
+          conn.addItems('DBW1012');
+          conn.addItems('DBW1014');
+          conn.addItems('DBW1016');
+          conn.addItems('DBW1018');
+          conn.addItems('DBW1020');
+          conn.addItems('DBW1022');
+          conn.addItems('DBW1024');
+          conn.addItems('DBW1026');
+          conn.addItems('DBW1028');
+          conn.addItems('DBW1030');
+          conn.addItems('DBW1032');
+          conn.addItems('DBW1034');
+          conn.addItems('DBW1036');
+          conn.addItems('DBW1038');
+          conn.addItems('DBW1040');
+          conn.addItems('DBW1042');
+          conn.addItems('DBW1044');
+          conn.addItems('DBW1046');
+          conn.addItems('DBW1048');
+          conn.addItems('DBW1050');
+          conn.addItems('DBW1052');
+          conn.addItems('DBW1054');
+          conn.addItems('DBW1056');
+          conn.addItems('DBW1058');
+          conn.addItems('DBW1060');
+          conn.addItems('DBW1062');
+          conn.addItems('DBW1064');
+          conn.addItems('DBW1066');
+          conn.addItems('DBW1068');
+          conn.addItems('DBW1070');
+          conn.addItems('DBW1072');
+          conn.addItems('DBW1074');
+          conn.addItems('DBW1076');
+          conn.addItems('DBW1078');
+          conn.addItems('DBW1080');
+          conn.addItems('DBW1082');
+          conn.addItems('DBW1084');
+          conn.addItems('DBW1086');
+          conn.addItems('DBW1088');
+          conn.addItems('DBW1090');
+          conn.addItems('DBW1092');
+          conn.addItems('DBW1094');
+          conn.addItems('DBW1096');
+          conn.addItems('DBW1098');
+          conn.addItems('DBW1100');
+          conn.addItems('DBW1102');
+          conn.addItems('DBW1104');
+          conn.addItems('DBW1106');
+          conn.addItems('DBW1108');
+          conn.addItems('DBW1110');
+          conn.addItems('DBW1112');
+          conn.addItems('DBW1114');
+          conn.addItems('DBW1116');
+          conn.addItems('DBW1118');
+          conn.addItems('DBW1120');
+          conn.addItems('DBW1122');
+          conn.addItems('DBW1124');
+          conn.addItems('DBW1126');
+          conn.addItems('DBW1128');
+          conn.addItems('DBW1130');
+          conn.addItems('DBW1132');
+          conn.addItems('DBW1134');
+          conn.addItems('DBW1136');
+          conn.addItems('DBW1138');
+          conn.addItems('DBW1140');
+          conn.addItems('DBW1142');
+          conn.addItems('DBW1144');
+          conn.addItems('DBW1146');
+          conn.addItems('DBW1148');
           setInterval(() => {
             conn.readAllItems(valuesReady);
           }, 200);
@@ -986,7 +1062,82 @@ var variables = {
   DBW586: 'DB101,INT586', // 2楼B扫码反馈
   DBW588: 'DB101,INT588', // 3楼A扫码反馈
   DBW590: 'DB101,INT590', // 3楼B扫码反馈
-  DBW592: 'DB101,INT592' // 出库扫码反馈
+  DBW592: 'DB101,INT592', // 出库扫码反馈
+  DBW1000: 'DB101,INT1000', // 报警信息
+  DBW1002: 'DB101,INT1002', // 报警信息
+  DBW1004: 'DB101,INT1004', // 报警信息
+  DBW1006: 'DB101,INT1006', // 报警信息
+  DBW1008: 'DB101,INT1008', // 报警信息
+  DBW1010: 'DB101,INT1010', // 报警信息
+  DBW1012: 'DB101,INT1012', // 报警信息
+  DBW1014: 'DB101,INT1014', // 报警信息
+  DBW1016: 'DB101,INT1016', // 报警信息
+  DBW1018: 'DB101,INT1018', // 报警信息
+  DBW1020: 'DB101,INT1020', // 报警信息
+  DBW1022: 'DB101,INT1022', // 报警信息
+  DBW1024: 'DB101,INT1024', // 报警信息
+  DBW1026: 'DB101,INT1026', // 报警信息
+  DBW1028: 'DB101,INT1028', // 报警信息
+  DBW1030: 'DB101,INT1030', // 报警信息
+  DBW1032: 'DB101,INT1032', // 报警信息
+  DBW1034: 'DB101,INT1034', // 报警信息
+  DBW1036: 'DB101,INT1036', // 报警信息
+  DBW1038: 'DB101,INT1038', // 报警信息
+  DBW1040: 'DB101,INT1040', // 报警信息
+  DBW1042: 'DB101,INT1042', // 报警信息
+  DBW1044: 'DB101,INT1044', // 报警信息
+  DBW1046: 'DB101,INT1046', // 报警信息
+  DBW1048: 'DB101,INT1048', // 报警信息
+  DBW1050: 'DB101,INT1050', // 报警信息
+  DBW1052: 'DB101,INT1052', // 报警信息
+  DBW1054: 'DB101,INT1054', // 报警信息
+  DBW1056: 'DB101,INT1056', // 报警信息
+  DBW1058: 'DB101,INT1058', // 报警信息
+  DBW1060: 'DB101,INT1060', // 报警信息
+  DBW1062: 'DB101,INT1062', // 报警信息
+  DBW1064: 'DB101,INT1064', // 报警信息
+  DBW1066: 'DB101,INT1066', // 报警信息
+  DBW1068: 'DB101,INT1068', // 报警信息
+  DBW1070: 'DB101,INT1070', // 报警信息
+  DBW1072: 'DB101,INT1072', // 报警信息
+  DBW1074: 'DB101,INT1074', // 报警信息
+  DBW1076: 'DB101,INT1076', // 报警信息
+  DBW1078: 'DB101,INT1078', // 报警信息
+  DBW1080: 'DB101,INT1080', // 报警信息
+  DBW1082: 'DB101,INT1082', // 报警信息
+  DBW1084: 'DB101,INT1084', // 报警信息
+  DBW1086: 'DB101,INT1086', // 报警信息
+  DBW1088: 'DB101,INT1088', // 报警信息
+  DBW1090: 'DB101,INT1090', // 报警信息
+  DBW1092: 'DB101,INT1092', // 报警信息
+  DBW1094: 'DB101,INT1094', // 报警信息
+  DBW1096: 'DB101,INT1096', // 报警信息
+  DBW1098: 'DB101,INT1098', // 报警信息
+  DBW1100: 'DB101,INT1100', // 报警信息
+  DBW1102: 'DB101,INT1102', // 报警信息
+  DBW1104: 'DB101,INT1104', // 报警信息
+  DBW1106: 'DB101,INT1106', // 报警信息
+  DBW1108: 'DB101,INT1108', // 报警信息
+  DBW1110: 'DB101,INT1110', // 报警信息
+  DBW1112: 'DB101,INT1112', // 报警信息
+  DBW1114: 'DB101,INT1114', // 报警信息
+  DBW1116: 'DB101,INT1116', // 报警信息
+  DBW1118: 'DB101,INT1118', // 报警信息
+  DBW1120: 'DB101,INT1120', // 报警信息
+  DBW1122: 'DB101,INT1122', // 报警信息
+  DBW1124: 'DB101,INT1124', // 报警信息
+  DBW1126: 'DB101,INT1126', // 报警信息
+  DBW1128: 'DB101,INT1128', // 报警信息
+  DBW1130: 'DB101,INT1130', // 报警信息
+  DBW1132: 'DB101,INT1132', // 报警信息
+  DBW1134: 'DB101,INT1134', // 报警信息
+  DBW1136: 'DB101,INT1136', // 报警信息
+  DBW1138: 'DB101,INT1138', // 报警信息
+  DBW1140: 'DB101,INT1140', // 报警信息
+  DBW1142: 'DB101,INT1142', // 报警信息
+  DBW1144: 'DB101,INT1144', // 报警信息
+  DBW1146: 'DB101,INT1146', // 报警信息
+  DBW1148: 'DB101,INT1148' // 报警信息
 };
 
 var writeStrArr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ''];
