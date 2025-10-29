@@ -391,7 +391,7 @@
                         class="nocode-config-row"
                       >
                         <div class="config-item">
-                          <span class="config-label">目标数：</span>
+                          <span class="config-label">目标：</span>
                           <el-input
                             v-model="nocodeTargetCount"
                             size="mini"
@@ -400,20 +400,20 @@
                           ></el-input>
                         </div>
                         <div class="config-item">
-                          <span class="config-label">预热房：</span>
+                          <span class="config-label">预热：</span>
                           <el-select
                             v-model="nocodeDestination"
                             size="mini"
                             :disabled="isModeExecuting"
-                            style="width: 100px"
+                            style="width: 100px; font-size: 11px"
                           >
-                            <el-option label="A1" value="A1"></el-option>
-                            <el-option label="B1" value="B1"></el-option>
-                            <el-option label="C1" value="C1"></el-option>
-                            <el-option label="D1" value="D1"></el-option>
-                            <el-option label="E1" value="E1"></el-option>
-                            <el-option label="F1" value="F1"></el-option>
-                            <el-option label="G1" value="G1"></el-option>
+                            <el-option label="YR01" value="A1"></el-option>
+                            <el-option label="YR02" value="B1"></el-option>
+                            <el-option label="YR03" value="C1"></el-option>
+                            <el-option label="YR04" value="D1"></el-option>
+                            <el-option label="YR05" value="E1"></el-option>
+                            <el-option label="YR06" value="F1"></el-option>
+                            <el-option label="YR07" value="G1"></el-option>
                           </el-select>
                         </div>
                         <div v-if="isModeExecuting" class="nocode-progress">
@@ -466,7 +466,9 @@
                     <span class="queue-marker-count">{{
                       getQueueCountFromPLC(marker.name)
                     }}</span>
-                    <span class="queue-marker-name">{{ marker.name }}</span>
+                    <span class="queue-marker-name">{{
+                      getQueueDisplayName(marker.name)
+                    }}</span>
                   </div>
                 </div>
                 <!-- 预热房状态卡片(A2-G2) - 只在预热完成时显示 -->
@@ -2632,13 +2634,13 @@
                             (controlMode === 'mse' && isModeExecuting)
                           "
                         >
-                          <el-option label="A" value="A"></el-option>
-                          <el-option label="B" value="B"></el-option>
-                          <el-option label="C" value="C"></el-option>
-                          <el-option label="D" value="D"></el-option>
-                          <el-option label="E" value="E"></el-option>
-                          <el-option label="F" value="F"></el-option>
-                          <el-option label="G" value="G"></el-option>
+                          <el-option label="YR01" value="A"></el-option>
+                          <el-option label="YR02" value="B"></el-option>
+                          <el-option label="YR03" value="C"></el-option>
+                          <el-option label="YR04" value="D"></el-option>
+                          <el-option label="YR05" value="E"></el-option>
+                          <el-option label="YR06" value="F"></el-option>
+                          <el-option label="YR07" value="G"></el-option>
                         </el-select>
                         <span
                           style="font-size: 12px; color: #fff; margin-left: 5px"
@@ -2653,13 +2655,13 @@
                             (controlMode === 'mse' && isModeExecuting)
                           "
                         >
-                          <el-option label="A" value="A"></el-option>
-                          <el-option label="B" value="B"></el-option>
-                          <el-option label="C" value="C"></el-option>
-                          <el-option label="D" value="D"></el-option>
-                          <el-option label="E" value="E"></el-option>
-                          <el-option label="F" value="F"></el-option>
-                          <el-option label="G" value="G"></el-option>
+                          <el-option label="B" value="A"></el-option>
+                          <el-option label="C" value="B"></el-option>
+                          <el-option label="D" value="C"></el-option>
+                          <el-option label="E" value="D"></el-option>
+                          <el-option label="F" value="E"></el-option>
+                          <el-option label="G" value="F"></el-option>
+                          <el-option label="H" value="G"></el-option>
                         </el-select>
                       </div>
                       <el-button
@@ -2707,13 +2709,13 @@
                           (controlMode === 'mse' && isModeExecuting)
                         "
                       >
-                        <el-option label="A" value="A"></el-option>
-                        <el-option label="B" value="B"></el-option>
-                        <el-option label="C" value="C"></el-option>
-                        <el-option label="D" value="D"></el-option>
-                        <el-option label="E" value="E"></el-option>
-                        <el-option label="F" value="F"></el-option>
-                        <el-option label="G" value="G"></el-option>
+                        <el-option label="B" value="A"></el-option>
+                        <el-option label="C" value="B"></el-option>
+                        <el-option label="D" value="C"></el-option>
+                        <el-option label="E" value="D"></el-option>
+                        <el-option label="F" value="E"></el-option>
+                        <el-option label="G" value="F"></el-option>
+                        <el-option label="H" value="G"></el-option>
                       </el-select>
                       <el-button
                         type="primary"
@@ -3241,7 +3243,9 @@
                 @dragover.prevent
                 @drop="handleDrop(index)"
               >
-                <span class="queue-name">{{ queue.queueName }}</span>
+                <span class="queue-name">{{
+                  getQueueDisplayName(queue.queueName)
+                }}</span>
                 <span class="tray-count">{{
                   queue.trayInfo?.length || 0
                 }}</span>
@@ -3251,7 +3255,7 @@
             <!-- 右侧托盘列表 -->
             <div class="queue-container-right">
               <div class="selected-queue-header" v-if="selectedQueue">
-                <h3>{{ selectedQueue.queueName }}</h3>
+                <h3>{{ getQueueDisplayName(selectedQueue.queueName) }}</h3>
                 <div class="queue-header-actions">
                   <el-button
                     type="primary"
@@ -3559,13 +3563,21 @@
             <div class="signal-test-container">
               <div class="signal-test-buttons">
                 <el-button
-                  v-for="room in ['A', 'B', 'C', 'D', 'E', 'F', 'G']"
+                  v-for="room in [
+                    'YR01',
+                    'YR02',
+                    'YR03',
+                    'YR04',
+                    'YR05',
+                    'YR06',
+                    'YR07'
+                  ]"
                   :key="'preheat-' + room"
                   type="success"
                   size="small"
                   @click="togglePreheatingComplete(room)"
                 >
-                  预热房{{ room }}完成
+                  {{ room }}完成
                 </el-button>
               </div>
             </div>
@@ -3576,13 +3588,13 @@
             <div class="signal-test-container">
               <div class="signal-test-buttons">
                 <el-button
-                  v-for="room in ['A', 'B', 'C', 'D', 'E', 'F', 'G']"
+                  v-for="room in ['B', 'C', 'D', 'E', 'F', 'G', 'H']"
                   :key="'sterilize-' + room"
                   type="warning"
                   size="small"
                   @click="toggleSterilizationComplete(room)"
                 >
-                  灭菌柜{{ room }}完成
+                  {{ room }}完成
                 </el-button>
               </div>
             </div>
@@ -3608,7 +3620,7 @@
             <span class="test-label">队列数量手动操作测试:</span>
             <div class="queue-quantity-test-container">
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">A1队列数量:</div>
+                <div class="queue-quantity-label">YR01A队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ aLineQuantity.a1 }}</span>
                   <el-button
@@ -3632,7 +3644,7 @@
                 </div>
               </div>
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">B1队列数量:</div>
+                <div class="queue-quantity-label">YR02A队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ bLineQuantity.b1 }}</span>
                   <el-button
@@ -3656,7 +3668,7 @@
                 </div>
               </div>
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">C1队列数量:</div>
+                <div class="queue-quantity-label">YR03A队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ cLineQuantity.c1 }}</span>
                   <el-button
@@ -3680,7 +3692,7 @@
                 </div>
               </div>
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">D1队列数量:</div>
+                <div class="queue-quantity-label">YR04A队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ dLineQuantity.d1 }}</span>
                   <el-button
@@ -3704,7 +3716,7 @@
                 </div>
               </div>
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">E1队列数量:</div>
+                <div class="queue-quantity-label">YR05A队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ eLineQuantity.e1 }}</span>
                   <el-button
@@ -3728,7 +3740,7 @@
                 </div>
               </div>
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">F1队列数量:</div>
+                <div class="queue-quantity-label">YR06A队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ fLineQuantity.f1 }}</span>
                   <el-button
@@ -3752,7 +3764,7 @@
                 </div>
               </div>
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">G1队列数量:</div>
+                <div class="queue-quantity-label">YR07A队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ gLineQuantity.g1 }}</span>
                   <el-button
@@ -3776,7 +3788,7 @@
                 </div>
               </div>
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">A2队列数量:</div>
+                <div class="queue-quantity-label">YR01B队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ aLineQuantity.a2 }}</span>
                   <el-button
@@ -3800,7 +3812,7 @@
                 </div>
               </div>
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">B2队列数量:</div>
+                <div class="queue-quantity-label">YR02B队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ bLineQuantity.b2 }}</span>
                   <el-button
@@ -3824,7 +3836,7 @@
                 </div>
               </div>
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">C2队列数量:</div>
+                <div class="queue-quantity-label">YR03B队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ cLineQuantity.c2 }}</span>
                   <el-button
@@ -3848,7 +3860,7 @@
                 </div>
               </div>
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">D2队列数量:</div>
+                <div class="queue-quantity-label">YR04B队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ dLineQuantity.d2 }}</span>
                   <el-button
@@ -3872,7 +3884,7 @@
                 </div>
               </div>
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">E2队列数量:</div>
+                <div class="queue-quantity-label">YR05B队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ eLineQuantity.e2 }}</span>
                   <el-button
@@ -3896,7 +3908,7 @@
                 </div>
               </div>
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">F2队列数量:</div>
+                <div class="queue-quantity-label">YR06B队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ fLineQuantity.f2 }}</span>
                   <el-button
@@ -3920,7 +3932,7 @@
                 </div>
               </div>
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">G2队列数量:</div>
+                <div class="queue-quantity-label">YR07B队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ gLineQuantity.g2 }}</span>
                   <el-button
@@ -3944,7 +3956,7 @@
                 </div>
               </div>
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">A3队列数量:</div>
+                <div class="queue-quantity-label">B队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ aLineQuantity.a3 }}</span>
                   <el-button
@@ -3968,7 +3980,7 @@
                 </div>
               </div>
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">B3队列数量:</div>
+                <div class="queue-quantity-label">C队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ bLineQuantity.b3 }}</span>
                   <el-button
@@ -3992,7 +4004,7 @@
                 </div>
               </div>
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">C3队列数量:</div>
+                <div class="queue-quantity-label">D队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ cLineQuantity.c3 }}</span>
                   <el-button
@@ -4016,7 +4028,7 @@
                 </div>
               </div>
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">D3队列数量:</div>
+                <div class="queue-quantity-label">E队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ dLineQuantity.d3 }}</span>
                   <el-button
@@ -4040,7 +4052,7 @@
                 </div>
               </div>
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">E3队列数量:</div>
+                <div class="queue-quantity-label">F队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ eLineQuantity.e3 }}</span>
                   <el-button
@@ -4064,7 +4076,7 @@
                 </div>
               </div>
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">F3队列数量:</div>
+                <div class="queue-quantity-label">G队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ fLineQuantity.f3 }}</span>
                   <el-button
@@ -4088,7 +4100,7 @@
                 </div>
               </div>
               <div class="queue-quantity-group">
-                <div class="queue-quantity-label">G3队列数量:</div>
+                <div class="queue-quantity-label">H队列数量:</div>
                 <div class="queue-quantity-controls">
                   <span class="quantity-display">{{ gLineQuantity.g3 }}</span>
                   <el-button
@@ -4190,7 +4202,9 @@
 
     <!-- 添加托盘对话框 -->
     <el-dialog
-      :title="`添加托盘 - ${selectedQueue ? selectedQueue.queueName : ''}`"
+      :title="`添加托盘 - ${
+        selectedQueue ? getQueueDisplayName(selectedQueue.queueName) : ''
+      }`"
       :visible.sync="addTrayDialogVisible"
       width="600px"
       append-to-body
@@ -4303,13 +4317,13 @@
               placeholder="请选择指定预热房"
               style="width: 100%"
             >
-              <el-option label="A" value="A"></el-option>
-              <el-option label="B" value="B"></el-option>
-              <el-option label="C" value="C"></el-option>
-              <el-option label="D" value="D"></el-option>
-              <el-option label="E" value="E"></el-option>
-              <el-option label="F" value="F"></el-option>
-              <el-option label="G" value="G"></el-option>
+              <el-option label="YR01" value="YR01"></el-option>
+              <el-option label="YR02" value="YR02"></el-option>
+              <el-option label="YR03" value="YR03"></el-option>
+              <el-option label="YR04" value="YR04"></el-option>
+              <el-option label="YR05" value="YR05"></el-option>
+              <el-option label="YR06" value="YR06"></el-option>
+              <el-option label="YR07" value="YR07"></el-option>
             </el-select>
           </el-form-item>
           <el-form-item label="指定预热房" v-else>
@@ -4331,13 +4345,13 @@
               placeholder="请选择指定灭菌柜"
               style="width: 100%"
             >
-              <el-option label="A" value="A"></el-option>
               <el-option label="B" value="B"></el-option>
               <el-option label="C" value="C"></el-option>
               <el-option label="D" value="D"></el-option>
               <el-option label="E" value="E"></el-option>
               <el-option label="F" value="F"></el-option>
               <el-option label="G" value="G"></el-option>
+              <el-option label="H" value="H"></el-option>
             </el-select>
           </el-form-item>
           <el-form-item label="指定灭菌柜" v-else>
@@ -4522,13 +4536,13 @@
                 placeholder="请选择预热房"
                 style="width: 100%"
               >
-                <el-option label="A" value="A" />
-                <el-option label="B" value="B" />
-                <el-option label="C" value="C" />
-                <el-option label="D" value="D" />
-                <el-option label="E" value="E" />
-                <el-option label="F" value="F" />
-                <el-option label="G" value="G" />
+                <el-option label="YR01" value="YR01" />
+                <el-option label="YR02" value="YR02" />
+                <el-option label="YR03" value="YR03" />
+                <el-option label="YR04" value="YR04" />
+                <el-option label="YR05" value="YR05" />
+                <el-option label="YR06" value="YR06" />
+                <el-option label="YR07" value="YR07" />
               </el-select>
             </el-form-item>
 
@@ -4538,13 +4552,13 @@
                 placeholder="请选择灭菌柜"
                 style="width: 100%"
               >
-                <el-option label="A" value="A" />
                 <el-option label="B" value="B" />
                 <el-option label="C" value="C" />
                 <el-option label="D" value="D" />
                 <el-option label="E" value="E" />
                 <el-option label="F" value="F" />
                 <el-option label="G" value="G" />
+                <el-option label="H" value="H" />
               </el-select>
             </el-form-item>
           </div>
@@ -4645,6 +4659,7 @@
 
 <script>
 import HttpUtil from '@/utils/HttpUtil';
+import MseUtil from '@/utils/MseUtil';
 import moment from 'moment';
 import { ipcRenderer } from 'electron';
 export default {
@@ -5982,47 +5997,47 @@ export default {
     },
     // MES模式下监听各个预热柜完成信号
     'preheatingStatus.bit0'(newVal, oldVal) {
-      this.handlePreheatingComplete('A', 0, newVal, oldVal);
+      this.handlePreheatingComplete('YR01', 0, newVal, oldVal);
     },
     'preheatingStatus.bit1'(newVal, oldVal) {
-      this.handlePreheatingComplete('B', 1, newVal, oldVal);
+      this.handlePreheatingComplete('YR02', 1, newVal, oldVal);
     },
     'preheatingStatus.bit2'(newVal, oldVal) {
-      this.handlePreheatingComplete('C', 2, newVal, oldVal);
+      this.handlePreheatingComplete('YR03', 2, newVal, oldVal);
     },
     'preheatingStatus.bit3'(newVal, oldVal) {
-      this.handlePreheatingComplete('D', 3, newVal, oldVal);
+      this.handlePreheatingComplete('YR04', 3, newVal, oldVal);
     },
     'preheatingStatus.bit4'(newVal, oldVal) {
-      this.handlePreheatingComplete('E', 4, newVal, oldVal);
+      this.handlePreheatingComplete('YR05', 4, newVal, oldVal);
     },
     'preheatingStatus.bit5'(newVal, oldVal) {
-      this.handlePreheatingComplete('F', 5, newVal, oldVal);
+      this.handlePreheatingComplete('YR06', 5, newVal, oldVal);
     },
     'preheatingStatus.bit6'(newVal, oldVal) {
-      this.handlePreheatingComplete('G', 6, newVal, oldVal);
+      this.handlePreheatingComplete('YR07', 6, newVal, oldVal);
     },
     // MES模式下监听各个灭菌柜完成信号
     'sterilizationStatus.bit0'(newVal, oldVal) {
-      this.handleSterilizationComplete('A', 0, newVal, oldVal);
+      this.handleSterilizationComplete('B', 0, newVal, oldVal);
     },
     'sterilizationStatus.bit1'(newVal, oldVal) {
-      this.handleSterilizationComplete('B', 1, newVal, oldVal);
+      this.handleSterilizationComplete('C', 1, newVal, oldVal);
     },
     'sterilizationStatus.bit2'(newVal, oldVal) {
-      this.handleSterilizationComplete('C', 2, newVal, oldVal);
+      this.handleSterilizationComplete('D', 2, newVal, oldVal);
     },
     'sterilizationStatus.bit3'(newVal, oldVal) {
-      this.handleSterilizationComplete('D', 3, newVal, oldVal);
+      this.handleSterilizationComplete('E', 3, newVal, oldVal);
     },
     'sterilizationStatus.bit4'(newVal, oldVal) {
-      this.handleSterilizationComplete('E', 4, newVal, oldVal);
+      this.handleSterilizationComplete('F', 4, newVal, oldVal);
     },
     'sterilizationStatus.bit5'(newVal, oldVal) {
-      this.handleSterilizationComplete('F', 5, newVal, oldVal);
+      this.handleSterilizationComplete('G', 5, newVal, oldVal);
     },
     'sterilizationStatus.bit6'(newVal, oldVal) {
-      this.handleSterilizationComplete('G', 6, newVal, oldVal);
+      this.handleSterilizationComplete('H', 6, newVal, oldVal);
     },
     // 一楼接货站台"有载信号"/光电占位
     'scanPhotoelectricSignal.bit0'(newVal) {
@@ -6133,9 +6148,9 @@ export default {
             Number(this.nocodeTargetCount);
 
           this.addLog(
-            `【无码模式】尾托判断：目标预热房${
+            `【无码模式】尾托判断：目标预热房${this.getQueueDisplayName(
               this.nocodeDestination
-            }托盘数${targetRoomTrayCount} + 缓存区已发送命令托盘数${cacheSentCount} + 1 = ${
+            )}托盘数${targetRoomTrayCount} + 缓存区已发送命令托盘数${cacheSentCount} + 1 = ${
               targetRoomTrayCount + cacheSentCount + 1
             }，设定数量${this.nocodeTargetCount}，${
               isLastTray ? '是' : '不是'
@@ -6169,22 +6184,23 @@ export default {
 
         // 3、判断完是否为本订单最后一个托盘后，给PLC发送，对应预热房命令
         const isPrint1 = firstUnprocessedTray.isPrint1 || '';
+        const preheatRoom = this.parseIsPrint1ToLetter(isPrint1);
         let plcCommand = 0;
 
-        // 读取isPrint1字段，判断是否包含字母：ABCDEFG
-        if (isPrint1.includes('A')) {
+        // 根据解析出的预热房字母发送PLC命令
+        if (preheatRoom === 'A') {
           plcCommand = isLastTray ? 11 : 1; // 预热房A启用进货，如果是本订单最后一个托盘发11
-        } else if (isPrint1.includes('B')) {
+        } else if (preheatRoom === 'B') {
           plcCommand = isLastTray ? 21 : 2; // 预热房B启用进货，如果是本订单最后一个托盘发21
-        } else if (isPrint1.includes('C')) {
+        } else if (preheatRoom === 'C') {
           plcCommand = isLastTray ? 31 : 3; // 预热房C启用进货，如果是本订单最后一个托盘发31
-        } else if (isPrint1.includes('D')) {
+        } else if (preheatRoom === 'D') {
           plcCommand = isLastTray ? 41 : 4; // 预热房D启用进货，如果是本订单最后一个托盘发41
-        } else if (isPrint1.includes('E')) {
+        } else if (preheatRoom === 'E') {
           plcCommand = isLastTray ? 51 : 5; // 预热房E启用进货，如果是本订单最后一个托盘发51
-        } else if (isPrint1.includes('F')) {
+        } else if (preheatRoom === 'F') {
           plcCommand = isLastTray ? 61 : 6; // 预热房F启用进货，如果是本订单最后一个托盘发61
-        } else if (isPrint1.includes('G')) {
+        } else if (preheatRoom === 'G') {
           plcCommand = isLastTray ? 71 : 7; // 预热房G启用进货，如果是本订单最后一个托盘发71
         }
 
@@ -6198,7 +6214,10 @@ export default {
           firstUnprocessedTray.hasSentPreheatCommand = true;
 
           this.addLog(
-            `预热房命令已发送：${plcCommand}，托盘：${
+            `预热房${this.getLogQueueName(
+              preheatRoom,
+              'preheat'
+            )}命令已发送：${plcCommand}，托盘：${
               firstUnprocessedTray.trayCode
             }，订单：${currentOrderId}，${
               isLastTray ? '本订单最后一个托盘' : '非本订单最后一个托盘'
@@ -6206,7 +6225,7 @@ export default {
           );
         } else {
           this.addLog(
-            `托盘${firstUnprocessedTray.trayCode}的isPrint1字段不包含有效预热房信息：${isPrint1}`
+            `托盘${firstUnprocessedTray.trayCode}的isPrint1字段无法解析有效预热房信息：${isPrint1}`
           );
         }
       }
@@ -6586,7 +6605,11 @@ export default {
         }
 
         this.addLog(
-          `无码模式验证：目标预热房${this.nocodeDestination}已有托盘${existingTrayCount}个，设定目标数量${this.nocodeTargetCount}个，需要新增${newTrayCount}个托盘，队列与PLC数量一致（${queueCount}）`
+          `无码模式验证：目标预热房${this.getQueueDisplayName(
+            this.nocodeDestination
+          )}已有托盘${existingTrayCount}个，设定目标数量${
+            this.nocodeTargetCount
+          }个，需要新增${newTrayCount}个托盘，队列与PLC数量一致（${queueCount}）`
         );
       }
 
@@ -6607,16 +6630,28 @@ export default {
 
         // 更新进度显示，基于已有托盘数量
         this.addLog(
-          `无码模式进度初始化：预热房${this.nocodeDestination}已有托盘${existingTrayCount}个，目标数量${this.nocodeTargetCount}个，当前进度：${existingTrayCount}/${this.nocodeTargetCount}`
+          `无码模式进度初始化：预热房${this.getQueueDisplayName(
+            this.nocodeDestination
+          )}已有托盘${existingTrayCount}个，目标数量${
+            this.nocodeTargetCount
+          }个，当前进度：${existingTrayCount}/${this.nocodeTargetCount}`
         );
 
         // 生成无码模式的临时唯一orderId
         this.nocodeOrderId = `order_${Date.now()}`;
         this.addLog(
-          `已启动无码模式，目标数量：${this.nocodeTargetCount}，预热房：${this.nocodeDestination}，已有托盘：${existingTrayCount}，临时订单ID：${this.nocodeOrderId}`
+          `已启动无码模式，目标数量：${
+            this.nocodeTargetCount
+          }，预热房：${this.getQueueDisplayName(
+            this.nocodeDestination
+          )}，已有托盘：${existingTrayCount}，临时订单ID：${this.nocodeOrderId}`
         );
         this.$message.success(
-          `无码模式已启动（目标：${this.nocodeTargetCount}，预热房：${this.nocodeDestination}，已有：${existingTrayCount}）`
+          `无码模式已启动（目标：${
+            this.nocodeTargetCount
+          }，预热房：${this.getQueueDisplayName(
+            this.nocodeDestination
+          )}，已有：${existingTrayCount}）`
         );
       } else {
         this.addLog('已启动MSE控制模式');
@@ -6924,11 +6959,27 @@ export default {
           targetQueue.trayInfo.push(...traysToMove);
 
           this.addLog(
-            `${queueName.toUpperCase()}队列数量增加${increaseCount}，已从上货区移动${increaseCount}个托盘`
+            `${this.getQueueDisplayName(
+              queueName.toUpperCase()
+            )}队列数量增加${increaseCount}，已从上货区移动${increaseCount}个托盘`
           );
+
+          // 调用MSE接口上报：2-进预热柜
+          traysToMove.forEach((tray) => {
+            // 根据队列名称生成预热柜编号：a1->YR01A, b1->YR02A, c1->YR03A, d1->YR04A, e1->YR05A, f1->YR06A, g1->YR07A
+            const roomIndex = 'abcdefg'.indexOf(queueName.charAt(0)) + 1;
+            const cabinetCode = `YR0${roomIndex}A`;
+            this.callMseOperationRecord(tray.trayCode, '2', cabinetCode).catch(
+              (error) => {
+                console.error('MSE接口调用失败:', error);
+              }
+            );
+          });
         } else {
           this.addLog(
-            `${queueName.toUpperCase()}队列数量增加${increaseCount}，但上货区托盘不足，仅移动${
+            `${this.getQueueDisplayName(
+              queueName.toUpperCase()
+            )}队列数量增加${increaseCount}，但上货区托盘不足，仅移动${
               availableTrays.length
             }个托盘`
           );
@@ -6985,15 +7036,19 @@ export default {
           targetQueue.trayInfo.push(...traysToMove);
 
           this.addLog(
-            `${queueName.toUpperCase()}队列数量增加${increaseCount}，已从${
+            `${this.getQueueDisplayName(
+              queueName.toUpperCase()
+            )}队列数量增加${increaseCount}，已从${this.getQueueDisplayName(
               sourceQueue.queueName
-            }移动${increaseCount}个托盘`
+            )}移动${increaseCount}个托盘`
           );
         } else {
           this.addLog(
-            `${queueName.toUpperCase()}队列数量增加${increaseCount}，但${
+            `${this.getQueueDisplayName(
+              queueName.toUpperCase()
+            )}队列数量增加${increaseCount}，但${this.getQueueDisplayName(
               sourceQueue.queueName
-            }托盘不足，仅移动${availableTrays.length}个托盘`
+            )}托盘不足，仅移动${availableTrays.length}个托盘`
           );
           // 移动所有可用的托盘
           const remainingTrays = availableTrays.splice(0);
@@ -7217,8 +7272,12 @@ export default {
         targetQueue.trayInfo.push(movedTray);
 
         // 添加日志
-        this.addLog(`队列 ${sourceQueue.queueName} 数据已更新`);
-        this.addLog(`队列 ${targetQueue.queueName} 数据已更新`);
+        this.addLog(
+          `队列 ${this.getQueueDisplayName(sourceQueue.queueName)} 数据已更新`
+        );
+        this.addLog(
+          `队列 ${this.getQueueDisplayName(targetQueue.queueName)} 数据已更新`
+        );
 
         // 队列数据已在前端，无需重新查询
 
@@ -7234,12 +7293,16 @@ export default {
 
         // 添加托盘移动日志
         this.addLog(
-          `托盘 ${movedTray.trayCode} 从 ${sourceQueue.queueName} 移动到 ${targetQueue.queueName}`
+          `托盘 ${movedTray.trayCode} 从 ${this.getQueueDisplayName(
+            sourceQueue.queueName
+          )} 移动到 ${this.getQueueDisplayName(targetQueue.queueName)}`
         );
 
         this.$message({
           type: 'success',
-          message: `托盘 ${movedTray.trayCode} 已成功移动到 ${targetQueue.queueName}`,
+          message: `托盘 ${
+            movedTray.trayCode
+          } 已成功移动到 ${this.getQueueDisplayName(targetQueue.queueName)}`,
           duration: 2000
         });
       } catch (error) {
@@ -7558,7 +7621,17 @@ export default {
     },
     // 切换预热完成信号测试
     togglePreheatingComplete(room) {
-      const bitIndex = 'ABCDEFG'.indexOf(room);
+      // 将YR01-YR07转换为对应的bit索引
+      const roomIndexMap = {
+        YR01: 0,
+        YR02: 1,
+        YR03: 2,
+        YR04: 3,
+        YR05: 4,
+        YR06: 5,
+        YR07: 6
+      };
+      const bitIndex = roomIndexMap[room];
       const bitKey = `bit${bitIndex}`;
 
       // 取反当前状态
@@ -7569,7 +7642,17 @@ export default {
     },
     // 切换灭菌完成信号测试
     toggleSterilizationComplete(room) {
-      const bitIndex = 'ABCDEFG'.indexOf(room);
+      // 将B-H转换为对应的bit索引
+      const roomIndexMap = {
+        B: 0,
+        C: 1,
+        D: 2,
+        E: 3,
+        F: 4,
+        G: 5,
+        H: 6
+      };
+      const bitIndex = roomIndexMap[room];
       const bitKey = `bit${bitIndex}`;
 
       // 取反当前状态
@@ -7625,14 +7708,20 @@ export default {
           this.selectedQueue.trayInfo.splice(trayIndex, 1);
 
           // 添加日志
-          this.addLog(`队列 ${this.selectedQueue.queueName} 数据已更新`);
+          this.addLog(
+            `队列 ${this.getQueueDisplayName(
+              this.selectedQueue.queueName
+            )} 数据已更新`
+          );
 
           // 刷新显示
           this.showTrays(this.selectedQueueIndex);
 
           // 添加删除托盘日志
           this.addLog(
-            `托盘 ${tray.id} 已从 ${this.selectedQueue.queueName} 删除`
+            `托盘 ${tray.id} 已从 ${this.getQueueDisplayName(
+              this.selectedQueue.queueName
+            )} 删除`
           );
 
           this.$message.success('托盘删除成功');
@@ -7797,7 +7886,8 @@ export default {
         ) {
           newTray.batchId = this.nocodeOrderId || 'NOCODE_BATCH';
           newTray.orderId = this.nocodeOrderId || 'NOCODE_ORDER';
-          newTray.isPrint1 = this.nocodeDestination || 'A1';
+          newTray.isPrint1 =
+            this.convertInternalToPreheating(this.nocodeDestination[0]) || '';
           newTray.isPrint2 = '';
           newTray.productName = '无码模式产品';
           newTray.productCode = 'NOCODE_PRODUCT';
@@ -7813,21 +7903,29 @@ export default {
         this.selectedQueue.trayInfo.push(newTray);
 
         // 添加日志
-        this.addLog(`队列 ${this.selectedQueue.queueName} 数据已更新`);
+        this.addLog(
+          `队列 ${this.getQueueDisplayName(
+            this.selectedQueue.queueName
+          )} 数据已更新`
+        );
 
         // 刷新显示
         this.showTrays(this.selectedQueueIndex);
 
         // 添加新托盘日志
         const logMessage = isCacheQueue
-          ? `新托盘 ${newTray.trayCode} 已添加到 ${
+          ? `新托盘 ${newTray.trayCode} 已添加到 ${this.getQueueDisplayName(
               this.selectedQueue.queueName
-            }，批次号：${newTray.batchId}，订单号：${newTray.orderId}${
+            )}，批次号：${newTray.batchId}，订单号：${newTray.orderId}${
               this.isModeExecuting && this.controlMode === 'nocode'
                 ? '（无码模式）'
                 : ''
             }`
-          : `新托盘 ${newTray.trayCode} 已添加到 ${this.selectedQueue.queueName}，批次号：${newTray.batchId}，订单号：${newTray.orderId}，产品：${newTray.productName}`;
+          : `新托盘 ${newTray.trayCode} 已添加到 ${this.getQueueDisplayName(
+              this.selectedQueue.queueName
+            )}，批次号：${newTray.batchId}，订单号：${newTray.orderId}，产品：${
+              newTray.productName
+            }`;
 
         this.addLog(logMessage);
 
@@ -8129,7 +8227,9 @@ export default {
                     ? trayInfo
                     : [];
                   this.addLog(
-                    `已加载队列${queueData.queueName || queueId}的托盘信息，共${
+                    `已加载队列${this.getQueueDisplayName(
+                      queueData.queueName || queueId
+                    )}的托盘信息，共${
                       this.queues[queueIndex].trayInfo.length
                     }个托盘`
                   );
@@ -8166,7 +8266,13 @@ export default {
       const fromValue = fromMap[this.disinfectionRoomSelectedFrom] || 0;
       const toValue = toMap[this.disinfectionRoomSelectedTo] || 0;
       this.addLog(
-        `预热房选择：${this.disinfectionRoomSelectedFrom}，发送DBW526值：${fromValue}，灭菌柜选择：${this.disinfectionRoomSelectedTo}，发送DBW528值：${toValue}`
+        `预热房选择：${this.getLogQueueName(
+          this.disinfectionRoomSelectedFrom,
+          'preheat'
+        )}，发送DBW526值：${fromValue}，灭菌柜选择：${this.getLogQueueName(
+          this.disinfectionRoomSelectedTo,
+          'sterilize'
+        )}，发送DBW528值：${toValue}`
       );
       ipcRenderer.send('writeSingleValueToPLC', 'DBW526', fromValue);
       ipcRenderer.send('writeSingleValueToPLC', 'DBW528', toValue);
@@ -8220,8 +8326,38 @@ export default {
             this.queues[targetIndex].trayInfo = [];
           this.queues[targetIndex].trayInfo.push(...traysToMove);
           this.addLog(
-            `已将${traysToMove.length}个托盘从${this.disinfectionRoomSelectedFrom}预热房移到${queueName}`
+            `已将${traysToMove.length}个托盘从${this.getLogQueueName(
+              this.disinfectionRoomSelectedFrom,
+              'preheat'
+            )}预热房移到${this.getLogQueueName(queueName[0], 'sterilize')}`
           );
+
+          // 调用MSE接口上报：3-出预热柜 和 4-进灭菌柜
+          traysToMove.forEach((tray) => {
+            // 3-出预热柜：根据预热房名称生成预热柜编号
+            const preheatRoomIndex =
+              'ABCDEFG'.indexOf(this.disinfectionRoomSelectedFrom) + 1;
+            const preheatCabinetCode = `YR0${preheatRoomIndex}B`;
+            this.callMseOperationRecord(
+              tray.trayCode,
+              '3',
+              preheatCabinetCode
+            ).catch((error) => {
+              console.error('MSE接口调用失败:', error);
+            });
+
+            // 4-进灭菌柜：根据队列名称生成灭菌柜编号：A3->B, B3->C, C3->D, D3->E, E3->F, F3->G, G3->H
+            const sterilizationCabinetCode = String.fromCharCode(
+              queueName.charCodeAt(0) + 1
+            );
+            this.callMseOperationRecord(
+              tray.trayCode,
+              '4',
+              sterilizationCabinetCode
+            ).catch((error) => {
+              console.error('MSE接口调用失败:', error);
+            });
+          });
           // 移除完成执行状态的调用，改为监听isPreheatingCompleted
         }
       }
@@ -8260,11 +8396,17 @@ export default {
       }, 2000);
 
       this.addLog(
-        `出库选择执行：队列${this.outboundSelectedQueue}，发送命令值：${commandValue}到PLC地址DBW530`
+        `出库选择执行：队列${this.getLogQueueName(
+          this.outboundSelectedQueue,
+          'sterilize'
+        )}，发送命令值：${commandValue}到PLC地址DBW530`
       );
 
       this.$message.success(
-        `${this.outboundSelectedQueue}队列出库命令已发送，等待出库完成`
+        `${this.getLogQueueName(
+          this.outboundSelectedQueue,
+          'sterilize'
+        )}队列出库命令已发送，等待出库完成`
       );
     },
     // 取消下货执行
@@ -8318,9 +8460,17 @@ export default {
           if (!queue.trayInfo || queue.trayInfo.length === 0) {
             this.isOutboundExecuting = false;
             this.$message.success(
-              `${queueName}队列出库完成，执行状态已自动取消`
+              `${this.getLogQueueName(
+                queueName,
+                'sterilize'
+              )}队列出库完成，执行状态已自动取消`
             );
-            this.addLog(`${queueName}队列托盘数量变成0，自动取消下货执行状态`);
+            this.addLog(
+              `${this.getLogQueueName(
+                queueName,
+                'sterilize'
+              )}队列托盘数量变成0，自动取消下货执行状态`
+            );
           }
         }
       }
@@ -8341,7 +8491,9 @@ export default {
       // 检查队列中是否有托盘
       if (!queue || !queue.trayInfo || queue.trayInfo.length === 0) {
         this.addLog(
-          `【MES模式】预热房${preheatingRoom}对应队列${queue.queueName}中无托盘，跳过自动执行`
+          `【MES模式】预热房${preheatingRoom}对应队列${this.getQueueDisplayName(
+            queue.queueName
+          )}中无托盘，跳过自动执行`
         );
         return;
       }
@@ -8372,15 +8524,16 @@ export default {
             );
 
             // 自动设置预热房到灭菌柜的选择
-            this.disinfectionRoomSelectedFrom = preheatingRoom;
-            this.disinfectionRoomSelectedTo = matchedOrder.isPrint2
-              ? matchedOrder.isPrint2.charAt(0)
-              : '';
+            // 数据库存储的是实际队列名称，需要转换为内部队列名称用于执行
+            this.disinfectionRoomSelectedFrom =
+              this.convertPreheatingToInternal(matchedOrder.isPrint1); // YR01->A, YR02->B等
+            this.disinfectionRoomSelectedTo =
+              this.convertSterilizationToInternal(matchedOrder.isPrint2); // B->A, C->B等
 
             // 延迟100ms后自动执行
             setTimeout(() => {
               this.addLog(
-                `【MES模式】自动执行：预热房${this.disinfectionRoomSelectedFrom}到灭菌柜${this.disinfectionRoomSelectedTo}`
+                `【MES模式】自动执行：预热房${matchedOrder.isPrint1}到灭菌柜${matchedOrder.isPrint2}`
               );
               this.handleDisinfectionRoomExecute();
             }, 100);
@@ -8418,7 +8571,9 @@ export default {
       // 检查队列中是否有托盘
       if (!queue || !queue.trayInfo || queue.trayInfo.length === 0) {
         this.addLog(
-          `【MES模式】灭菌柜${sterilizationRoom}对应队列${queue.queueName}中无托盘，跳过自动执行`
+          `【MES模式】灭菌柜${sterilizationRoom}对应队列${this.getQueueDisplayName(
+            queue.queueName
+          )}中无托盘，跳过自动执行`
         );
         return;
       }
@@ -8448,13 +8603,15 @@ export default {
               `【MES模式】查询到订单信息：${matchedOrder.orderId}，指定出口：${matchedOrder.isPrint3}`
             );
 
-            // 自动设置出库选择
-            this.outboundSelectedQueue = sterilizationRoom;
+            // 自动设置出库选择 - 需要将B-H转换为A-G
+            this.outboundSelectedQueue = this.convertSterilizationToInternal(
+              matchedOrder.isPrint2
+            );
 
             // 延迟100ms后自动执行出库
             setTimeout(() => {
               this.addLog(
-                `【MES模式】自动执行出库：队列${this.outboundSelectedQueue}`
+                `【MES模式】自动执行出库：队列${matchedOrder.isPrint2}（内部队列${this.outboundSelectedQueue}）`
               );
               this.handleOutboundExecute();
             }, 100);
@@ -8497,7 +8654,7 @@ export default {
       if (this.nocodeOutboundEnabled) {
         // 无码下货：直接给通行，并请求信号后直接出货当前正在出货执行的灭菌房队列的第一个托盘
 
-        // 查找当前正在进行出货执行的灭菌房队列的第一个托盘
+        // 查找当前正在执行出货执行的灭菌房队列的第一个托盘
         let firstTray = null;
         let sourceQueueIndex = -1;
 
@@ -8529,7 +8686,9 @@ export default {
 
         if (firstTray) {
           this.addLog(
-            `【无码下货】找到灭菌房队列${this.queues[sourceQueueIndex].queueName}第一个托盘：${firstTray.trayCode}，开始出货`
+            `【无码下货】找到灭菌房队列${this.getQueueDisplayName(
+              this.queues[sourceQueueIndex].queueName
+            )}第一个托盘：${firstTray.trayCode}，开始出货`
           );
 
           // 检查目的地选择
@@ -8581,7 +8740,11 @@ export default {
           downLoadQueue.trayInfo.push(trayWithEntryTime);
 
           this.addLog(
-            `【无码下货】托盘${firstTray.trayCode}已从${this.queues[sourceQueueIndex].queueName}移动到下货区队列`
+            `【无码下货】托盘${
+              firstTray.trayCode
+            }已从${this.getQueueDisplayName(
+              this.queues[sourceQueueIndex].queueName
+            )}移动到下货区队列`
           );
         } else {
           if (this.isOutboundExecuting && this.outboundSelectedQueue) {
@@ -8651,6 +8814,120 @@ export default {
       const bitKey = `bit${bitIndex}`;
       return this.sterilizationStatus[bitKey] === '1';
     },
+    // 解析数据库中的isPrint2值（B/C/D/E/F/G/H格式）转换为对应的字母
+    parseIsPrint2ToLetter(isPrint2Value) {
+      if (!isPrint2Value) return '';
+
+      // 如果已经是单个字母格式，直接返回
+      if (/^[B-H]$/.test(isPrint2Value)) return isPrint2Value;
+
+      // 处理其他可能的格式，取第一个字符
+      return isPrint2Value.charAt(0);
+    },
+    // 解析数据库中的isPrint1值（YR01-YR07格式）转换为对应的字母
+    parseIsPrint1ToLetter(isPrint1Value) {
+      if (!isPrint1Value) return '';
+
+      // 处理YR01-YR07格式
+      if (isPrint1Value.includes('YR01')) return 'A';
+      if (isPrint1Value.includes('YR02')) return 'B';
+      if (isPrint1Value.includes('YR03')) return 'C';
+      if (isPrint1Value.includes('YR04')) return 'D';
+      if (isPrint1Value.includes('YR05')) return 'E';
+      if (isPrint1Value.includes('YR06')) return 'F';
+      if (isPrint1Value.includes('YR07')) return 'G';
+
+      // 如果已经是字母格式，直接返回
+      if (/^[A-G]$/.test(isPrint1Value)) return isPrint1Value;
+
+      return '';
+    },
+    // 将灭菌柜名称（B-H）转换为内部队列名称（A-G）
+    convertSterilizationToInternal(sterilizationName) {
+      const conversionMap = {
+        B: 'A',
+        C: 'B',
+        D: 'C',
+        E: 'D',
+        F: 'E',
+        G: 'F',
+        H: 'G'
+      };
+      return conversionMap[sterilizationName] || sterilizationName;
+    },
+    // 将预热房名称（YR01-YR07）转换为内部队列名称（A-G）
+    convertPreheatingToInternal(preheatingName) {
+      const conversionMap = {
+        YR01: 'A',
+        YR02: 'B',
+        YR03: 'C',
+        YR04: 'D',
+        YR05: 'E',
+        YR06: 'F',
+        YR07: 'G'
+      };
+      return conversionMap[preheatingName] || preheatingName;
+    },
+    // 将内部队列名称（A-G）转换为预热房名称（YR01-YR07）
+    convertInternalToPreheating(internalName) {
+      const conversionMap = {
+        A: 'YR01',
+        B: 'YR02',
+        C: 'YR03',
+        D: 'YR04',
+        E: 'YR05',
+        F: 'YR06',
+        G: 'YR07'
+      };
+      return conversionMap[internalName] || internalName;
+    },
+    // 队列名称映射函数
+    getQueueDisplayName(queueName) {
+      const mapping = {
+        // A1-G1 映射为 YR01A-YR07A
+        A1: 'YR01A',
+        B1: 'YR02A',
+        C1: 'YR03A',
+        D1: 'YR04A',
+        E1: 'YR05A',
+        F1: 'YR06A',
+        G1: 'YR07A',
+        // A2-G2 映射为 YR01B-YR07B
+        A2: 'YR01B',
+        B2: 'YR02B',
+        C2: 'YR03B',
+        D2: 'YR04B',
+        E2: 'YR05B',
+        F2: 'YR06B',
+        G2: 'YR07B',
+        // A3-G3 映射为 B-H
+        A3: 'B',
+        B3: 'C',
+        C3: 'D',
+        D3: 'E',
+        E3: 'F',
+        F3: 'G',
+        G3: 'H'
+      };
+      return mapping[queueName] || queueName;
+    },
+    // 将内部字母转换为日志显示的队列名称
+    getLogQueueName(letter, type) {
+      if (!letter) return '';
+
+      const letterIndex = 'ABCDEFG'.indexOf(letter);
+      if (letterIndex === -1) return letter;
+
+      if (type === 'preheat') {
+        // 预热房：A-G 对应 YR01-YR07
+        return `YR0${letterIndex + 1}`;
+      } else if (type === 'sterilize') {
+        // 灭菌柜：A-G 对应 B-H
+        return String.fromCharCode(66 + letterIndex); // B=66, C=67, D=68, E=69, F=70, G=71, H=72
+      }
+
+      return letter;
+    },
     // 获取预热房目的地
     getPreheatingDestination(queueName) {
       const room = queueName[0];
@@ -8712,10 +8989,16 @@ export default {
       // 当目标预热房PLC数量达到设定上货数时自动停止
       if (newVal >= this.nocodeTargetCount) {
         this.addLog(
-          `【无码模式】目标预热房${queueName}PLC数量（${newVal}）已达到设定上货数（${this.nocodeTargetCount}），自动结束`
+          `【无码模式】目标预热房${this.getQueueDisplayName(
+            queueName
+          )}PLC数量（${newVal}）已达到设定上货数（${
+            this.nocodeTargetCount
+          }），自动结束`
         );
         this.$message.success(
-          `无码模式已完成！目标预热房${queueName}PLC数量 ${newVal} 个，已达到设定上货数 ${this.nocodeTargetCount} 个`
+          `无码模式已完成！目标预热房${this.getQueueDisplayName(
+            queueName
+          )}PLC数量 ${newVal} 个，已达到设定上货数 ${this.nocodeTargetCount} 个`
         );
         this.isModeExecuting = false;
         // 重置计数器和清理临时orderId
@@ -8723,7 +9006,6 @@ export default {
         this.nocodeOrderId = ''; // 清理临时orderId
       }
     },
-
     // ============ WebSocket相关方法 ============
     // 初始化WebSocket连接（通过IPC与主进程通信）
     initWebSocketServer() {
@@ -8825,6 +9107,59 @@ export default {
         this.mobileConnections = clients || [];
         this.refreshingConnections = false;
       });
+    },
+
+    // --------------------------------MSE接口调用相关方法--------------------------------
+    /**
+     * 调用MSE接口上报托盘运输环节信息
+     * @param {String} trayDataCode - 托盘号
+     * @param {String} type - 环节类型：1-上运输线，2-进预热柜，3-出预热柜，4-进灭菌柜，5-出灭菌柜
+     * @param {String} cabinetDataCode - 预热柜/灭菌柜编号：YR01-YR07/B/C/D/E/F/G/H
+     */
+    async callMseOperationRecord(trayDataCode, type, cabinetDataCode = '') {
+      try {
+        // 获取当前时间，格式：YYYY-MM-DD HH:mm:ss
+        const operatingTime = moment().format('YYYY-MM-DD HH:mm:ss');
+
+        // 构建请求参数
+        const params = {
+          tray_data_code: trayDataCode,
+          type: type,
+          operating_time: operatingTime,
+          location_number: '1', // 默认写1
+          cabinet_data_code: cabinetDataCode
+        };
+
+        // 发送POST请求到/fk/report接口
+        const response = await MseUtil.post('/fk/report', params);
+
+        // 根据环节类型决定日志输出格式
+        if (type === '1') {
+          // 输送线环节不输出柜号
+          this.addLog(`MSE接口调用成功：托盘${trayDataCode}，环节${type}`);
+        } else {
+          this.addLog(
+            `MSE接口调用成功：托盘${trayDataCode}，环节${type}，柜号${cabinetDataCode}`
+          );
+        }
+        return response;
+      } catch (error) {
+        console.error('MSE接口调用失败:', error);
+        // 根据环节类型决定错误日志输出格式
+        if (type === '1') {
+          // 输送线环节不输出柜号
+          this.addLog(
+            `MSE接口调用失败：托盘${trayDataCode}，环节${type}，错误：${error.message}`,
+            'alarm'
+          );
+        } else {
+          this.addLog(
+            `MSE接口调用失败：托盘${trayDataCode}，环节${type}，柜号${cabinetDataCode}，错误：${error.message}`,
+            'alarm'
+          );
+        }
+        throw error;
+      }
     },
     // 格式化时间
     formatTime(timeValue) {
@@ -8967,7 +9302,7 @@ export default {
           batchId: 'no_tray_code', // 无码模式下批次id为no_tray_code
           infoId: '',
           orderId: this.nocodeOrderId, // 无码模式下使用生成的临时唯一orderId
-          isPrint1: this.nocodeDestination, // 使用设定的预热房目的地
+          isPrint1: this.convertInternalToPreheating(this.nocodeDestination[0]), // 将内部队列名称转换为实际预热房名称
           isPrint2: '', // 无码模式下不指定灭菌柜
           isPrint3: '', // 无码模式下不指定出口
           inPut: '',
@@ -9002,7 +9337,11 @@ export default {
         const newTotalProgress = existingTrayCount + newBufferTrayCount;
 
         this.addLog(
-          `${source}：【无码模式】托盘${timestampTrayCode}已添加到上货区队列（预热房${this.nocodeDestination}已有：${existingTrayCount}，缓冲区实际：${newBufferTrayCount}，总进度：${newTotalProgress}/${this.nocodeTargetCount}）`
+          `${source}：【无码模式】托盘${timestampTrayCode}已添加到上货区队列（预热房${this.getQueueDisplayName(
+            this.nocodeDestination
+          )}已有：${existingTrayCount}，缓冲区实际：${newBufferTrayCount}，总进度：${newTotalProgress}/${
+            this.nocodeTargetCount
+          }）`
         );
         return;
       }
@@ -9070,6 +9409,11 @@ export default {
           this.addLog(
             `${source}：托盘${trayCode}属于当前订单，已添加到上货区队列 (${this.currentOrderScannedCount}/${this.currentOrderTrayCount})`
           );
+
+          // 调用MSE接口上报：1-上运输线
+          this.callMseOperationRecord(trayCode, '1', '').catch((error) => {
+            console.error('MSE接口调用失败:', error);
+          });
         } else {
           // 缓存区扫码反馈异常DBW582
           ipcRenderer.send('writeSingleValueToPLC', 'DBW582', 10);
@@ -9465,7 +9809,9 @@ export default {
       }
 
       this.addLog(
-        `${source}：在队列${this.queues[sourceQueueIndex].queueName}中找到匹配托盘：${scanCode}`
+        `${source}：在队列${this.getQueueDisplayName(
+          this.queues[sourceQueueIndex].queueName
+        )}中找到匹配托盘：${scanCode}`
       );
 
       // 3、根据目的地选择给PLC发送下发目的地命令
@@ -9525,8 +9871,19 @@ export default {
       downLoadQueue.trayInfo.push(trayWithEntryTime);
 
       this.addLog(
-        `${source}：托盘${scanCode}已从${this.queues[sourceQueueIndex].queueName}移动到下货区队列`
+        `${source}：托盘${scanCode}已从${this.getQueueDisplayName(
+          this.queues[sourceQueueIndex].queueName
+        )}移动到下货区队列`
       );
+
+      // 调用MSE接口上报：5-出灭菌柜
+      // 根据队列名称生成灭菌柜编号：A3->B, B3->C, C3->D, D3->E, E3->F, F3->G, G3->H
+      const cabinetCode = String.fromCharCode(
+        this.queues[sourceQueueIndex].queueName.charCodeAt(0) + 1
+      );
+      this.callMseOperationRecord(scanCode, '5', cabinetCode).catch((error) => {
+        console.error('MSE接口调用失败:', error);
+      });
     },
 
     // 启动托盘清理定时器
