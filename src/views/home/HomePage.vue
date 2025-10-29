@@ -2,7 +2,7 @@
   <div class="homePage">
     <div class="maskDiv">
       <div class="maskDiv-top">
-        <div class="maskDiv-top-left">
+        <div class="maskDiv-top-left" @dblclick="maxWindow">
           <img
             src="../../../build/icons/64x64.png"
             style="width: 38px; height: 38px"
@@ -21,6 +21,9 @@
           >
             <el-menu-item index="1">首页</el-menu-item>
             <el-menu-item index="2">业务处理</el-menu-item>
+            <el-menu-item index="3" v-if="userRole === 'ADMIN'"
+              >用户管理</el-menu-item
+            >
             <el-menu-item index="5">关于</el-menu-item>
           </el-menu>
         </div>
@@ -61,13 +64,16 @@
               style="margin-right: 10px"
             ></el-avatar>
             <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item icon="el-icon-close" style="color: #f04134"
-                >注销用户</el-dropdown-item
-              >
-              <el-dropdown-item icon="el-icon-key" command="updatePassword"
+              <el-dropdown-item
+                icon="el-icon-key"
+                command="updatePassword"
+                v-if="userRole !== 'ADMIN'"
                 >修改密码</el-dropdown-item
               >
-              <el-dropdown-item icon="el-icon-upload2" command="logout"
+              <el-dropdown-item
+                icon="el-icon-upload2"
+                command="logout"
+                v-if="userRole === 'ADMIN'"
                 >退出登录</el-dropdown-item
               >
             </el-dropdown-menu>
@@ -90,7 +96,11 @@
             style="font-size: 18px; font-weight: 600"
           ></i>
         </div>
-        <div class="maskDiv-top-close" @click="closewindow">
+        <div
+          class="maskDiv-top-close"
+          @click="closewindow"
+          v-if="userRole === 'ADMIN'"
+        >
           <i
             class="el-icon-close"
             style="font-size: 18px; font-weight: 600"
@@ -154,7 +164,8 @@ export default {
       updatePasswordForm: {
         newPassword: '',
         newPasswordAgain: ''
-      }
+      },
+      userRole: ''
     };
   },
   watch: {},
@@ -181,6 +192,15 @@ export default {
             }
           });
           break;
+        case '3':
+          this.$nextTick(() => {
+            if (this.$route.path !== '/homePage/userManagement') {
+              this.$router.replace({
+                path: '/homePage/userManagement'
+              });
+            }
+          });
+          break;
         case '5':
           this.$nextTick(() => {
             if (this.$route.path !== '/homePage/aboutPage') {
@@ -195,6 +215,11 @@ export default {
       }
     },
     closewindow() {
+      // 检查用户权限，只有管理员可以关闭系统
+      if (this.userRole !== 'ADMIN') {
+        this.$message.warning('操作员权限不足，无法关闭系统！');
+        return;
+      }
       ipcRenderer.send('close-window');
     },
     minWindow() {
@@ -221,6 +246,11 @@ export default {
     handelCommand(command) {
       switch (command) {
         case 'logout':
+          // 检查用户权限，只有管理员可以退出登录
+          if (this.userRole !== 'ADMIN') {
+            this.$message.warning('操作员权限不足，无法退出登录！');
+            return;
+          }
           this.$notify({
             title: '已退出登录！',
             message: '退出登录！',
@@ -326,6 +356,8 @@ export default {
     // 给主进程发送消息，更改窗口大小，设置最小大小，默认全屏
     ipcRenderer.send('logStatus', 'login');
     this.changeIcon();
+    // 获取用户角色
+    this.userRole = remote.getGlobal('sharedObject').userInfo.userRole || '';
   },
   mounted() {}
 };
@@ -447,8 +479,8 @@ export default {
   }
   ::v-deep {
     .el-drawer__wrapper {
-      height: 100%;
-      top: auto;
+      height: calc(100% - 57px);
+      top: 57px;
       bottom: auto;
     }
     .v-modal {

@@ -4146,11 +4146,38 @@
       :before-close="handleHistoryDialogClose"
     >
       <div>
+        <div
+          style="
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+          "
+        >
+          订单号：
+          <el-input
+            v-model="historyFilter.orderId"
+            placeholder="订单号"
+            clearable
+            style="width: 220px"
+          />
+          执行人：
+          <el-input
+            v-model="historyFilter.executorName"
+            placeholder="执行人（支持模糊）"
+            clearable
+            style="width: 220px"
+          />
+          <el-button type="primary" @click="searchHistoryOrders"
+            >查询</el-button
+          >
+          <el-button @click="resetHistoryFilters">重置</el-button>
+        </div>
         <el-table :data="historyOrders" style="width: 100%" border stripe>
-          <el-table-column prop="orderId" label="订单编号" width="180" />
-          <el-table-column prop="batchId" label="订单批号" width="180" />
-          <el-table-column prop="insertTime" label="订单时间" width="180" />
-          <el-table-column prop="productName" label="产品名称" width="180" />
+          <el-table-column prop="orderId" label="订单编号" width="150" />
+          <el-table-column prop="batchId" label="订单批号" width="150" />
+          <el-table-column prop="insertTime" label="订单时间" width="200" />
+          <el-table-column prop="productName" label="产品名称" width="150" />
           <el-table-column prop="isPrint1" label="指定预热房" width="100" />
           <el-table-column prop="isPrint2" label="指定灭菌柜" width="100" />
           <el-table-column prop="isPrint3" label="指定输出" width="100">
@@ -4161,6 +4188,14 @@
           <el-table-column prop="inPut" label="进货口信息" width="100">
             <template slot-scope="scope">
               {{ getInputText(scope.row.inPut) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="createrName" label="创建人" width="100" />
+          <el-table-column prop="executorName" label="执行人" width="100" />
+          <el-table-column prop="finisherName" label="完成人" width="100" />
+          <el-table-column prop="finishTime" label="完成时间" width="200">
+            <template slot-scope="scope">
+              {{ formatTime(scope.row.finishTime) }}
             </template>
           </el-table-column>
           <el-table-column
@@ -4662,6 +4697,7 @@ import HttpUtil from '@/utils/HttpUtil';
 import MseUtil from '@/utils/MseUtil';
 import moment from 'moment';
 import { ipcRenderer } from 'electron';
+const remote = require('electron').remote;
 export default {
   name: 'MonitorScreen',
   data() {
@@ -4677,6 +4713,7 @@ export default {
       activeLogType: 'running',
       activeOrderTab: 'current',
       ordersList: [],
+      historyFilter: { orderId: '', executorName: '' },
       runningLogs: [], // 修改为空数组
       alarmLogs: [], // 修改为空数组
       carts: [
@@ -6673,8 +6710,17 @@ export default {
           if (this.controlMode === 'nocode') {
             this.nocodeCurrentCount = 0;
             this.nocodeOrderId = ''; // 清理临时orderId
+
+            // 重置所有接货口的允许上货状态
+            this.nocodeFloor1Enabled = false;
+            this.nocodeFloor2AEnabled = false;
+            this.nocodeFloor2BEnabled = false;
+            this.nocodeFloor3AEnabled = false;
+            this.nocodeFloor3BEnabled = false;
+            this.nocodeOutboundEnabled = false;
+
             this.addLog(
-              `已取消无码模式（上货口计数：${this.nocodeCurrentCount}/${this.nocodeTargetCount}）`
+              `已取消无码模式（上货口计数：${this.nocodeCurrentCount}/${this.nocodeTargetCount}），所有接货口允许上货状态已重置`
             );
             this.$message.info('无码模式已取消');
           } else {
@@ -7353,9 +7399,15 @@ export default {
 
         // 设置加载状态
         order.isLoading = true;
+
+        // 获取当前登录用户信息
+        const userInfo = remote.getGlobal('sharedObject').userInfo;
+
         const param = {
           id: order.id,
-          orderStatus: '1'
+          orderStatus: '1',
+          executorName: userInfo.userName || '', // 添加执行人姓名
+          executorCode: userInfo.userCode || '' // 添加执行人编码
         };
         await HttpUtil.post('/order_info/update', param)
           .then((res) => {
@@ -7395,9 +7447,16 @@ export default {
 
         // 设置加载状态
         order.isLoading = true;
+
+        // 获取当前登录用户信息
+        const userInfo = remote.getGlobal('sharedObject').userInfo;
+
         const param = {
           id: order.id,
-          orderStatus: '3'
+          orderStatus: '3',
+          finisherName: userInfo.userName || '', // 添加完成人姓名
+          finisherCode: userInfo.userCode || '', // 添加完成人编码
+          finishTime: new Date() // 添加完成时间
         };
         await HttpUtil.post('/order_info/update', param)
           .then((res) => {
@@ -7523,7 +7582,9 @@ export default {
     async loadHistoryOrders() {
       const params = {
         pageNum: this.currentPage,
-        pageSize: this.pageSize
+        pageSize: this.pageSize,
+        orderId: this.historyFilter.orderId || '',
+        executorName: this.historyFilter.executorName || ''
       };
 
       try {
@@ -7540,6 +7601,15 @@ export default {
       } catch (error) {
         this.$message.error('获取历史订单失败');
       }
+    },
+    searchHistoryOrders() {
+      this.currentPage = 1;
+      this.loadHistoryOrders();
+    },
+    resetHistoryFilters() {
+      this.historyFilter = { orderId: '', executorName: '' };
+      this.currentPage = 1;
+      this.loadHistoryOrders();
     },
     handleSizeChange(val) {
       this.pageSize = val;
@@ -8007,6 +8077,9 @@ export default {
 
         this.isSubmittingOrder = true;
 
+        // 获取当前登录用户信息
+        const userInfo = remote.getGlobal('sharedObject').userInfo;
+
         // 构建订单数据
         const orderData = {
           orderId: this.newOrderForm.orderId,
@@ -8021,7 +8094,9 @@ export default {
           isManual: '1', // 新建订单都是手动添加
           qrCode: this.newOrderForm.trayCodes.join(','), // 托盘码用逗号分隔
           orderStatus: '0', // 待执行
-          invalidFlag: '0' // 未作废
+          invalidFlag: '0', // 未作废
+          createrName: userInfo.userName || '', // 添加创建人姓名
+          createrCode: userInfo.userCode || '' // 添加创建人编码
         };
 
         // 调用保存接口
@@ -9004,6 +9079,14 @@ export default {
         // 重置计数器和清理临时orderId
         this.nocodeCurrentCount = 0;
         this.nocodeOrderId = ''; // 清理临时orderId
+
+        // 重置所有接货口的允许上货状态
+        this.nocodeFloor1Enabled = false;
+        this.nocodeFloor2AEnabled = false;
+        this.nocodeFloor2BEnabled = false;
+        this.nocodeFloor3AEnabled = false;
+        this.nocodeFloor3BEnabled = false;
+        this.nocodeOutboundEnabled = false;
       }
     },
     // ============ WebSocket相关方法 ============
