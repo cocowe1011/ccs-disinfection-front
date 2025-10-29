@@ -3219,7 +3219,16 @@
       <div class="queue-section" :class="{ expanded: isQueueExpanded }">
         <div class="section-header" @click="changeQueueExpanded">
           <template v-if="isQueueExpanded">
-            <span><i class="el-icon-s-data"></i> 队列信息</span>
+            <div class="header-title-wrapper">
+              <span><i class="el-icon-s-data"></i> 队列信息</span>
+              <el-button
+                type="primary"
+                size="mini"
+                icon="el-icon-refresh"
+                @click.stop="loadQueueInfoFromDatabase"
+                >刷新队列数据</el-button
+              >
+            </div>
             <span
               class="arrow-icon"
               :class="{ 'expanded-arrow': isQueueExpanded }"
@@ -9858,6 +9867,13 @@ export default {
               }
             });
             this.addLog('队列信息加载完成');
+            // 如果当前有选中的队列，重新加载右侧托盘列表
+            if (
+              this.selectedQueueIndex >= 0 &&
+              this.selectedQueueIndex < this.queues.length
+            ) {
+              this.showTrays(this.selectedQueueIndex);
+            }
           } else {
             this.addLog('数据库中暂无队列信息');
           }
@@ -10645,6 +10661,11 @@ export default {
           this.handleMobileScanCode(data);
         });
 
+        // 监听移动端托盘数据变更通知
+        ipcRenderer.on('mobile-tray-data-changed', (event, data) => {
+          this.handleMobileTrayDataChanged(data);
+        });
+
         // 立即获取一次状态
         ipcRenderer.send('get-websocket-status');
 
@@ -10695,6 +10716,20 @@ export default {
             data: null
           }
         });
+      }
+    },
+
+    // 处理移动端托盘数据变更通知
+    handleMobileTrayDataChanged(data) {
+      console.log('收到移动端托盘数据变更通知:', data);
+
+      try {
+        // 重新加载队列数据
+        this.loadQueueInfoFromDatabase();
+        this.addLog('已收到移动端托盘数据变更通知，队列数据已刷新', 'running');
+      } catch (error) {
+        console.error('处理移动端托盘数据变更通知失败:', error);
+        this.addLog(`刷新队列数据失败: ${error.message}`, 'alarm');
       }
     },
 
@@ -12969,6 +13004,11 @@ export default {
         margin-bottom: 12px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         flex-shrink: 0;
+        .header-title-wrapper {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
       }
       .expandable-content-queue {
         flex: 1;

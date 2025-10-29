@@ -124,6 +124,11 @@ class AlarmWebSocketServer {
         this.handleScanCodeMessage(clientId, data);
         break;
 
+      case 'tray_data_changed':
+        // 处理托盘数据变更通知
+        this.handleTrayDataChanged(clientId, data);
+        break;
+
       default:
         console.log(`收到客户端 ${clientId} 未知消息类型:`, data.type);
     }
@@ -190,6 +195,22 @@ class AlarmWebSocketServer {
       success: result.success,
       message: result.message,
       data: result.data
+    });
+  }
+
+  // 处理托盘数据变更通知
+  handleTrayDataChanged(clientId, data) {
+    console.log(`收到客户端 ${clientId} 托盘数据变更通知`);
+
+    if (!this.mainWindow) {
+      console.error('主窗口引用未设置，无法处理托盘数据变更通知');
+      return;
+    }
+
+    // 通过IPC发送消息到渲染进程，触发重新加载托盘数据
+    this.mainWindow.webContents.send('mobile-tray-data-changed', {
+      clientId: clientId,
+      timestamp: data.timestamp
     });
   }
 
