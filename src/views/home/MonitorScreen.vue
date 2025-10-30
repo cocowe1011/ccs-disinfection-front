@@ -7386,6 +7386,10 @@ export default {
       this.sterilizationDoorStatus.bit12 = getBit(word368, 4); // G前门开到位
       this.sterilizationDoorStatus.bit13 = getBit(word368, 5); // G后门开到位
 
+      // 更新报警点位数据 - 统一使用convertToWord处理word数据
+      // 先保存旧值用于报警检查
+      const oldAlarmPoints = { ...this.alarmPoints };
+
       // 更新报警点位数据
       this.alarmPoints.DBW1000 = Number(values.DBW1000 ?? 0);
       this.alarmPoints.DBW1002 = Number(values.DBW1002 ?? 0);
@@ -7462,6 +7466,9 @@ export default {
       this.alarmPoints.DBW1144 = Number(values.DBW1144 ?? 0);
       this.alarmPoints.DBW1146 = Number(values.DBW1146 ?? 0);
       this.alarmPoints.DBW1148 = Number(values.DBW1148 ?? 0);
+
+      // 手动检查报警点位变化并触发报警
+      this.checkAlarmPoints(oldAlarmPoints);
     });
   },
   watch: {
@@ -8098,42 +8105,49 @@ export default {
       if (newVal === '1') {
         this.handleDownLoadScan();
       }
-    },
-    // ---- 监听指定队列的 trayInfo 变化结束 ----
-    // 报警点位监听 - 监听所有报警点位的变化
-    alarmPoints: {
-      handler(newVal, oldVal) {
-        if (!oldVal) return;
-
-        // 遍历所有报警点位，检查位变化
-        Object.keys(newVal).forEach((address) => {
-          const newValue = newVal[address];
-          const oldValue = oldVal[address];
-
-          if (newValue !== oldValue) {
-            // 检查每一位的变化
-            for (let bit = 0; bit < 16; bit++) {
-              const newBit = (newValue >> bit) & 1;
-              const oldBit = (oldValue >> bit) & 1;
-
-              // 如果位从0变为1，触发报警
-              if (oldBit === 0 && newBit === 1) {
-                const dbAddress = `DB101.${address}`;
-                const bitKey = `bit${bit}`;
-                const alarmMessage = this.alarmMapping[dbAddress]?.[bitKey];
-
-                if (alarmMessage && alarmMessage.trim() !== '') {
-                  this.addLog(`报警: ${alarmMessage}`, 'alarm');
-                }
-              }
-            }
-          }
-        });
-      },
-      deep: true
     }
   },
   methods: {
+    // 检查报警点位变化并触发报警
+    checkAlarmPoints(oldAlarmPoints) {
+      // 使用与其它点位相同的bit处理逻辑
+      const getBit = (word, bitIndex) => ((word >> bitIndex) & 1).toString();
+
+      // 遍历所有报警点位，检查位变化
+      Object.keys(this.alarmPoints).forEach((address) => {
+        const newValue = this.alarmPoints[address];
+        const oldValue = oldAlarmPoints[address];
+
+        // 比较具体的值而不是对象引用
+        if (newValue !== oldValue) {
+          // 检查每一位的变化 (按照其他点位的bit映射规则)
+          for (let bit = 0; bit < 16; bit++) {
+            let bitIndex;
+            if (bit < 8) {
+              // bit0-bit7: 使用bitIndex=8-15
+              bitIndex = bit + 8;
+            } else {
+              // bit8-bit15: 使用bitIndex=0-7
+              bitIndex = bit - 8;
+            }
+
+            const newBit = getBit(newValue, bitIndex);
+            const oldBit = getBit(oldValue, bitIndex);
+
+            // 如果位从0变为1，触发报警
+            if (oldBit === '0' && newBit === '1') {
+              const dbAddress = `DB101.${address}`;
+              const bitKey = `bit${bitIndex}`;
+              const alarmMessage = this.alarmMapping[dbAddress]?.[bitKey];
+
+              if (alarmMessage && alarmMessage.trim() !== '') {
+                this.addLog(`报警: ${alarmMessage}`, 'alarm');
+              }
+            }
+          }
+        }
+      });
+    },
     // --------------------------------模式控制相关方法--------------------------------
     // 处理模式设定
     handleModeSet() {
