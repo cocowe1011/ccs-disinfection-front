@@ -8282,7 +8282,6 @@ export default {
             this.nocodeFloor2BEnabled = false;
             this.nocodeFloor3AEnabled = false;
             this.nocodeFloor3BEnabled = false;
-            this.nocodeOutboundEnabled = false;
 
             this.addLog(
               `已取消无码模式（上货口计数：${this.nocodeCurrentCount}/${this.nocodeTargetCount}），所有接货口允许上货状态已重置`
@@ -10658,7 +10657,6 @@ export default {
         this.nocodeFloor2BEnabled = false;
         this.nocodeFloor3AEnabled = false;
         this.nocodeFloor3BEnabled = false;
-        this.nocodeOutboundEnabled = false;
       }
     },
     // ============ WebSocket相关方法 ============
